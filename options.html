@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub Issue Field Badges - settings</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg-base: #f6f8fa;
+      --bg-surface: #ffffff;
+      --bg-elevated: #f6f8fa;
+      --bg-input: #ffffff;
+      --border-default: #d0d7de;
+      --border-strong: #8c959f;
+      --border-focus: #0969da;
+      --text-primary: #1f2328;
+      --text-secondary: #59636e;
+      --text-muted: #1f2328;
+      --accent: #0969da;
+      --accent-hover: #0860ca;
+      --btn-bg: #f6f8fa;
+      --btn-bg-hover: #eaeef2;
+      --code-bg: rgba(175, 184, 193, 0.2);
+      --green: #1a7f37;
+      --red: #d1242f;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-base: #0d1117;
+        --bg-surface: #161b22;
+        --bg-elevated: #0d1117;
+        --bg-input: #0d1117;
+        --border-default: #30363d;
+        --border-strong: #6e7681;
+        --border-focus: #58a6ff;
+        --text-primary: #e6edf3;
+        --text-secondary: #8b949e;
+        --text-muted: #c9d1d9;
+        --accent: #58a6ff;
+        --accent-hover: #79b8ff;
+        --btn-bg: #21262d;
+        --btn-bg-hover: #30363d;
+        --code-bg: rgba(110, 118, 129, 0.4);
+        --green: #3fb950;
+        --red: #f85149;
+      }
+    }
+    * { box-sizing: border-box; }
+    .only-dark { display: none; }
+    @media (prefers-color-scheme: dark) { .only-dark { display: block; } .only-light { display: none; } }
+    body { margin: 0; min-height: 100vh; background: var(--bg-base); color: var(--text-primary); font: 14px/1.55 var(--font-sans); }
+    .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 64px; }
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+    header img { width: 44px; height: 44px; border-radius: 10px; }
+    header h1 { font-size: 20px; font-weight: 600; margin: 0; line-height: 1.2; }
+    header .subtitle { color: var(--text-secondary); font-size: 13px; margin-top: 2px; }
+    .lead { color: var(--text-muted); margin: 16px 0 24px; }
+    .card { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+    .card.access { border-color: var(--accent); }
+    .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+    .card p.desc { color: var(--text-secondary); margin: 0 0 16px; font-size: 13px; }
+    label { display: block; font-weight: 600; font-size: 13px; margin: 16px 0 6px; }
+    label:first-of-type { margin-top: 0; }
+    .input-row { display: flex; gap: 8px; }
+    input[type="text"], input[type="password"] {
+      flex: 1; width: 100%; padding: 9px 12px;
+      background: var(--bg-input); border: 1px solid var(--border-default); border-radius: 8px;
+      color: var(--text-primary); font: 14px var(--font-sans); outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input::placeholder { color: var(--text-secondary); }
+    input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.25); }
+    .hint { color: var(--text-secondary); font-size: 12px; margin: 6px 0 0; }
+    .hint a, footer a { color: var(--accent); text-decoration: none; }
+    .hint a:hover, footer a:hover { text-decoration: underline; }
+    code, .mono { font-family: var(--font-mono); font-size: 12px; background: var(--code-bg); border-radius: 5px; padding: 1px 6px; }
+    .actions { display: flex; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    button {
+      padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-default);
+      background: var(--btn-bg); color: var(--text-primary); font: 600 13px var(--font-sans); cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    button:hover { background: var(--btn-bg-hover); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    #status { font-size: 13px; }
+    #status.ok { color: var(--green); }
+    #status.err { color: var(--red); }
+    .chip-input {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      min-height: 42px; padding: 6px 8px;
+      background: var(--bg-input); border: 1px solid var(--border-default); border-radius: 8px;
+      cursor: text; transition: border-color .15s, box-shadow .15s;
+    }
+    .chip-input:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.25); }
+    .chip-input input {
+      flex: 1 1 160px; min-width: 120px; border: none; background: transparent; padding: 4px 6px;
+      color: var(--text-primary); font: 14px var(--font-sans); outline: none;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 4px 0 10px;
+      border-radius: 999px; border: 1px solid var(--chip-border); background: var(--chip-bg); color: var(--chip-fg);
+      font-size: 13px; font-weight: 500; line-height: 1; white-space: nowrap;
+    }
+    .chip button {
+      all: unset; display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 50%; cursor: pointer; color: inherit; font-size: 14px; line-height: 1; opacity: .7;
+    }
+    .chip button:hover { opacity: 1; background: rgba(0, 0, 0, 0.12); }
+    .chip.c0 { --chip-bg: rgba(9, 105, 218, 0.12); --chip-border: rgba(9, 105, 218, 0.4); --chip-fg: #0969da; }
+    .chip.c1 { --chip-bg: rgba(130, 80, 223, 0.12); --chip-border: rgba(130, 80, 223, 0.4); --chip-fg: #8250df; }
+    .chip.c2 { --chip-bg: rgba(26, 127, 55, 0.12); --chip-border: rgba(26, 127, 55, 0.4); --chip-fg: #1a7f37; }
+    .chip.c3 { --chip-bg: rgba(188, 76, 0, 0.12); --chip-border: rgba(188, 76, 0, 0.4); --chip-fg: #bc4c00; }
+    .chip.c4 { --chip-bg: rgba(191, 57, 137, 0.12); --chip-border: rgba(191, 57, 137, 0.4); --chip-fg: #bf3989; }
+    .chip.c5 { --chip-bg: rgba(89, 99, 110, 0.12); --chip-border: rgba(89, 99, 110, 0.4); --chip-fg: #59636e; }
+    @media (prefers-color-scheme: dark) {
+      .chip.c0 { --chip-fg: #58a6ff; } .chip.c1 { --chip-fg: #a371f7; } .chip.c2 { --chip-fg: #3fb950; }
+      .chip.c3 { --chip-fg: #f0883e; } .chip.c4 { --chip-fg: #db61a2; } .chip.c5 { --chip-fg: #8b949e; }
+      .chip button:hover { background: rgba(255, 255, 255, 0.12); }
+    }
+    kbd { font: 11px var(--font-mono); padding: 1px 5px; border: 1px solid var(--border-default); border-bottom-width: 2px; border-radius: 4px; background: var(--code-bg); }
+    footer { color: var(--text-secondary); font-size: 12px; margin-top: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .mono:empty { display: none; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <img class="only-dark" src="icons/icon-dark-128.png" alt="">
+      <img class="only-light" src="icons/icon-light-128.png" alt="">
+      <div>
+        <h1>GitHub Issue Field Badges</h1>
+        <div class="subtitle">Extension settings</div>
+      </div>
+    </header>
+    <p class="lead">Shows the values of custom issue fields as badges next to each sub-issue on GitHub issue pages, right beside the issue type.</p>
+
+    <section class="card access" id="access" hidden>
+      <h2>Site access</h2>
+      <p class="desc">This browser has not granted the extension access to <code>github.com</code> and <code>api.github.com</code> yet. Firefox asks for this separately from the installation.</p>
+      <button id="grant" type="button" class="primary">Allow access to github.com</button>
+    </section>
+
+    <section class="card">
+      <h2>GitHub access</h2>
+      <p class="desc">Field values are read through the GitHub API. The token is stored in this browser profile only and is sent to nothing but <code>api.github.com</code>. Fields with "Organization only" visibility need a token of an organization member.</p>
+
+      <label for="token">Personal access token</label>
+      <div class="input-row">
+        <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_... or ghp_...">
+        <button id="toggle" type="button" title="Show or hide the token">Show</button>
+      </div>
+      <p class="hint">
+        Recommended: a <a href="https://github.com/settings/tokens/new?scopes=repo&description=issue-field-badges-extension" target="_blank" rel="noopener">classic token</a> with the <code>repo</code> scope. If the organization enforces SSO, open "Configure SSO" next to the new token and authorize it for that organization.
+        A <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> also works: set the organization as resource owner, pick the repositories, and under Repository permissions set <code>Issues</code> to <code>Read-only</code>.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Fields to show</h2>
+      <p class="desc">Names of the issue fields to display, matched case-insensitively against the fields defined by the organization. Badges appear in this order; single-select values use the option's colour.</p>
+      <label for="field-input">Field names</label>
+      <div id="chips" class="chip-input" role="list" aria-label="Field names">
+        <input id="field-input" type="text" spellcheck="false" autocomplete="off" placeholder="Add a field and press Enter">
+      </div>
+      <p class="hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a field, <kbd>Backspace</kbd> or the × button to remove one. Nothing is shown until at least one field is added.</p>
+    </section>
+
+    <div class="actions">
+      <button id="save" class="primary" type="button">Save</button>
+      <button id="test" type="button">Test token</button>
+      <span id="status" role="status"></span>
+    </div>
+
+    <footer>
+      <span>GitHub Issue Field Badges <span id="version" class="mono"></span></span>
+      <span>Not affiliated with GitHub.</span>
+    </footer>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

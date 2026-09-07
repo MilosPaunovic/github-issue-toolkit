@@ -1,0 +1,14 @@
+# Chrome signing key and built packages - never commit these
+*.pem
+*.crx
+*.zip
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local scratch
+node_modules/
+dist/

@@ -1,0 +1,54 @@
+.gsf-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  max-width: 100%;
+  padding: 0 7px 1px;
+  margin-right: 4px;
+  border: 1px solid;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  text-decoration: none !important;
+  color: var(--gsf-fg);
+  background-color: var(--gsf-bg);
+  border-color: var(--gsf-border);
+}
+.gsf-badge:hover {
+  text-decoration: underline !important;
+}
+.gsf-badge[data-gsf-color="RED"]    { --gsf-fg: var(--fgColor-danger);    --gsf-bg: var(--bgColor-danger-muted);    --gsf-border: var(--borderColor-danger-muted); }
+.gsf-badge[data-gsf-color="ORANGE"] { --gsf-fg: var(--fgColor-severe);    --gsf-bg: var(--bgColor-severe-muted);    --gsf-border: var(--borderColor-severe-muted); }
+.gsf-badge[data-gsf-color="YELLOW"] { --gsf-fg: var(--fgColor-attention); --gsf-bg: var(--bgColor-attention-muted); --gsf-border: var(--borderColor-attention-muted); }
+.gsf-badge[data-gsf-color="GREEN"]  { --gsf-fg: var(--fgColor-success);   --gsf-bg: var(--bgColor-success-muted);   --gsf-border: var(--borderColor-success-muted); }
+.gsf-badge[data-gsf-color="BLUE"]   { --gsf-fg: var(--fgColor-accent);    --gsf-bg: var(--bgColor-accent-muted);    --gsf-border: var(--borderColor-accent-muted); }
+.gsf-badge[data-gsf-color="PURPLE"] { --gsf-fg: var(--fgColor-done);      --gsf-bg: var(--bgColor-done-muted);      --gsf-border: var(--borderColor-done-muted); }
+.gsf-badge[data-gsf-color="PINK"]   { --gsf-fg: var(--fgColor-sponsors);  --gsf-bg: var(--bgColor-sponsors-muted);  --gsf-border: var(--borderColor-sponsors-muted); }
+.gsf-badge[data-gsf-color="GRAY"]   { --gsf-fg: var(--fgColor-muted);     --gsf-bg: var(--bgColor-neutral-muted);   --gsf-border: var(--borderColor-muted); }
+
+.gsf-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 16px 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--borderColor-attention-muted);
+  border-radius: 6px;
+  background: var(--bgColor-attention-muted);
+  color: var(--fgColor-default);
+  font-size: 12px;
+}
+.gsf-notice button {
+  border: 1px solid var(--borderColor-default);
+  border-radius: 6px;
+  background: var(--button-default-bgColor-rest, var(--bgColor-default));
+  color: var(--fgColor-default);
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+}

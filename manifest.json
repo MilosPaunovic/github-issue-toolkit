@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub Issue Field Badges",
+  "short_name": "Field Badges",
+  "version": "1.0.0",
+  "description": "Shows custom issue field values as badges on the sub-issues list of GitHub issues.",
+  "author": "Miloš Paunović",
+  "homepage_url": "https://milospaunovic.github.io/issue-field-badges/",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://api.github.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://github.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "GitHub Issue Field Badges"
+  },
+  "icons": {
+    "16": "icons/icon-dark-16.png",
+    "32": "icons/icon-dark-32.png",
+    "48": "icons/icon-dark-48.png",
+    "128": "icons/icon-dark-128.png"
+  }
+}
