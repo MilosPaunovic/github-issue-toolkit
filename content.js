@@ -374,15 +374,28 @@
   }
 
   // GitHub's global header: put our button among the action icons, right before the notifications bell.
-  // Class names change between GitHub's server-rendered and React headers, so this is structural:
-  // find the notifications control inside a <header>, and copy the classes of a neighbouring icon button.
+  // Class names change between GitHub's header variants, so this is structural: find the bell *button*
+  // (never a breadcrumb or page-title link that also points at /notifications), or fall back to the user menu.
+  function isBellButton(el) {
+    if (!el || el.closest('[class*="Breadcrumb"], nav[aria-label*="readcrumb"], h1, h2')) return false;
+    if (el.tagName === "NOTIFICATION-INDICATOR" || el.id === "AppHeader-notifications-button") return true;
+    const cls = String(el.className);
+    return /IconButton|appHeaderButton|AppHeader-button|Button--iconOnly/.test(cls) || Boolean(el.querySelector("svg.octicon-bell, svg.octicon-inbox"));
+  }
+
   function findHeaderSlot() {
     for (const header of document.querySelectorAll("header")) {
-      const bell = header.querySelector('notification-indicator, #AppHeader-notifications-button, a[href^="/notifications"], [data-testid*="notification"]');
-      if (!bell) continue;
+      const candidates = [...header.querySelectorAll('notification-indicator, #AppHeader-notifications-button, a[href^="/notifications"], [data-testid*="notification"]')];
+      const bell = candidates.find(isBellButton) || null;
       let ref = bell;
+      if (!ref) {
+        // No bell on this page (the notifications page hides it): sit before the user menu instead.
+        ref = header.querySelector('[class*="GlobalNavUserMenu"], .AppHeader-user, button[aria-label*="user navigation" i], [data-login]');
+        if (!ref) continue;
+      }
       while (ref.parentElement && ref.parentElement !== header && ref.parentElement.children.length === 1) ref = ref.parentElement;
-      const twin = header.querySelector('a[href="/pulls"], a[href="/issues"], #AppHeader-notifications-button, a[href^="/notifications"]');
+      let twin = bell && bell.tagName === "A" ? bell : header.querySelector('a[href="/pulls"], a[href="/issues"], #AppHeader-notifications-button');
+      if (twin && twin.closest('[class*="Breadcrumb"], nav')) twin = null;
       return { header, ref, twin };
     }
     return null;
@@ -435,10 +448,14 @@
     const { box } = panelParts;
     if (headerButton && headerButton.isConnected) {
       const r = headerButton.getBoundingClientRect();
+      const width = box.offsetWidth || 320;
+      const left = Math.min(Math.max(8, Math.round(r.right - width)), Math.max(8, window.innerWidth - width - 8));
       box.style.top = `${Math.round(r.bottom + 8)}px`;
-      box.style.right = `${Math.max(8, Math.round(window.innerWidth - r.right))}px`;
+      box.style.left = `${left}px`;
+      box.style.right = "auto";
     } else {
       box.style.top = "";
+      box.style.left = "";
       box.style.right = "";
     }
   }

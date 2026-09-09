@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.0.4] - 2026-09-09
+
+### Fixed
+
+- On the notifications page the pin button landed next to the page title on the left and its dropdown opened off screen: the header slot now targets the bell button itself, never a breadcrumb link to the same address, falls back to the user menu when the bell is hidden, and the dropdown stays inside the viewport.
+
 ## [2.0.3] - 2026-09-09
 
 ### Changed
@@ -76,7 +82,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.3...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.4...HEAD
+[2.0.4]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.4
 [2.0.3]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.3
 [2.0.2]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.2
 [2.0.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.1
