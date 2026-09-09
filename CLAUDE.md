@@ -14,6 +14,7 @@ GitHub Issue Toolkit, a Manifest V3 browser extension (Chromium and Firefox) wit
 - Never put a version or release number in the subject; versions live in the manifests, the changelog and the tag.
 - No em dashes or en dashes anywhere, use a plain hyphen.
 - Never amend or force-push commits that are already on `origin/main` unless the maintainer explicitly asks for a history rewrite.
+- Pull requests are squash-merged, and GitHub uses the PR title as the commit subject and the PR description as the body. Write both to the rules above: lowercase subject, one paragraph followed by bullets. Review follow-ups pushed to a contributor's branch end up in that one squashed commit, so the PR description must be updated to cover them before merging.
 
 ## Releases
 
