@@ -4,11 +4,12 @@
   const PROJECT_PATH = /^\/(?:orgs|users)\/[^/]+\/projects\/\d+(?:\/|$)|^\/[^/]+\/[^/]+\/projects\/\d+(?:\/|$)/;
   const CACHE_TTL_MS = 5 * 60 * 1000;
   const DAY_MS = 24 * 60 * 60 * 1000;
+  const FETCH_CHUNK = 60;
   const cache = new Map(); // "owner/repo#n" -> { at, values, createdAt }
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: true, ageUnit: "months" };
+  let settings = { ageEnabled: false, ageUnit: "months", pinsEnabled: true };
   let pins = [];
   let pinsCollapsed = true;
 
@@ -34,18 +35,19 @@
   function parseIssueInput(text, fallbackRepo) {
     const s = String(text || "").trim();
     if (!s) return null;
-    try {
-      const url = new URL(s, location.origin);
-      if (/github\.com$/.test(url.hostname)) {
-        const ref = refFromPath(url.pathname);
-        if (ref) return ref;
-      }
-    } catch { /* not a url */ }
     let m = /^([^/\s]+)\/([^#\s]+)#(\d+)$/.exec(s);
     if (m) return { owner: m[1], repo: m[2], number: Number(m[3]), key: `${m[1]}/${m[2]}#${m[3]}` };
     m = /^#?(\d+)$/.exec(s);
-    if (m && fallbackRepo) {
+    if (m) {
+      if (!fallbackRepo) return null;
       return { owner: fallbackRepo.owner, repo: fallbackRepo.repo, number: Number(m[1]), key: `${fallbackRepo.owner}/${fallbackRepo.repo}#${m[1]}` };
+    }
+    // Only absolute URLs: a relative value would resolve against the current page and pick up its issue number.
+    if (/^https?:\/\//i.test(s)) {
+      try {
+        const url = new URL(s);
+        if (/(^|\.)github\.com$/.test(url.hostname)) return refFromPath(url.pathname);
+      } catch { /* not a url */ }
     }
     return null;
   }
@@ -238,8 +240,9 @@
     if (noticeShown) return;
     const container = document.querySelector('[data-testid="sub-issues-issue-container"]');
     if (!container) {
-      // No sub-issues list on this page (project view): report through the pins panel instead.
+      // No sub-issues list on this page (project view): report through the pins panel and flag its button.
       if (panel) setPanelStatus(message, false, withOptionsButton);
+      flagHeaderButton(message);
       return;
     }
     noticeShown = true;
@@ -284,9 +287,19 @@
     for (const key of toFetch.keys()) pending.add(key);
     const issues = [...toFetch.values()].map(({ owner, repo, number }) => ({ owner, repo, number }));
 
+    // Project tables can hold hundreds of rows: keep each GraphQL request small enough for GitHub's limits.
+    const chunks = [];
+    for (let i = 0; i < issues.length; i += FETCH_CHUNK) chunks.push(issues.slice(i, i + FETCH_CHUNK));
+
     let response;
     try {
-      response = await api.runtime.sendMessage({ type: "fetchFieldValues", issues });
+      const parts = await Promise.all(chunks.map((chunk) => api.runtime.sendMessage({ type: "fetchFieldValues", issues: chunk })));
+      const failed = parts.find((part) => !part || part.error);
+      response = failed || parts.reduce((acc, part) => {
+        Object.assign(acc.values, part.values || {});
+        Object.assign(acc.created, part.created || {});
+        return acc;
+      }, { values: {}, created: {} });
     } catch (err) {
       response = { error: err && err.message ? err.message : String(err) };
     } finally {
@@ -297,7 +310,7 @@
       if (response && response.error === "NO_TOKEN") {
         showNotice("Issue field badges: add a GitHub token in the extension settings to show field values here.", true);
       } else if (response && response.error === "NO_FIELDS") {
-        showNotice("Issue field badges: choose which fields to show in the extension settings.", true);
+        showNotice("Issue field badges: choose which fields to show, or enable the age badge, in the extension settings.", true);
       } else {
         showNotice(`Issue field badges: ${response ? response.error : "unknown error"}`, true);
       }
@@ -321,6 +334,10 @@
   function clearBadges() {
     cache.clear();
     noticeShown = false;
+    if (headerButton) {
+      headerButton.classList.remove("gsf-has-error");
+      headerButton.title = "Pinned issues";
+    }
     document.querySelectorAll(".gsf-badge, .gsf-badges, .gsf-notice").forEach((el) => el.remove());
     document.querySelectorAll("[data-gsf-state]").forEach((el) => delete el.dataset.gsfState);
   }
@@ -396,6 +413,12 @@
     slot.ref.parentElement.insertBefore(headerButton, slot.ref);
     updateHeaderButton();
     return true;
+  }
+
+  function flagHeaderButton(message) {
+    if (!headerButton) return;
+    headerButton.classList.add("gsf-has-error");
+    headerButton.title = message ? `Pinned issues. ${message}` : "Pinned issues";
   }
 
   function updateHeaderButton() {
@@ -481,8 +504,9 @@
       input.value = "";
       await pinIssue(ref);
     });
-    // GitHub's keyboard shortcuts must not fire while typing here.
+    // GitHub's keyboard shortcuts must not fire while typing here; Escape still closes the panel.
     for (const type of ["keydown", "keyup", "keypress"]) input.addEventListener(type, (e) => e.stopPropagation());
+    input.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); setCollapsed(true); } });
 
     const status = document.createElement("div");
     status.className = "gsf-pins-status";
@@ -509,7 +533,6 @@
 
   function setCollapsed(collapsed) {
     pinsCollapsed = collapsed;
-    api.storage.local.set({ pinsCollapsed: collapsed });
     renderPanel();
   }
 
@@ -742,6 +765,11 @@
 
   // Show, hide or refresh the panel when the page or the open item changes (GitHub navigates without reloads).
   function syncPanel() {
+    if (!settings.pinsEnabled) {
+      if (headerButton && headerButton.isConnected) headerButton.remove();
+      if (panel) panel.hidden = true;
+      return;
+    }
     const inHeader = mountHeaderButton();
     const wanted = inHeader || panelWanted();
     if (wanted && !panel) buildPanel();
@@ -784,27 +812,28 @@
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes.token || changes.fields || changes.ageEnabled || changes.ageUnit) {
-      if (changes.ageEnabled) settings.ageEnabled = changes.ageEnabled.newValue !== false;
+      if (changes.ageEnabled) settings.ageEnabled = changes.ageEnabled.newValue === true;
       if (changes.ageUnit) settings.ageUnit = changes.ageUnit.newValue || "months";
       clearBadges();
       schedule();
+    }
+    if (changes.pinsEnabled) {
+      settings.pinsEnabled = changes.pinsEnabled.newValue !== false;
+      lastHref = null;
+      syncPanel();
     }
     if (changes.pins) {
       pins = Array.isArray(changes.pins.newValue) ? changes.pins.newValue : [];
       lastHref = null;
       syncPanel();
     }
-    if (changes.pinsCollapsed) {
-      pinsCollapsed = changes.pinsCollapsed.newValue !== false;
-      renderPanel();
-    }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "pins", "pinsCollapsed"]).then((stored) => {
-    settings.ageEnabled = stored.ageEnabled !== false;
+  api.storage.local.get(["ageEnabled", "ageUnit", "pinsEnabled", "pins"]).then((stored) => {
+    settings.ageEnabled = stored.ageEnabled === true;
     settings.ageUnit = stored.ageUnit || "months";
+    settings.pinsEnabled = stored.pinsEnabled !== false;
     pins = Array.isArray(stored.pins) ? stored.pins : [];
-    pinsCollapsed = stored.pinsCollapsed !== false;
     lastHref = null;
     schedule();
   }).catch(() => schedule());

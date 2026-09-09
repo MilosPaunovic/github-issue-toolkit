@@ -163,6 +163,7 @@
       <a class="link" href="#install">Install</a>
       <a class="link" href="#token">Token</a>
       <a class="link" href="#settings">Settings</a>
+      <a class="link" href="#pins">Pins</a>
       <a class="link" href="#faq">FAQ</a>
       <a class="link" href="https://github.com/MilosPaunovic/issue-field-badges">GitHub</a>
       <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Switch between light and dark mode" title="Light / dark mode">
@@ -177,7 +178,7 @@
       <img class="only-dark" src="icon-dark-128.png" alt="">
       <img class="only-light" src="icon-light-128.png" alt="">
       <h1>GitHub Issue Field Badges</h1>
-      <p class="lead">See your organization's <strong>custom issue fields</strong> on every sub-issue of an epic, right where GitHub shows only the issue type.</p>
+      <p class="lead">See your organization's <strong>custom issue fields</strong> on every sub-issue of an epic and on every row of a Projects view, right where GitHub shows only the issue type.</p>
       <div class="btns">
         <a class="btn primary" href="#install">Install from source</a>
         <a class="btn" href="https://github.com/MilosPaunovic/issue-field-badges">View on GitHub</a>
@@ -188,7 +189,7 @@
   <section id="what">
     <div class="wrap">
       <h2>What it does</h2>
-      <p class="muted">GitHub organizations can define their own <a href="https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-and-managing-issue-fields">custom issue fields</a>. Each issue shows them in its sidebar, but the <strong>Sub-issues</strong> list on a parent issue shows only the issue type. To know a field value for twenty sub-issues you have to open twenty tabs. This extension puts the values you care about directly on each row.</p>
+      <p class="muted">GitHub organizations can define their own <a href="https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-and-managing-issue-fields">custom issue fields</a>. Each issue shows them in its sidebar, but the <strong>Sub-issues</strong> list on a parent issue shows only the issue type, and Projects views show only the columns you add by hand. To know a field value for twenty sub-issues you have to open twenty tabs. This extension puts the values you care about directly on each row, on sub-issue lists and on project tables and boards.</p>
 
       <div class="compare">
         <div class="panel">
@@ -211,10 +212,13 @@
       <div class="grid" style="margin-top:24px">
         <div class="card"><h3>Any field, any type</h3><p>Single-select, multi-select, text, number and date fields all work. Single-select badges use the colour of the chosen option, so a red option stays red.</p></div>
         <div class="card"><h3>You pick the fields</h3><p>Choose which fields to show and in what order on the settings page. One field or five, per your workflow.</p></div>
-        <div class="card"><h3>One request per page</h3><p>All visible sub-issues, across repositories, are fetched in a single GitHub GraphQL query. Results are cached for five minutes.</p></div>
+        <div class="card"><h3>One request per page</h3><p>All visible rows, across repositories, are fetched in batched GitHub GraphQL queries of 60 issues. Results are cached for five minutes.</p></div>
+        <div class="card"><h3>Projects views too</h3><p>The same badges appear on GitHub Projects: after the issue number in the table layout, under the title on board cards. Draft items and pull requests are left alone.</p></div>
+        <div class="card"><h3>Issue age, if you want it</h3><p>An optional gray badge shows how long ago each issue was created, in months, weeks or days. Off by default, one checkbox in the settings.</p></div>
+        <div class="card"><h3>Pinned epics</h3><p>A pin button in GitHub's top bar keeps your epics one click away: copy their reference, or make the issue you are looking at a sub-issue of one. Optional as well.</p></div>
         <div class="card"><h3>Clickable</h3><p>Each badge links to the repository's issue search filtered by that field value, the same way GitHub's own field badges do.</p></div>
         <div class="card"><h3>Looks native</h3><p>Badges reuse GitHub's own colour tokens, so they match light and dark themes and every colour blindness setting GitHub offers.</p></div>
-        <div class="card"><h3>Private by design</h3><p>No analytics, no third-party servers. Your token stays in your browser and only ever talks to <code>api.github.com</code>.</p></div>
+        <div class="card"><h3>Private by design</h3><p>No analytics, no third-party servers. Your token stays in your browser and only ever talks to <code>api.github.com</code>. The only write is the sub-issue link you trigger yourself.</p></div>
       </div>
     </div>
   </section>
@@ -224,10 +228,10 @@
       <h2>How it works</h2>
       <p class="muted">Three small files, no build step, one code base for Chromium and Firefox. The extension never scrapes the field values from the page, because organization-only fields are not in the HTML. It asks the GitHub API instead.</p>
       <div class="flow">
-        <div class="step"><h3>Detect the list</h3><p>A content script on <code>github.com</code> watches the page for the sub-issues container and collects the issue links of its rows: owner, repository, number.</p></div>
-        <div class="step"><h3>One batched query</h3><p>The background script (a service worker on Chromium, an event page on Firefox) groups those issues by repository and runs a single GraphQL query using <code>Issue.issueFieldValues</code>, with your token.</p></div>
-        <div class="step"><h3>Keep what you chose</h3><p>From the returned values it keeps only the fields you configured, in your order, and hands back <code>field</code>, <code>value</code> and <code>colour</code> per issue.</p></div>
-        <div class="step"><h3>Render badges</h3><p>The content script inserts a badge per value right after the issue type badge. It re-renders when GitHub redraws the list, so expanding nested sub-issues just works.</p></div>
+        <div class="step"><h3>Detect the rows</h3><p>A content script on <code>github.com</code> watches the page for sub-issue lists, project table rows and board cards, and collects the issue links: owner, repository, number.</p></div>
+        <div class="step"><h3>One batched query</h3><p>The background script (a service worker on Chromium, an event page on Firefox) groups those issues by repository and runs one GraphQL query per batch of 60 using <code>Issue.issueFieldValues</code> and <code>createdAt</code>, with your token.</p></div>
+        <div class="step"><h3>Keep what you chose</h3><p>From the returned values it keeps only the fields you configured, in your order, and hands back <code>field</code>, <code>value</code>, <code>colour</code> and the creation date per issue.</p></div>
+        <div class="step"><h3>Render badges</h3><p>The content script inserts a badge per value right after the issue type badge, after the issue number in project tables, or under the title on board cards, plus the age badge when enabled. It re-renders when GitHub redraws the page.</p></div>
       </div>
       <pre><code>{ r0: repository(owner: "org", name: "repo") {
     i7700: issue(number: 7700) {
@@ -239,7 +243,7 @@
     }
     # one alias per visible sub-issue, one repository block per repository
 } }</code></pre>
-      <p class="muted" style="margin-top:14px">The query above is what the service worker sends. GitHub's GraphQL rate limit is 5,000 points per hour per token; a page with fifty sub-issues costs one point.</p>
+      <p class="muted" style="margin-top:14px">The query above is what the background script sends, one such request per 60 issues. GitHub's GraphQL rate limit is 5,000 points per hour per token; a page with fifty sub-issues costs one point.</p>
     </div>
   </section>
 
@@ -273,7 +277,7 @@
   <section id="token">
     <div class="wrap">
       <h2>The GitHub token</h2>
-      <p class="muted">Custom fields are usually set to "Organization only" visibility, so GitHub returns them only to a token of an organization member. The extension needs read access to issues and nothing else.</p>
+      <p class="muted">Custom fields are usually set to "Organization only" visibility, so GitHub returns them only to a token of an organization member. The extension needs read access to issues. Write access is needed only if you want to link issues to pinned epics from the panel.</p>
       <div class="cols">
         <div class="card rec">
           <span class="pill">Recommended</span>
@@ -292,7 +296,7 @@
           <ul>
             <li>Set the organization as <em>Resource owner</em>.</li>
             <li>Pick the repositories you browse, or all repositories.</li>
-            <li>Under <em>Repository permissions</em> set <code>Issues</code> to <code>Read-only</code>. GitHub adds <code>Metadata: Read-only</code> automatically.</li>
+            <li>Under <em>Repository permissions</em> set <code>Issues</code> to <code>Read-only</code>, or <code>Read and write</code> if you want to link issues to pinned epics. GitHub adds <code>Metadata: Read-only</code> automatically.</li>
           </ul>
         </div>
       </div>
@@ -303,7 +307,7 @@
   <section id="settings">
     <div class="wrap">
       <h2>Settings</h2>
-      <p class="muted">Two things to configure: the token, and the fields to show. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Nothing is shown until at least one field is added.</p>
+      <p class="muted">The token and the fields to show are the two essentials; the age badge and the pinned issues button are optional extras with their own cards. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Nothing is shown until at least one field is added or the age badge is enabled.</p>
       <figure>
         <img class="only-light" src="settings-light.png" alt="The settings page: token input and the field names chip box">
         <img class="only-dark" src="settings-dark.png" alt="The settings page in dark mode: token input and the field names chip box">
@@ -312,12 +316,25 @@
     </div>
   </section>
 
+  <section id="pins">
+    <div class="wrap">
+      <h2>Pinned issues</h2>
+      <p class="muted">Triaging a backlog usually means linking many issues to a handful of epics. The pin button in GitHub's top bar, next to the notifications bell, keeps those epics at hand.</p>
+      <div class="grid">
+        <div class="card"><h3>Pin</h3><p>Pin the issue you are looking at, the item open in a project side panel, or paste an issue URL or <code>owner/repo#123</code>. Each pin shows its type and title.</p></div>
+        <div class="card"><h3>Link</h3><p>One click makes the current issue a sub-issue of the pinned epic through GitHub's <code>addSubIssue</code> mutation. If the issue already has another parent, you are asked before it is moved.</p></div>
+        <div class="card"><h3>Copy</h3><p>Copies <code>owner/repo#123</code> to the clipboard, ready to paste into a comment or a task list.</p></div>
+      </div>
+      <p class="muted" style="margin-top:18px">Pins are stored locally in your browser and shared across tabs; the open or closed state of the panel is per tab. A red dot on the button means the last request failed, for example because no token is set yet. The whole feature can be switched off in the settings.</p>
+    </div>
+  </section>
+
   <section id="privacy">
     <div class="wrap">
       <h2>Privacy</h2>
       <div class="grid">
-        <div class="card"><h3>What is stored</h3><p>Your token and your field list, in <code>chrome.storage.local</code>, on your device. Uninstalling removes both.</p></div>
-        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the sub-issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. Nothing else, to no one else.</p></div>
+        <div class="card"><h3>What is stored</h3><p>Your token, your field list, your preferences and your pinned issues, in <code>chrome.storage.local</code>, on your device. Uninstalling removes all of it.</p></div>
+        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. The only write is the sub-issue link you click yourself. Nothing else, to no one else.</p></div>
         <div class="card"><h3>What is not</h3><p>No analytics, telemetry, crash reports, cookies or third-party services. The full policy is in <a href="https://github.com/MilosPaunovic/issue-field-badges/blob/main/PRIVACY.md">PRIVACY.md</a>.</p></div>
       </div>
     </div>
@@ -327,7 +344,8 @@
     <div class="wrap">
       <h2>FAQ</h2>
       <details><summary>Why does it need a token at all?</summary><p>Because organization-only field values are not in the page HTML; GitHub loads them through its authenticated API only for members. A token is the only way an extension can read them. If your organization sets fields to "Public" visibility, a token is still required by the API, but any account's token will do.</p></details>
-      <details><summary>Does it show fields on the issues list page too?</summary><p>No. GitHub already shows pinned field values on the issues list. The extension targets the one place that has none: the sub-issues list on an issue page, including nested sub-issues once you expand them.</p></details>
+      <details><summary>Where exactly do the badges appear?</summary><p>On the sub-issues list of an issue page, including nested sub-issues once you expand them, and on GitHub Projects views: table rows and board cards. Not on the plain issues list, where GitHub already shows pinned field values.</p></details>
+      <details><summary>Does linking need extra permissions?</summary><p>Yes. Making an issue a sub-issue of a pinned epic writes to GitHub, so the token needs write access to the issue's repository: the <code>repo</code> scope on a classic token, or <code>Issues: Read and write</code> on a fine-grained one. Badges alone work with read-only access.</p></details>
       <details><summary>Sub-issues live in several repositories. Does that work?</summary><p>Yes. Rows are grouped by repository and fetched in one query. Each badge links to the search in its own repository.</p></details>
       <details><summary>A field shows no badge on some rows.</summary><p>Those issues simply have no value for that field. Check the field name on the settings page matches the organization's field name; matching is case-insensitive but the full name must match.</p></details>
       <details><summary>Badges did not update after I changed a field on GitHub.</summary><p>Values are cached for five minutes per issue. Reload the page after that, or change any setting to clear the cache immediately.</p></details>

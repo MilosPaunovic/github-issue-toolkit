@@ -3,7 +3,7 @@
   "name": "GitHub Issue Field Badges",
   "short_name": "Field Badges",
   "version": "1.0.0",
-  "description": "Shows custom issue field values and issue age as badges on sub-issue lists and GitHub Projects views, with a pinned-epics panel for quick linking.",
+  "description": "Custom issue field values and issue age as badges on sub-issue lists and Projects views, plus a pinned issues panel.",
   "author": "Miloš Paunović",
   "homepage_url": "https://milospaunovic.github.io/issue-field-badges/",
   "permissions": [

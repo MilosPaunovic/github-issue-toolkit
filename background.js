@@ -7,7 +7,7 @@ async function getSettings() {
   return {
     token: (stored.token || "").trim(),
     fields: parseFields(stored.fields),
-    ageEnabled: stored.ageEnabled !== false,
+    ageEnabled: stored.ageEnabled === true,
     ageUnit: stored.ageUnit || "months"
   };
 }

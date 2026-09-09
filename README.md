@@ -4,16 +4,16 @@
 
 Browser extension that shows the values of your organization's custom GitHub **issue fields** as badges on every row of the **Sub-issues** list of an issue and on **Projects** views (table and board), plus the **age** of each issue. A small **Pinned issues** panel keeps your epics one click away so you can link the issue you are looking at to them. Works in Chrome, Edge, Brave and other Chromium browsers, and in Firefox.
 
-GitHub itself only shows the issue type there. This extension reads the field values through the GitHub GraphQL API, in one batched query per page for all visible sub-issues, across repositories.
+GitHub itself only shows the issue type there. This extension reads the field values through the GitHub GraphQL API, in batched queries covering all visible rows, across repositories. Everything is read-only except the optional linking of an issue to a pinned epic, which writes through the same API.
 
 ## Features
 
 - Badges appear next to the issue type on each sub-issue row, in the option's colour.
 - The same badges appear on GitHub Projects views: after the issue number in the table layout, under the title on board cards.
-- An **age** badge shows how old each issue is, in months by default (`3 mo`), or in weeks or days.
-- A **Pinned issues** panel in the top right corner of project views and issue pages: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click.
+- An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days. Off by default.
+- A **Pinned issues** button in GitHub's top bar: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click. Can be switched off in the settings.
 - Any field type works: single-select, multi-select, text, number, date.
-- Choose which fields to show and in what order; nothing is shown until you pick at least one.
+- Choose which fields to show and in what order; nothing is shown until you pick at least one field or enable the age badge.
 - One API request per page, results cached for five minutes, no polling.
 - Light and dark theme, follows GitHub's own colour tokens.
 - No analytics, no third-party services. See [PRIVACY.md](PRIVACY.md).
@@ -52,13 +52,13 @@ Minimum version: Firefox 140, required by the `data_collection_permissions` mani
    - **Classic** (recommended): https://github.com/settings/tokens/new with the `repo` scope. If the organization enforces SSO, click "Configure SSO" next to the new token and authorize it for the organization.
    - **Fine-grained**: https://github.com/settings/personal-access-tokens/new. Set the organization as resource owner, pick the repositories, and under Repository permissions set `Issues` to `Read-only` (or `Read and write` if you want to link issues to pinned epics from the panel).
 2. Paste the token on the settings page, click **Test token**, then **Save**.
-3. Add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. No badges appear until at least one field is added.
-4. Optionally adjust the **Issue age** badge (on by default, in months).
+3. Add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. No badges appear until at least one field is added or the age badge is enabled.
+4. Optionally enable the **Issue age** badge (off by default) and pick its unit, and decide whether you want the **Pinned issues** button in GitHub's top bar (on by default).
 5. Open any issue with sub-issues, or a project view such as `https://github.com/orgs/<org>/projects/<n>/views/<v>`.
 
 ### Pinned issues
 
-A pin button sits in GitHub's top bar, next to the notifications bell, with the number of pinned issues. It opens the pinned issues panel as a dropdown; clicking outside or pressing Escape closes it. On pages without the GitHub header a small floating pin button in the top right corner takes its place.
+A pin button sits in GitHub's top bar, next to the notifications bell, with the number of pinned issues. It opens the pinned issues panel as a dropdown; clicking outside or pressing Escape closes it, and the open or closed state is per tab. On pages without the GitHub header a small floating pin button in the top right corner takes its place. A red dot on the button means the last request failed (for example no token yet); open the panel to read the message. The whole feature can be switched off in the settings.
 
 - **Pin it** pins the issue you are looking at: the current issue page, or the item open in the project side panel. You can also paste an issue URL or `owner/repo#123` and press **Pin**.
 - Each pin shows its type (for example `Epic`) and title, and has three actions: **Link** makes the current issue a sub-issue of the pin (asks before moving an issue that already has a different parent), **Copy** copies `owner/repo#123` to the clipboard, and **×** unpins it.
@@ -73,7 +73,7 @@ The token is stored with `chrome.storage.local` on your device and is only ever 
 ## How it works
 
 - `content.js` watches the page for sub-issue lists, project table rows (`role="rowheader"` cells) and board cards, collects the issue links, and asks the background script for the field values and creation dates.
-- `background.js` groups the issues by repository and runs one GraphQL query using `Issue.issueFieldValues` and `createdAt`, then returns only the configured fields. Without a token or without anything to show it answers with a hint that `content.js` shows above the sub-issues list or in the pins panel. It also resolves pinned issues (title, type) and runs the `addSubIssue` mutation. It runs as a service worker on Chromium and as an event page on Firefox.
+- `background.js` groups the issues by repository and runs one GraphQL query per batch of 60 issues using `Issue.issueFieldValues` and `createdAt`, then returns only the configured fields. Without a token or without anything to show it answers with a hint that `content.js` shows above the sub-issues list or in the pins panel. It also resolves pinned issues (title, type) and runs the `addSubIssue` mutation. It runs as a service worker on Chromium and as an event page on Firefox.
 - `content.js` renders a badge per value after the issue type badge (or after the issue number in project tables, under the title on board cards), plus the age badge, styled by `content.css` with GitHub's colour tokens. It also renders the pinned issues panel; the current issue is taken from the page URL or from the `issue=owner|repo|number` parameter GitHub adds when a project side panel is open.
 - `options.html` / `options.js` provide the settings page, including the one-time site-access prompt Firefox needs.
 - All scripts start with `const api = browser ?? chrome`, so the same code runs on both engines.

@@ -7,13 +7,13 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 
 - Badges on GitHub Projects views: the table layout shows them after the issue number in the title cell, the board layout under the card title. Badges follow the configured issue fields, so the same setup now works on `/orgs/<org>/projects/<n>/views/...` pages and on sub-issue lists alike.
-- **Issue age** badge showing how long ago the issue was created, in months by default (`3 mo`, `<1 mo`), with weeks and days as alternatives in the settings. Hovering shows the exact age and the creation date. Enabled by default.
-- **Pinned issues** panel, opened from a pin button added to GitHub's top bar next to the notifications bell (styled like the other header icons, with a count). Pin the epics you use most (from the current issue, or by pasting a URL or `owner/repo#123`), then for each pin: open it, copy its reference, or **Link** the issue you are looking at as a sub-issue of it. Linking uses the `addSubIssue` mutation and offers to move the issue when it already has another parent. Pins show the issue title (read from the page immediately, then completed with the issue type from the API). The panel collapses to a small pill and the pins are kept in `chrome.storage.local`.
-- Settings: **Issue age** card (toggle and unit) and **Pinned issues** card with a "Remove all pins" button.
+- **Issue age** badge showing how long ago the issue was created, in months (`3 mo`, `<1 mo`), weeks or days. Hovering shows the exact age and the creation date. Off by default, enabled in the settings.
+- **Pinned issues** panel, opened from a pin button added to GitHub's top bar next to the notifications bell (styled like the other header icons, with a count). Pin the epics you use most (from the current issue, or by pasting a URL or `owner/repo#123`), then for each pin: open it, copy its reference, or **Link** the issue you are looking at as a sub-issue of it. Linking uses the `addSubIssue` mutation and offers to move the issue when it already has another parent. Pins show the issue title (read from the page immediately, then completed with the issue type from the API). The panel collapses to a small pill, its open or closed state is per tab, and the pins are kept in `chrome.storage.local`. A red dot on the button flags a failed request on pages that have no sub-issues list. The feature can be switched off in the settings.
+- Settings: **Issue age** card (toggle and unit) and **Pinned issues** card (toggle and a "Remove all pins" button).
 
 ### Changed
 
-- The field query tolerates missing or inaccessible issues instead of failing the whole page.
+- The field query tolerates missing or inaccessible issues instead of failing the whole page, and is sent in batches of 60 issues so large project tables stay within GitHub's limits.
 - The token hint now mentions that linking needs write access to issues (`repo` scope, or `Issues: Read and write` for fine-grained tokens).
 
 ## [1.0.0] - 2026-09-07
