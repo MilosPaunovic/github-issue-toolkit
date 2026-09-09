@@ -4,17 +4,32 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.0.0] - 2026-09-09
+
+A major version because the extension changes name and Firefox identity and grows from a badge renderer into a small toolkit.
+
 ### Added
 
-- Badges on GitHub Projects views: the table layout shows them after the issue number in the title cell, the board layout under the card title. Badges follow the configured issue fields, so the same setup now works on `/orgs/<org>/projects/<n>/views/...` pages and on sub-issue lists alike.
-- **Issue age** badge showing how long ago the issue was created, in months by default (`3 mo`, `<1 mo`), with weeks and days as alternatives in the settings. Hovering shows the exact age and the creation date. Enabled by default.
-- **Pinned issues** panel, opened from a pin button added to GitHub's top bar next to the notifications bell (styled like the other header icons, with a count). Pin the epics you use most (from the current issue, or by pasting a URL or `owner/repo#123`), then for each pin: open it, copy its reference, or **Link** the issue you are looking at as a sub-issue of it. Linking uses the `addSubIssue` mutation and offers to move the issue when it already has another parent. Pins show the issue title (read from the page immediately, then completed with the issue type from the API). The panel collapses to a small pill and the pins are kept in `chrome.storage.local`.
-- Settings: **Issue age** card (toggle and unit) and **Pinned issues** card with a "Remove all pins" button.
+- Badges on GitHub Projects views: the table layout shows them after the issue number in the title cell, the board layout under the card title. Badges follow the configured issue fields, so the same setup works on `/orgs/<org>/projects/<n>/views/...` pages and on sub-issue lists alike.
+- **Issue age** badge showing how long ago the issue was created, in months (`3 mo`, `<1 mo`), weeks or days. Hovering shows the exact age and the creation date. Off by default, enabled in the settings.
+- **Pinned issues** panel, opened from a pin button added to GitHub's top bar next to the notifications bell (styled like the other header icons, with a count). Pin the epics you use most (from the current issue, or by pasting a URL or `owner/repo#123`), then for each pin: open it, copy its reference, or **Link** the issue you are looking at as a sub-issue of it. Linking uses the `addSubIssue` mutation and offers to move the issue when it already has another parent. Pins show the issue title and type. The open or closed state of the panel is per tab, and the pins are kept in `chrome.storage.local`. A red dot on the button flags a failed request on pages that have no sub-issues list. The feature can be switched off in the settings.
+- Settings: **Issue age** card (toggle and unit) and **Pinned issues** card (toggle and a "Remove all pins" button).
+- Documentation site: examples of every surface with an invented repository, a compact navigation with a mobile menu, and a `scripts/render-examples.py` script that renders the README images from those examples.
+- `release` GitHub Actions workflow: pushing a `v*` tag builds both packages and publishes the GitHub release with the matching changelog section as notes.
 
 ### Changed
 
-- The field query tolerates missing or inaccessible issues instead of failing the whole page.
+- Renamed to **GitHub Issue Toolkit**. The repository moved to https://github.com/MilosPaunovic/github-issue-toolkit (the old address redirects) and the documentation site to https://milospaunovic.github.io/github-issue-toolkit/ (the old address does not). Icons are unchanged.
+- Package files are `github-issue-toolkit-<version>-chrome.zip` and `github-issue-toolkit-<version>-firefox.zip`.
+- The Firefox add-on id is `github-issue-toolkit@milospaunovic.github.io`; Firefox treats it as a different add-on from 1.0.0, so remove the old temporary add-on before loading this one.
+- The field query tolerates missing or inaccessible issues instead of failing the whole page, and is sent in batches of 60 issues so large project tables stay within GitHub's limits.
 - The token hint now mentions that linking needs write access to issues (`repo` scope, or `Issues: Read and write` for fine-grained tokens).
+
+### Fixed
+
+- Pinned issues keep their title and type: the metadata loaded after pinning was written to a stale copy of the pin.
 
 ## [1.0.0] - 2026-09-07
 
@@ -39,5 +54,6 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/issue-field-badges/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/MilosPaunovic/issue-field-badges/releases/tag/v1.0.0
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.0
+[1.0.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v1.0.0

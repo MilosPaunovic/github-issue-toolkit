@@ -7,7 +7,7 @@ async function getSettings() {
   return {
     token: (stored.token || "").trim(),
     fields: parseFields(stored.fields),
-    ageEnabled: stored.ageEnabled !== false,
+    ageEnabled: stored.ageEnabled === true,
     ageUnit: stored.ageUnit || "months"
   };
 }
@@ -25,7 +25,7 @@ async function graphql(token, query, { partial = false } = {}) {
     headers: {
       Authorization: `bearer ${token}`,
       "Content-Type": "application/json",
-      "User-Agent": "gh-subissue-fields-extension"
+      "User-Agent": "github-issue-toolkit"
     },
     body: JSON.stringify({ query })
   });

@@ -1,19 +1,70 @@
-# GitHub Issue Field Badges
+# GitHub Issue Toolkit
 
-[Documentation site](https://milospaunovic.github.io/issue-field-badges/) · [Releases](https://github.com/MilosPaunovic/issue-field-badges/releases) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md)
+Formerly "GitHub Issue Field Badges".
+
+[Documentation site](https://milospaunovic.github.io/github-issue-toolkit/) · [Releases](https://github.com/MilosPaunovic/github-issue-toolkit/releases) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md)
 
 Browser extension that shows the values of your organization's custom GitHub **issue fields** as badges on every row of the **Sub-issues** list of an issue and on **Projects** views (table and board), plus the **age** of each issue. A small **Pinned issues** panel keeps your epics one click away so you can link the issue you are looking at to them. Works in Chrome, Edge, Brave and other Chromium browsers, and in Firefox.
 
-GitHub itself only shows the issue type there. This extension reads the field values through the GitHub GraphQL API, in one batched query per page for all visible sub-issues, across repositories.
+GitHub itself only shows the issue type there. This extension reads the field values through the GitHub GraphQL API, in batched queries covering all visible rows, across repositories. Everything is read-only except the optional linking of an issue to a pinned epic, which writes through the same API.
+
+## What it looks like
+
+Illustrations of an invented repository, rendered from the documentation site with `scripts/render-examples.py`, using a field named Priority as the example.
+
+**Sub-issues list**: one badge per configured field, right after the issue type.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-sub-dark.png">
+  <img src="docs/example-sub-light.png" alt="Sub-issues list with Priority badges after the issue type" width="760">
+</picture>
+</p>
+
+**Projects table view**: badges follow the issue number in the title cell.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-table-dark.png">
+  <img src="docs/example-table-light.png" alt="Project table rows with Priority and age badges after the issue number" width="760">
+</picture>
+</p>
+
+**Projects board view**: badges sit under the card title.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-board-dark.png">
+  <img src="docs/example-board-light.png" alt="Project board cards with Priority and age badges under the title" width="760">
+</picture>
+</p>
+
+**Issue age** (optional, off by default): a gray badge with the time since the issue was created, in months, weeks or days.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-age-dark.png">
+  <img src="docs/example-age-light.png" alt="Sub-issue rows with an age badge next to the field badges" width="760">
+</picture>
+</p>
+
+**Pinned issues**: a pin button next to the notifications bell opens your pinned epics; Link makes the current issue a sub-issue of one, Copy copies its reference.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-pins-dark.png">
+  <img src="docs/example-pins-light.png" alt="Pinned issues dropdown with three epics and Link, Copy and unpin actions" width="760">
+</picture>
+</p>
 
 ## Features
 
 - Badges appear next to the issue type on each sub-issue row, in the option's colour.
 - The same badges appear on GitHub Projects views: after the issue number in the table layout, under the title on board cards.
-- An **age** badge shows how old each issue is, in months by default (`3 mo`), or in weeks or days.
-- A **Pinned issues** panel in the top right corner of project views and issue pages: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click.
+- An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days. Off by default.
+- A **Pinned issues** button in GitHub's top bar: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click. Can be switched off in the settings.
 - Any field type works: single-select, multi-select, text, number, date.
-- Choose which fields to show and in what order; nothing is shown until you pick at least one.
+- Choose which fields to show and in what order; nothing is shown until you pick at least one field or enable the age badge.
 - One API request per page, results cached for five minutes, no polling.
 - Light and dark theme, follows GitHub's own colour tokens.
 - No analytics, no third-party services. See [PRIVACY.md](PRIVACY.md).
@@ -33,7 +84,7 @@ The extension is plain files with no build step, so "installing from source" mea
 
 Firefox does not run extension service workers and treats site access as an optional permission, so it uses its own manifest (`manifest.firefox.json`) and asks once for access to `github.com`.
 
-1. Run `scripts/package.sh` to build `github-issue-field-badges-<version>-firefox.zip`, or download it from the releases page.
+1. Run `scripts/package.sh` to build `github-issue-toolkit-<version>-firefox.zip`, or download it from the releases page.
 2. Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on**, and pick the zip. Temporary add-ons are removed when Firefox restarts; a permanent install needs a package signed by Mozilla.
 3. Open the settings from the toolbar icon. If a **Site access** box is shown, click **Allow access to github.com**. Firefox may also show the request on the extensions (puzzle) button.
 
@@ -46,19 +97,19 @@ Minimum version: Firefox 140, required by the `data_collection_permissions` mani
 
 ## Setup
 
-![Settings page](docs/settings-dark.png)
+<p align="center"><img src="docs/settings-dark.png" alt="Settings page" width="640"></p>
 
 1. Create a GitHub personal access token:
    - **Classic** (recommended): https://github.com/settings/tokens/new with the `repo` scope. If the organization enforces SSO, click "Configure SSO" next to the new token and authorize it for the organization.
    - **Fine-grained**: https://github.com/settings/personal-access-tokens/new. Set the organization as resource owner, pick the repositories, and under Repository permissions set `Issues` to `Read-only` (or `Read and write` if you want to link issues to pinned epics from the panel).
 2. Paste the token on the settings page, click **Test token**, then **Save**.
-3. Add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. No badges appear until at least one field is added.
-4. Optionally adjust the **Issue age** badge (on by default, in months).
+3. Add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. No badges appear until at least one field is added or the age badge is enabled.
+4. Optionally enable the **Issue age** badge (off by default) and pick its unit, and decide whether you want the **Pinned issues** button in GitHub's top bar (on by default).
 5. Open any issue with sub-issues, or a project view such as `https://github.com/orgs/<org>/projects/<n>/views/<v>`.
 
 ### Pinned issues
 
-A pin button sits in GitHub's top bar, next to the notifications bell, with the number of pinned issues. It opens the pinned issues panel as a dropdown; clicking outside or pressing Escape closes it. On pages without the GitHub header a small floating pin button in the top right corner takes its place.
+A pin button sits in GitHub's top bar, next to the notifications bell, with the number of pinned issues. It opens the pinned issues panel as a dropdown; clicking outside or pressing Escape closes it, and the open or closed state is per tab. On pages without the GitHub header a small floating pin button in the top right corner takes its place. A red dot on the button means the last request failed (for example no token yet); open the panel to read the message. The whole feature can be switched off in the settings.
 
 - **Pin it** pins the issue you are looking at: the current issue page, or the item open in the project side panel. You can also paste an issue URL or `owner/repo#123` and press **Pin**.
 - Each pin shows its type (for example `Epic`) and title, and has three actions: **Link** makes the current issue a sub-issue of the pin (asks before moving an issue that already has a different parent), **Copy** copies `owner/repo#123` to the clipboard, and **×** unpins it.
@@ -73,7 +124,7 @@ The token is stored with `chrome.storage.local` on your device and is only ever 
 ## How it works
 
 - `content.js` watches the page for sub-issue lists, project table rows (`role="rowheader"` cells) and board cards, collects the issue links, and asks the background script for the field values and creation dates.
-- `background.js` groups the issues by repository and runs one GraphQL query using `Issue.issueFieldValues` and `createdAt`, then returns only the configured fields. Without a token or without anything to show it answers with a hint that `content.js` shows above the sub-issues list or in the pins panel. It also resolves pinned issues (title, type) and runs the `addSubIssue` mutation. It runs as a service worker on Chromium and as an event page on Firefox.
+- `background.js` groups the issues by repository and runs one GraphQL query per batch of 60 issues using `Issue.issueFieldValues` and `createdAt`, then returns only the configured fields. Without a token or without anything to show it answers with a hint that `content.js` shows above the sub-issues list or in the pins panel. It also resolves pinned issues (title, type) and runs the `addSubIssue` mutation. It runs as a service worker on Chromium and as an event page on Firefox.
 - `content.js` renders a badge per value after the issue type badge (or after the issue number in project tables, under the title on board cards), plus the age badge, styled by `content.css` with GitHub's colour tokens. It also renders the pinned issues panel; the current issue is taken from the page URL or from the `issue=owner|repo|number` parameter GitHub adds when a project side panel is open.
 - `options.html` / `options.js` provide the settings page, including the one-time site-access prompt Firefox needs.
 - All scripts start with `const api = browser ?? chrome`, so the same code runs on both engines.
@@ -84,7 +135,8 @@ No build step. Edit the files, then reload the extension (Chromium: reload icon 
 
 - `manifest.json` is the Chromium manifest, `manifest.firefox.json` the Firefox one. Keep them in sync except for the `background` and `browser_specific_settings` keys.
 - `python3 scripts/make-icons.py` regenerates the icons, dark tiles for the manifests and light tiles for the settings page and the docs site (needs Pillow).
-- `scripts/package.sh` builds two zips one level above the repo (or into `OUT_DIR`): `github-issue-field-badges-<version>-chrome.zip` for Chromium browsers and `github-issue-field-badges-<version>-firefox.zip` for Firefox. Pass a `.pem` path as the first argument to also build a signed `.crx` for Chromium. Keep the key outside the repository; `.gitignore` excludes `*.pem`, `*.crx` and `*.zip`.
+- `python3 scripts/render-examples.py` re-renders the example images in `docs/` from the mock-ups in `docs/index.html` (needs Chrome and Pillow). Run it after changing those mock-ups.
+- `scripts/package.sh` builds two zips one level above the repo (or into `OUT_DIR`): `github-issue-toolkit-<version>-chrome.zip` for Chromium browsers and `github-issue-toolkit-<version>-firefox.zip` for Firefox. Pass a `.pem` path as the first argument to also build a signed `.crx` for Chromium. Keep the key outside the repository; `.gitignore` excludes `*.pem`, `*.crx` and `*.zip`.
 
 ### Releasing
 
@@ -97,7 +149,7 @@ The `release` workflow (`.github/workflows/release.yml`) checks that the tag mat
 
 ## Documentation site
 
-`docs/index.html` is a single-page site (no build step) describing what the extension does, how it works, and how to set it up. It is served by GitHub Pages from the `docs/` folder: in the repository settings open **Pages**, choose **Deploy from a branch**, branch `main`, folder `/docs`, save. The site is available at https://milospaunovic.github.io/issue-field-badges/. Its screenshots are the same `docs/settings-*.png` files used in this README.
+`docs/index.html` is a single-page site (no build step) describing what the extension does, how it works, and how to set it up. It is served by GitHub Pages from the `docs/` folder: in the repository settings open **Pages**, choose **Deploy from a branch**, branch `main`, folder `/docs`, save. The site is available at https://milospaunovic.github.io/github-issue-toolkit/. Its screenshots are the same `docs/settings-*.png` files used in this README.
 
 ## License
 

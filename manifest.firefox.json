@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "GitHub Issue Field Badges",
-  "short_name": "Field Badges",
-  "version": "1.0.0",
-  "description": "Shows custom issue field values and issue age as badges on sub-issue lists and GitHub Projects views, with a pinned-epics panel for quick linking.",
+  "name": "GitHub Issue Toolkit",
+  "short_name": "Issue Tools",
+  "version": "2.0.0",
+  "description": "Custom issue field values and issue age as badges on GitHub sub-issue lists and Projects views, plus a pinned epics panel.",
   "author": "Miloš Paunović",
-  "homepage_url": "https://milospaunovic.github.io/issue-field-badges/",
+  "homepage_url": "https://milospaunovic.github.io/github-issue-toolkit/",
   "browser_specific_settings": {
     "gecko": {
-      "id": "issue-field-badges@milospaunovic.github.io",
+      "id": "github-issue-toolkit@milospaunovic.github.io",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": [
@@ -50,7 +50,7 @@
     "open_in_tab": true
   },
   "action": {
-    "default_title": "GitHub Issue Field Badges"
+    "default_title": "GitHub Issue Toolkit - open settings"
   },
   "icons": {
     "16": "icons/icon-dark-16.png",

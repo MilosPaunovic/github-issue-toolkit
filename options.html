@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GitHub Issue Field Badges - settings</title>
+  <title>GitHub Issue Toolkit - settings</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -139,7 +139,7 @@
       <img class="only-dark" src="icons/icon-dark-128.png" alt="">
       <img class="only-light" src="icons/icon-light-128.png" alt="">
       <div>
-        <h1>GitHub Issue Field Badges</h1>
+        <h1>GitHub Issue Toolkit</h1>
         <div class="subtitle">Extension settings</div>
       </div>
     </header>
@@ -161,7 +161,7 @@
         <button id="toggle" type="button" title="Show or hide the token">Show</button>
       </div>
       <p class="hint">
-        Recommended: a <a href="https://github.com/settings/tokens/new?scopes=repo&description=issue-field-badges-extension" target="_blank" rel="noopener">classic token</a> with the <code>repo</code> scope. If the organization enforces SSO, open "Configure SSO" next to the new token and authorize it for that organization.
+        Recommended: a <a href="https://github.com/settings/tokens/new?scopes=repo&description=github-issue-toolkit" target="_blank" rel="noopener">classic token</a> with the <code>repo</code> scope. If the organization enforces SSO, open "Configure SSO" next to the new token and authorize it for that organization.
         A <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> also works: set the organization as resource owner, pick the repositories, and under Repository permissions set <code>Issues</code> to <code>Read-only</code>.
       </p>
     </section>
@@ -173,13 +173,13 @@
       <div id="chips" class="chip-input" role="list" aria-label="Field names">
         <input id="field-input" type="text" spellcheck="false" autocomplete="off" placeholder="Add a field and press Enter">
       </div>
-      <p class="hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a field, <kbd>Backspace</kbd> or the × button to remove one. Nothing is shown until at least one field is added.</p>
+      <p class="hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a field, <kbd>Backspace</kbd> or the × button to remove one. Nothing is shown until at least one field is added or the age badge is enabled.</p>
     </section>
 
     <section class="card">
       <h2>Issue age</h2>
       <p class="desc">Adds a badge with the time elapsed since the issue was created, next to the field badges, on sub-issue lists and on project table and board views.</p>
-      <label class="check"><input id="age-enabled" type="checkbox"> Show the age of each issue</label>
+      <label class="check"><input id="age-enabled" type="checkbox"> Show the age of each issue (off by default)</label>
       <label for="age-unit">Unit</label>
       <select id="age-unit">
         <option value="months">Months (default), e.g. 3 mo</option>
@@ -191,8 +191,9 @@
 
     <section class="card">
       <h2>Pinned issues</h2>
-      <p class="desc">On project views and issue pages a small panel in the top right corner keeps your pinned issues, for example epics, one click away. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
-      <div class="actions" style="margin-top:0">
+      <p class="desc">A pin button in GitHub's top bar, next to the notifications bell, opens a panel with your pinned issues, for example epics. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
+      <label class="check"><input id="pins-enabled" type="checkbox"> Show the pinned issues button in GitHub's top bar</label>
+      <div class="actions" style="margin-top:12px">
         <span id="pins-count" class="hint" style="margin:0"></span>
         <button id="pins-clear" type="button">Remove all pins</button>
       </div>
@@ -205,7 +206,7 @@
     </div>
 
     <footer>
-      <span>GitHub Issue Field Badges <span id="version" class="mono"></span></span>
+      <span>GitHub Issue Toolkit <span id="version" class="mono"></span></span>
       <span>Not affiliated with GitHub.</span>
     </footer>
   </div>

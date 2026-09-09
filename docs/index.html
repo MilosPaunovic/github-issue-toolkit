@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GitHub Issue Field Badges</title>
+  <title>GitHub Issue Toolkit</title>
   <meta name="description" content="Chrome extension that shows custom issue field values as badges on the sub-issues list of GitHub issues, next to the issue type.">
   <link rel="icon" href="icon-dark-32.png">
   <script>
@@ -37,7 +37,7 @@
         --fg: #e6edf3; --fg-muted: #8b949e; --accent: #58a6ff; --accent-fg: #0d1117;
         --code-bg: rgba(110,118,129,.4); --shadow: 0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
         --danger: #ff8182; --severe: #f0883e; --attention: #d29922; --info: #58a6ff; --done: #a371f7; --success: #3fb950; --neutral: #8b949e;
-        --open: #3fb950; --closed: #a371f7;
+        --open: #3fb950; --closed: #a371f7; --pink-fg: #db61a2;
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -55,19 +55,38 @@
     section:first-of-type { border-top: 0; }
 
     /* nav */
+    html { scroll-padding-top: 72px; }
     nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); background: color-mix(in srgb, var(--bg) 85%, transparent); border-bottom: 1px solid var(--border); }
-    nav .wrap { display: flex; align-items: center; gap: 12px; height: 56px; }
+    nav .wrap { display: flex; align-items: center; gap: 12px; height: 56px; position: relative; }
     nav img { width: 28px; height: 28px; border-radius: 7px; }
-    nav .brand { font-weight: 600; margin-right: auto; color: var(--fg); }
-    nav a.link { color: var(--fg-muted); font-size: 14px; }
-    nav a.link:hover { color: var(--fg); text-decoration: none; }
-    @media (max-width: 640px) { nav a.link { display: none; } }
-    .theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-muted); color: var(--fg-muted); cursor: pointer; padding: 0; }
-    .theme-toggle:hover { color: var(--fg); background: var(--border); }
-    .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    nav .brand { font-weight: 600; color: var(--fg); white-space: nowrap; }
+    nav .brand:hover { text-decoration: none; }
+    nav .links { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+    nav .link { color: var(--fg-muted); font-size: 14px; padding: 6px 10px; border-radius: 8px; line-height: 1; }
+    nav .link:hover { color: var(--fg); background: var(--bg-muted); text-decoration: none; }
+    nav .link.active { color: var(--fg); font-weight: 600; }
+    nav .link.gh { display: inline-flex; padding: 8px; margin-left: 4px; }
+    nav .link.gh svg { width: 18px; height: 18px; fill: currentColor; }
+    .theme-toggle, .menu-toggle { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-muted); color: var(--fg-muted); cursor: pointer; padding: 0; flex: 0 0 auto; }
+    .theme-toggle:hover, .menu-toggle:hover { color: var(--fg); background: var(--border); }
+    .theme-toggle svg, .menu-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .theme-toggle .moon { display: none; }
     :root[data-theme="dark"] .theme-toggle .sun { display: none; }
     :root[data-theme="dark"] .theme-toggle .moon { display: block; }
+    .menu-toggle { display: none; }
+    .menu-toggle .close { display: none; }
+    nav.open .menu-toggle .open { display: none; }
+    nav.open .menu-toggle .close { display: block; }
+    @media (max-width: 860px) {
+      .menu-toggle { display: inline-flex; }
+      nav .links { display: none; position: absolute; top: 56px; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 2px; padding: 10px 16px 14px; margin: 0; background: var(--bg); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+      nav.open .links { display: flex; }
+      nav .link { padding: 10px 12px; font-size: 15px; }
+      nav .link.gh { margin: 4px 0 0; justify-content: center; }
+      nav .link.gh::after { content: "GitHub repository"; margin-left: 8px; font-size: 14px; }
+      .theme-toggle { margin-left: auto; }
+    }
+    @media (max-width: 480px) { nav .brand { font-size: 14px; } }
     :root:not([data-theme="dark"]) .only-dark { display: none !important; }
     :root[data-theme="dark"] .only-light { display: none !important; }
 
@@ -148,26 +167,119 @@
     details[open] summary::after { content: "–"; }
     details p { color: var(--fg-muted); margin: 0 0 14px; font-size: 15px; }
 
+
+    /* mock-ups of the other surfaces */
+    .mock-table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-card); box-shadow: var(--shadow); font-size: 13px; }
+    .mock-table .tr { display: grid; grid-template-columns: 34px minmax(0, 1fr) 120px 110px; align-items: center; border-top: 1px solid var(--border); min-height: 40px; }
+    .mock-table .tr:first-child { border-top: 0; background: var(--bg-muted); color: var(--fg-muted); font-weight: 600; font-size: 12px; min-height: 34px; }
+    .mock-table .td { padding: 6px 10px; display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
+    .mock-table .td.title { overflow: visible; flex-wrap: wrap; white-space: normal; }
+    .mock-table .td .num { color: var(--fg-muted); }
+    .mock-table .td .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mock-table .state { width: 16px; height: 16px; flex: 0 0 16px; fill: var(--open); }
+    .mock-table .state.closed { fill: var(--closed); }
+    .mock-table .status { display: inline-flex; align-items: center; gap: 6px; }
+    .mock-table .status::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--status, var(--info)); }
+    .mock-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    .mock-column { background: var(--bg-muted); border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
+    .mock-column h4 { margin: 0 0 8px 4px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    .mock-column h4 .count { color: var(--fg-muted); font-weight: 500; }
+    .mock-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; }
+    .mock-card .ref { display: flex; align-items: center; gap: 6px; color: var(--fg-muted); font-size: 12px; }
+    .mock-card .ref svg { width: 14px; height: 14px; fill: var(--open); }
+    .mock-card .title { margin: 4px 0 6px; font-weight: 500; line-height: 1.35; }
+    .mock-card .badges { display: flex; flex-wrap: wrap; gap: 4px; }
+    .mock-card .badges .badge { margin: 0; }
+    .mock-card .labels { display: flex; gap: 4px; margin-top: 8px; }
+    .label { display: inline-block; font-size: 11px; padding: 0 7px; border-radius: 999px; line-height: 18px; border: 1px solid transparent; white-space: nowrap; }
+    .mock-pins { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .mock-pins .mock-header { align-self: center; }
+    #ex-age, #ex-table, #ex-board { margin-left: auto; margin-right: auto; }
+    .mock-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-muted); border: 1px solid var(--border); border-radius: 10px; }
+    .mock-header .hbtn { width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); display: inline-flex; align-items: center; justify-content: center; color: var(--fg-muted); position: relative; }
+    .mock-header .hbtn svg { width: 16px; height: 16px; fill: currentColor; }
+    .mock-header .hbtn.active { color: var(--fg); background: var(--border); }
+    .mock-header .hbtn .count { position: absolute; top: -5px; right: -5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--accent); color: var(--accent-fg); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; }
+    .mock-box { width: 320px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; font-size: 12px; text-align: left; }
+    .mock-box .head { display: flex; justify-content: space-between; align-items: center; padding: 8px 8px 8px 12px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 13px; }
+    .mock-box .head span:last-child { color: var(--fg-muted); font-weight: 400; font-size: 16px; padding: 0 6px; }
+    .mock-box .current { padding: 8px 12px; background: var(--bg-muted); border-bottom: 1px solid var(--border); color: var(--fg-muted); display: flex; gap: 6px; align-items: center; }
+    .mock-box .current code { font-size: 11px; }
+    .mock-box .pin { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .mock-box .pin .main { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .mock-box .pin .main .badge { margin: 0; flex: 0 0 auto; }
+    .mock-box .pin .ptitle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
+    .mock-box .pin.closed .ptitle { text-decoration: line-through; color: var(--fg-muted); }
+    .mock-box .pin .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
+    .mock-box .pin .pref { color: var(--fg-muted); font-family: var(--font-mono); font-size: 11px; }
+    .mock-box .actions { display: flex; gap: 4px; align-items: center; }
+    .mock-box .mbtn { border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: var(--fg); font-size: 11px; font-weight: 500; padding: 4px 8px; }
+    .mock-box .mbtn.primary { background: var(--success); border-color: var(--success); color: #fff; }
+    .mock-box .mbtn.disabled { opacity: .5; }
+    .mock-box .x { color: var(--fg-muted); padding: 0 4px; font-size: 14px; }
+    .mock-box .form { display: flex; gap: 6px; padding: 8px 12px; }
+    .mock-box .form .input { flex: 1; height: 28px; border: 1px solid var(--border); border-radius: 6px; padding: 0 8px; color: var(--fg-muted); display: flex; align-items: center; }
+    .mock-box .status { padding: 6px 12px 8px; color: var(--success); }
+    .b-pink { color: var(--pink-fg, #bf3989); background: rgba(191, 57, 137, .12); border-color: rgba(191, 57, 137, .4); }
+
+    /* GitHub-like chrome for the mock-ups */
+    .gh-card .head { display: flex; align-items: center; gap: 8px; }
+    .gh-card .head .head-title { font-weight: 600; }
+    .gh-card .head .chev, .gh-card .head .ico { width: 16px; height: 16px; fill: var(--fg-muted); flex: 0 0 16px; }
+    .gh-card .head .ico { margin-left: auto; }
+    .gh-card .head .tag { margin-left: auto; margin-right: 8px; }
+    .gh-card .head .tag + .ico { margin-left: 0; }
+    .gh-card .progress { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px 0 6px; height: 20px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--fg-muted); }
+    .gh-card .progress .prog { width: 14px; height: 14px; color: var(--done); }
+    .gh-card .foot { padding: 8px 14px; border-top: 1px solid var(--border); display: flex; }
+    .gh-card .mbtn { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border: 1px solid var(--border); background: var(--bg-muted); color: var(--fg); font-size: 12px; font-weight: 500; border-radius: 6px 0 0 6px; }
+    .gh-card .mbtn.caret { border-left: 0; border-radius: 0 6px 6px 0; padding: 0 8px; }
+    .row .extras { margin-left: auto; display: flex; align-items: center; gap: 14px; color: var(--fg-muted); font-size: 12px; white-space: nowrap; padding-left: 8px; }
+    .row .extras .pr { width: 16px; height: 16px; fill: currentColor; vertical-align: -3px; margin-right: 2px; }
+    .kebab { color: var(--fg-muted); letter-spacing: 1px; font-weight: 700; }
+    .avatar { width: 20px; height: 20px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+    .avatar.a1 { background: linear-gradient(135deg, #f78166, #d29922); }
+    .avatar.a2 { background: linear-gradient(135deg, #58a6ff, #8250df); }
+    .avatar.a3 { background: linear-gradient(135deg, #3fb950, #1f6feb); }
+    .mock-table .tr { grid-template-columns: 36px 30px minmax(0, 1fr) 130px 100px 130px; }
+    .mock-table .tr.th .td { color: var(--fg-muted); font-weight: 600; font-size: 12px; }
+    .mock-table .td.n { color: var(--fg-muted); font-size: 12px; justify-content: center; }
+    .mock-table .td.labels { overflow: hidden; }
+    .mock-column h4 .spacer { flex: 1; }
+    .mock-column h4 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+    .mock-column .add { color: var(--fg-muted); font-size: 13px; padding: 6px 8px; }
+    .mock-card .ref .state { width: 16px; height: 16px; }
+    .mock-card .bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; margin-top: 8px; }
+    .mock-card .labels { margin-top: 0; flex-wrap: wrap; }
+    .label.b-success { color: var(--success); background: var(--success-bg); border-color: var(--success-border); }
+    .mock-header .avatar { width: 28px; height: 28px; margin-left: 4px; }
+    .example-caption { text-align: center; color: var(--fg-muted); font-size: 13px; margin: 10px 0 0; }
     footer { padding: 32px 0 48px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 14px; }
     footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
   </style>
 </head>
 <body>
-  <nav>
+  <nav id="nav">
     <div class="wrap">
       <img class="only-dark" src="icon-dark-48.png" alt="">
       <img class="only-light" src="icon-light-48.png" alt="">
-      <a class="brand" href="#top">GitHub Issue Field Badges</a>
-      <a class="link" href="#what">What it does</a>
-      <a class="link" href="#how">How it works</a>
-      <a class="link" href="#install">Install</a>
-      <a class="link" href="#token">Token</a>
-      <a class="link" href="#settings">Settings</a>
-      <a class="link" href="#faq">FAQ</a>
-      <a class="link" href="https://github.com/MilosPaunovic/issue-field-badges">GitHub</a>
+      <a class="brand" href="#top">GitHub Issue Toolkit</a>
+      <div class="links" id="site-menu">
+        <a class="link" href="#what">What it does</a>
+        <a class="link" href="#examples">Examples</a>
+        <a class="link" href="#how">How it works</a>
+        <a class="link" href="#install">Install</a>
+        <a class="link" href="#token">Set up</a>
+        <a class="link" href="#faq">FAQ</a>
+        <a class="link gh" href="https://github.com/MilosPaunovic/github-issue-toolkit" aria-label="GitHub repository" title="GitHub repository"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg></a>
+      </div>
       <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Switch between light and dark mode" title="Light / dark mode">
         <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
         <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <button class="menu-toggle" type="button" id="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="site-menu">
+        <svg class="open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <svg class="close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
   </nav>
@@ -176,11 +288,11 @@
     <div class="wrap">
       <img class="only-dark" src="icon-dark-128.png" alt="">
       <img class="only-light" src="icon-light-128.png" alt="">
-      <h1>GitHub Issue Field Badges</h1>
-      <p class="lead">See your organization's <strong>custom issue fields</strong> on every sub-issue of an epic, right where GitHub shows only the issue type.</p>
+      <h1>GitHub Issue Toolkit</h1>
+      <p class="lead">See your organization's <strong>custom issue fields</strong> on every sub-issue of an epic and on every row of a Projects view, right where GitHub shows only the issue type.</p>
       <div class="btns">
-        <a class="btn primary" href="#install">Install from source</a>
-        <a class="btn" href="https://github.com/MilosPaunovic/issue-field-badges">View on GitHub</a>
+        <a class="btn primary" href="#install">Install</a>
+        <a class="btn" href="https://github.com/MilosPaunovic/github-issue-toolkit">View on GitHub</a>
       </div>
     </div>
   </header>
@@ -188,46 +300,108 @@
   <section id="what">
     <div class="wrap">
       <h2>What it does</h2>
-      <p class="muted">GitHub organizations can define their own <a href="https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-and-managing-issue-fields">custom issue fields</a>. Each issue shows them in its sidebar, but the <strong>Sub-issues</strong> list on a parent issue shows only the issue type. To know a field value for twenty sub-issues you have to open twenty tabs. This extension puts the values you care about directly on each row.</p>
+      <p class="muted">GitHub organizations can define their own <a href="https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-and-managing-issue-fields">custom issue fields</a>. Each issue shows them in its sidebar, but the <strong>Sub-issues</strong> list on a parent issue shows only the issue type, and Projects views show only the columns you add by hand. To know a field value for twenty sub-issues you have to open twenty tabs. This extension puts the values you care about directly on each row, on sub-issue lists and on project tables and boards.</p>
 
       <div class="compare">
-        <div class="panel">
-          <div class="head">Sub-issues <span class="tag">without the extension</span></div>
-          <div class="row"><svg class="state open" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-danger">Bug</span>Custom dashboard state filter is silently ignored on logs chart<span class="ref">#7700</span></div></div>
-          <div class="row"><svg class="state open" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-info">Feature</span>Add configurable query timeout for dashboard-triggered queries<span class="ref">#14231</span></div></div>
-          <div class="row"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg><div class="text"><span class="badge b-attention">Task</span>Lock custom dashboard API in OSS<span class="ref">#9814</span></div></div>
-          <div class="row"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg><div class="text"><span class="badge b-danger">Bug</span>Start date in dashboard tables wraps and has no tooltip<span class="ref">#9845</span></div></div>
+        <div class="panel gh-card">
+          <div class="head"><svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg><span class="head-title">Sub-issues</span><span class="progress"><svg class="prog" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/><path d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>2 of 4</span><span class="tag">without the extension</span><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M.75 3h14.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5ZM3 7.75A.75.75 0 0 1 3.75 7h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 3 7.75Zm3 4a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/></svg></div>
+        <div class="row"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-danger">Bug</span>Search results ignore the selected date range<span class="ref">#1482</span></div><div class="extras"><svg class="pr" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg> 2<span class="avatar a1"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+        <div class="row"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-info">Feature</span>Add keyboard shortcuts to the results list<span class="ref">#1490</span></div><div class="extras"><span class="avatar a2"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+        <div class="row"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg><div class="text"><span class="badge b-attention">Task</span>Migrate the search index to the new schema<span class="ref">#1477</span></div><div class="extras"><svg class="pr" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg> 1<span class="avatar a3"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+        <div class="row"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg><div class="text"><span class="badge b-danger">Bug</span>Filters reset when switching result pages<span class="ref">#1503</span></div><div class="extras"><svg class="pr" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg> 1<span class="avatar a1"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+          <div class="foot"><span class="mbtn">Create sub-issue</span><span class="mbtn caret">▾</span></div>
         </div>
-        <div class="panel">
-          <div class="head">Sub-issues <span class="tag">with the extension</span></div>
-          <div class="row"><svg class="state open" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-danger">Bug</span><span class="badge b-severe">P1: Must Have</span>Custom dashboard state filter is silently ignored on logs chart<span class="ref">#7700</span></div></div>
-          <div class="row"><svg class="state open" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-info">Feature</span><span class="badge b-severe">P1: Must Have</span>Add configurable query timeout for dashboard-triggered queries<span class="ref">#14231</span></div></div>
-          <div class="row"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg><div class="text"><span class="badge b-attention">Task</span><span class="badge b-attention">P2: Should Have</span>Lock custom dashboard API in OSS<span class="ref">#9814</span></div></div>
-          <div class="row"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg><div class="text"><span class="badge b-danger">Bug</span><span class="badge b-neutral">P3: Could Have</span>Start date in dashboard tables wraps and has no tooltip<span class="ref">#9845</span></div></div>
+        <div class="panel gh-card" id="ex-sub">
+          <div class="head"><svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg><span class="head-title">Sub-issues</span><span class="progress"><svg class="prog" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/><path d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>2 of 4</span><span class="tag">with the extension</span><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M.75 3h14.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5ZM3 7.75A.75.75 0 0 1 3.75 7h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 3 7.75Zm3 4a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/></svg></div>
+        <div class="row"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-danger">Bug</span><span class="badge b-severe">P1: Must Have</span>Search results ignore the selected date range<span class="ref">#1482</span></div><div class="extras"><svg class="pr" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg> 2<span class="avatar a1"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+        <div class="row"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-info">Feature</span><span class="badge b-severe">P1: Must Have</span>Add keyboard shortcuts to the results list<span class="ref">#1490</span></div><div class="extras"><span class="avatar a2"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+        <div class="row"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg><div class="text"><span class="badge b-attention">Task</span><span class="badge b-attention">P2: Should Have</span>Migrate the search index to the new schema<span class="ref">#1477</span></div><div class="extras"><svg class="pr" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg> 1<span class="avatar a3"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+        <div class="row"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg><div class="text"><span class="badge b-danger">Bug</span><span class="badge b-neutral">P3: Could Have</span>Filters reset when switching result pages<span class="ref">#1503</span></div><div class="extras"><svg class="pr" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg> 1<span class="avatar a1"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+          <div class="foot"><span class="mbtn">Create sub-issue</span><span class="mbtn caret">▾</span></div>
         </div>
       </div>
-      <p class="muted" style="font-size:13px;text-align:center;margin:12px 0 0">Illustration only. The badges show whichever fields you configure; a field named Priority is used here as an example.</p>
+      <p class="muted" style="font-size:13px;text-align:center;margin:12px 0 0">Illustration with an invented repository. The badges show whichever fields you configure; a field named Priority is used here as an example.</p>
 
       <div class="grid" style="margin-top:24px">
         <div class="card"><h3>Any field, any type</h3><p>Single-select, multi-select, text, number and date fields all work. Single-select badges use the colour of the chosen option, so a red option stays red.</p></div>
         <div class="card"><h3>You pick the fields</h3><p>Choose which fields to show and in what order on the settings page. One field or five, per your workflow.</p></div>
-        <div class="card"><h3>One request per page</h3><p>All visible sub-issues, across repositories, are fetched in a single GitHub GraphQL query. Results are cached for five minutes.</p></div>
+        <div class="card"><h3>One request per page</h3><p>All visible rows, across repositories, are fetched in batched GitHub GraphQL queries of 60 issues. Results are cached for five minutes.</p></div>
+        <div class="card"><h3>Projects views too</h3><p>The same badges appear on GitHub Projects: after the issue number in the table layout, under the title on board cards. Draft items and pull requests are left alone.</p></div>
+        <div class="card"><h3>Issue age, if you want it</h3><p>An optional gray badge shows how long ago each issue was created, in months, weeks or days. Off by default, one checkbox in the settings.</p></div>
+        <div class="card"><h3>Pinned epics</h3><p>A pin button in GitHub's top bar keeps your epics one click away: copy their reference, or make the issue you are looking at a sub-issue of one. Optional as well.</p></div>
         <div class="card"><h3>Clickable</h3><p>Each badge links to the repository's issue search filtered by that field value, the same way GitHub's own field badges do.</p></div>
         <div class="card"><h3>Looks native</h3><p>Badges reuse GitHub's own colour tokens, so they match light and dark themes and every colour blindness setting GitHub offers.</p></div>
-        <div class="card"><h3>Private by design</h3><p>No analytics, no third-party servers. Your token stays in your browser and only ever talks to <code>api.github.com</code>.</p></div>
+        <div class="card"><h3>Private by design</h3><p>No analytics, no third-party servers. Your token stays in your browser and only ever talks to <code>api.github.com</code>. The only write is the sub-issue link you trigger yourself.</p></div>
       </div>
+    </div>
+  </section>
+
+  <section id="examples">
+    <div class="wrap">
+      <h2>Examples</h2>
+      <p class="muted">The same badges follow you to Projects views, an optional age badge tells you how long an issue has been open, and the pinned issues panel keeps your epics one click away. Illustrations of an invented repository, with a field named Priority as the example.</p>
+
+      <h3 style="margin-top:8px">Projects table view</h3>
+      <p class="muted" style="font-size:14px">Badges come right after the issue number in the title cell, so a table needs no extra columns.</p>
+      <div class="mock-table gh-card" id="ex-table" style="max-width:900px">
+        <div class="tr th"><div class="td n"></div><div class="td"></div><div class="td">Title</div><div class="td">Status</div><div class="td">Assignees</div><div class="td">Labels</div></div>
+        <div class="tr"><div class="td n">1</div><div class="td"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg></div><div class="td title"><span class="name">Search results ignore the selected date range</span><span class="num">#1482</span><span class="badge b-severe">P1: Must Have</span><span class="badge b-neutral">7 mo</span></div><div class="td"><span class="status" style="--status: var(--attention)">In progress</span></div><div class="td"><span class="avatar a1"></span></div><div class="td labels"><span class="label b-info">area/search</span></div></div>
+        <div class="tr"><div class="td n">2</div><div class="td"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg></div><div class="td title"><span class="name">Add keyboard shortcuts to the results list</span><span class="num">#1490</span><span class="badge b-severe">P1: Must Have</span><span class="badge b-neutral">5 mo</span></div><div class="td"><span class="status" style="--status: var(--info)">Backlog</span></div><div class="td"><span class="avatar a2"></span></div><div class="td labels"><span class="label b-info">area/search</span></div></div>
+        <div class="tr"><div class="td n">3</div><div class="td"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg></div><div class="td title"><span class="name">Migrate the search index to the new schema</span><span class="num">#1477</span><span class="badge b-attention">P2: Should Have</span><span class="badge b-neutral">9 mo</span></div><div class="td"><span class="status" style="--status: var(--done)">Done</span></div><div class="td"><span class="avatar a3"></span></div><div class="td labels"><span class="label b-info">area/search</span></div></div>
+        <div class="tr"><div class="td n">4</div><div class="td"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg></div><div class="td title"><span class="name">Highlight matched terms in result snippets</span><span class="num">#1511</span><span class="badge b-neutral">P3: Could Have</span><span class="badge b-neutral">&lt;1 mo</span></div><div class="td"><span class="status" style="--status: var(--info)">Backlog</span></div><div class="td"><span class="avatar a2"></span></div><div class="td labels"><span class="label b-info">area/search</span></div></div>
+      </div>
+
+      <h3 style="margin-top:28px">Projects board view</h3>
+      <p class="muted" style="font-size:14px">On board cards the badges sit under the title. The age badge is the gray one, shown here enabled.</p>
+      <div class="mock-board" id="ex-board" style="max-width:820px">
+        <div class="mock-column"><h4><span class="dot" style="background:var(--info)"></span> Backlog <span class="count">2</span><span class="spacer"></span><span class="kebab" aria-hidden="true">···</span></h4>
+          <div class="mock-card"><div class="ref"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg> acme/webapp #1490</div><div class="title">Add keyboard shortcuts to the results list</div><div class="badges"><span class="badge b-severe">P1: Must Have</span><span class="badge b-neutral">5 mo</span></div><div class="bottom"><div class="labels"><span class="label b-info">area/search</span></div><span class="avatar a2"></span></div></div>
+          <div class="mock-card"><div class="ref"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg> acme/webapp #1511</div><div class="title">Highlight matched terms in result snippets</div><div class="badges"><span class="badge b-neutral">P3: Could Have</span><span class="badge b-neutral">&lt;1 mo</span></div><div class="bottom"><div class="labels"><span class="label b-info">area/search</span><span class="label b-success">good first issue</span></div><span class="avatar a2"></span></div></div>
+          <div class="add">+ Add item</div>
+        </div>
+        <div class="mock-column"><h4><span class="dot" style="background:var(--attention)"></span> In progress <span class="count">1</span><span class="spacer"></span><span class="kebab" aria-hidden="true">···</span></h4>
+          <div class="mock-card"><div class="ref"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg> acme/webapp #1482</div><div class="title">Search results ignore the selected date range</div><div class="badges"><span class="badge b-severe">P1: Must Have</span><span class="badge b-info">3.2</span><span class="badge b-neutral">7 mo</span></div><div class="bottom"><div class="labels"><span class="label b-danger">bug</span><span class="label b-info">area/search</span></div><span class="avatar a1"></span></div></div>
+          <div class="add">+ Add item</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:28px">Issue age</h3>
+      <p class="muted" style="font-size:14px">Off by default. When enabled, a gray badge shows how long ago the issue was created, in months, weeks or days; hovering gives the exact age and the creation date.</p>
+      <div class="panel gh-card" id="ex-age" style="max-width:680px">
+        <div class="head"><svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg><span class="head-title">Sub-issues</span><span class="progress"><svg class="prog" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/><path d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>1 of 3</span><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M.75 3h14.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5ZM3 7.75A.75.75 0 0 1 3.75 7h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 3 7.75Zm3 4a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"/></svg></div>
+        <div class="row"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-danger">Bug</span><span class="badge b-severe">P1: Must Have</span><span class="badge b-neutral">7 mo</span>Search results ignore the selected date range<span class="ref">#1482</span></div><div class="extras"><svg class="pr" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg> 2<span class="avatar a1"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+        <div class="row"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg><div class="text"><span class="badge b-info">Feature</span><span class="badge b-attention">P2: Should Have</span><span class="badge b-neutral">3w</span>Add keyboard shortcuts to the results list<span class="ref">#1490</span></div><div class="extras"><span class="avatar a2"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+        <div class="row"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg><div class="text"><span class="badge b-attention">Task</span><span class="badge b-neutral">P3: Could Have</span><span class="badge b-neutral">98d</span>Migrate the search index to the new schema<span class="ref">#1477</span></div><div class="extras"><svg class="pr" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg> 1<span class="avatar a3"></span><span class="kebab" aria-hidden="true">···</span></div></div>
+      </div>
+      <p class="example-caption">Months, weeks and days shown side by side; in practice one unit applies to every row.</p>
+
+      <h3 style="margin-top:28px">Pinned issues</h3>
+      <p class="muted" style="font-size:14px">The pin button sits next to the notifications bell with the number of pins. The dropdown lists your epics with their type; Link makes the issue you are looking at a sub-issue of one, Copy puts its reference on the clipboard.</p>
+      <div class="mock-pins" id="ex-pins">
+        <div class="mock-header"><span class="hbtn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg></span><span class="hbtn active"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.294.984l3.722 3.722a1.75 1.75 0 0 1-.504 2.826l-1.327.613a3.089 3.089 0 0 0-1.707 2.084l-.584 2.454c-.317 1.332-1.972 1.8-2.94.832L5.75 11.311 1.78 15.28a.749.749 0 1 1-1.06-1.06l3.969-3.97-2.204-2.204c-.968-.968-.5-2.623.832-2.94l2.454-.584a3.08 3.08 0 0 0 2.084-1.707l.613-1.327a1.75 1.75 0 0 1 2.826-.504ZM6.283 9.723l2.732 2.731a.25.25 0 0 0 .42-.119l.584-2.454a4.586 4.586 0 0 1 2.537-3.098l1.328-.613a.25.25 0 0 0 .072-.404l-3.722-3.722a.25.25 0 0 0-.404.072l-.613 1.328a4.584 4.584 0 0 1-3.098 2.537l-2.454.584a.25.25 0 0 0-.119.42l2.731 2.732Z"/></svg><span class="count">3</span></span><span class="hbtn"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 16a2 2 0 0 0 1.985-1.75c.017-.137-.097-.25-.235-.25h-3.5c-.138 0-.252.113-.235.25A2 2 0 0 0 8 16ZM3 5a5 5 0 0 1 10 0v2.947c0 .05.015.098.042.139l1.703 2.555A1.519 1.519 0 0 1 13.482 13H2.518a1.516 1.516 0 0 1-1.263-2.36l1.703-2.554A.255.255 0 0 0 3 7.947Z"/></svg></span><span class="avatar a1"></span></div>
+        <div class="mock-box">
+          <div class="head"><span>Pinned issues</span><span>×</span></div>
+          <div class="current">Current: <code>acme/webapp#1511</code></div>
+          <div class="pin"><div class="main"><span class="badge b-pink">Epic</span><span class="ptitle">[Epic] Search improvements</span></div><div class="meta"><span class="pref">acme/webapp#1450</span><span class="actions"><span class="mbtn primary">Link</span><span class="mbtn">Copy</span><span class="x">×</span></span></div></div>
+          <div class="pin"><div class="main"><span class="badge b-pink">Epic</span><span class="ptitle">[Epic] Onboarding redesign</span></div><div class="meta"><span class="pref">acme/webapp#1320</span><span class="actions"><span class="mbtn primary">Link</span><span class="mbtn">Copy</span><span class="x">×</span></span></div></div>
+          <div class="pin closed"><div class="main"><span class="badge b-pink">Epic</span><span class="ptitle">[Epic] Notifications overhaul</span></div><div class="meta"><span class="pref">acme/webapp#1205</span><span class="actions"><span class="mbtn primary">Link</span><span class="mbtn">Copy</span><span class="x">×</span></span></div></div>
+          <div class="form"><span class="input">Issue URL or owner/repo#123</span><span class="mbtn">Pin</span></div>
+          <div class="status">acme/webapp#1511 is now a sub-issue of acme/webapp#1450.</div>
+        </div>
+      </div>
+      <p class="example-caption">Closed epics stay pinned, struck through. Link is disabled on the epic you are currently viewing.</p>
     </div>
   </section>
 
   <section id="how">
     <div class="wrap">
       <h2>How it works</h2>
-      <p class="muted">Three small files, no build step, one code base for Chromium and Firefox. The extension never scrapes the field values from the page, because organization-only fields are not in the HTML. It asks the GitHub API instead.</p>
+      <p class="muted">A handful of plain files, no build step, one code base for Chromium and Firefox. The extension never scrapes the field values from the page, because organization-only fields are not in the HTML. It asks the GitHub API instead.</p>
       <div class="flow">
-        <div class="step"><h3>Detect the list</h3><p>A content script on <code>github.com</code> watches the page for the sub-issues container and collects the issue links of its rows: owner, repository, number.</p></div>
-        <div class="step"><h3>One batched query</h3><p>The background script (a service worker on Chromium, an event page on Firefox) groups those issues by repository and runs a single GraphQL query using <code>Issue.issueFieldValues</code>, with your token.</p></div>
-        <div class="step"><h3>Keep what you chose</h3><p>From the returned values it keeps only the fields you configured, in your order, and hands back <code>field</code>, <code>value</code> and <code>colour</code> per issue.</p></div>
-        <div class="step"><h3>Render badges</h3><p>The content script inserts a badge per value right after the issue type badge. It re-renders when GitHub redraws the list, so expanding nested sub-issues just works.</p></div>
+        <div class="step"><h3>Detect the rows</h3><p>A content script on <code>github.com</code> watches the page for sub-issue lists, project table rows and board cards, and collects the issue links: owner, repository, number.</p></div>
+        <div class="step"><h3>One batched query</h3><p>The background script (a service worker on Chromium, an event page on Firefox) groups those issues by repository and runs one GraphQL query per batch of 60 using <code>Issue.issueFieldValues</code> and <code>createdAt</code>, with your token.</p></div>
+        <div class="step"><h3>Keep what you chose</h3><p>From the returned values it keeps only the fields you configured, in your order, and hands back <code>field</code>, <code>value</code>, <code>colour</code> and the creation date per issue.</p></div>
+        <div class="step"><h3>Render badges</h3><p>The content script inserts a badge per value right after the issue type badge, after the issue number in project tables, or under the title on board cards, plus the age badge when enabled. It re-renders when GitHub redraws the page.</p></div>
       </div>
       <pre><code>{ r0: repository(owner: "org", name: "repo") {
     i7700: issue(number: 7700) {
@@ -239,7 +413,7 @@
     }
     # one alias per visible sub-issue, one repository block per repository
 } }</code></pre>
-      <p class="muted" style="margin-top:14px">The query above is what the service worker sends. GitHub's GraphQL rate limit is 5,000 points per hour per token; a page with fifty sub-issues costs one point.</p>
+      <p class="muted" style="margin-top:14px">The query above is what the background script sends, one such request per 60 issues. GitHub's GraphQL rate limit is 5,000 points per hour per token; a page with fifty sub-issues costs one point.</p>
     </div>
   </section>
 
@@ -251,16 +425,16 @@
         <div class="card">
           <h3>Chrome, Edge, Brave, Opera, Vivaldi, Arc</h3>
           <ol class="steps" style="margin-top:12px">
-            <li><strong>Get the code</strong> Clone or download <a href="https://github.com/MilosPaunovic/issue-field-badges">MilosPaunovic/issue-field-badges</a>.</li>
+            <li><strong>Get the code</strong> Download <code>github-issue-toolkit-&lt;version&gt;-chrome.zip</code> from the <a href="https://github.com/MilosPaunovic/github-issue-toolkit/releases">releases page</a> and unzip it, or clone <a href="https://github.com/MilosPaunovic/github-issue-toolkit">MilosPaunovic/github-issue-toolkit</a>.</li>
             <li><strong>Enable developer mode</strong> Open <code>chrome://extensions</code> (<code>edge://extensions</code>, <code>brave://extensions</code>, and so on) and switch on <em>Developer mode</em>.</li>
-            <li><strong>Load unpacked</strong> Click <em>Load unpacked</em> and select the repository folder. The icon appears in the toolbar.</li>
+            <li><strong>Load unpacked</strong> Click <em>Load unpacked</em> and select the unzipped folder. The icon appears in the toolbar.</li>
             <li><strong>Open the settings</strong> Click the toolbar icon, or <em>Details</em> then <em>Extension options</em>.</li>
           </ol>
         </div>
         <div class="card">
           <h3>Firefox (140 or newer)</h3>
           <ol class="steps" style="margin-top:12px">
-            <li><strong>Get the Firefox package</strong> Download <code>github-issue-field-badges-&lt;version&gt;-firefox.zip</code> from the <a href="https://github.com/MilosPaunovic/issue-field-badges/releases">releases page</a>, or build it with <code>scripts/package.sh</code>.</li>
+            <li><strong>Get the Firefox package</strong> Download <code>github-issue-toolkit-&lt;version&gt;-firefox.zip</code> from the <a href="https://github.com/MilosPaunovic/github-issue-toolkit/releases">releases page</a>, or build it with <code>scripts/package.sh</code>.</li>
             <li><strong>Load it</strong> Open <code>about:debugging#/runtime/this-firefox</code>, click <em>Load Temporary Add-on</em>, pick the zip. Temporary add-ons are removed when Firefox restarts; a permanent install needs a package signed by Mozilla.</li>
             <li><strong>Allow site access</strong> Open the settings from the toolbar icon and click <em>Allow access to github.com</em>. Firefox asks for this separately from the installation.</li>
           </ol>
@@ -273,16 +447,16 @@
   <section id="token">
     <div class="wrap">
       <h2>The GitHub token</h2>
-      <p class="muted">Custom fields are usually set to "Organization only" visibility, so GitHub returns them only to a token of an organization member. The extension needs read access to issues and nothing else.</p>
+      <p class="muted">Custom fields are usually set to "Organization only" visibility, so GitHub returns them only to a token of an organization member. The extension needs read access to issues. Write access is needed only if you want to link issues to pinned epics from the panel.</p>
       <div class="cols">
         <div class="card rec">
           <span class="pill">Recommended</span>
           <h3>Classic token</h3>
-          <p>Create it at <a href="https://github.com/settings/tokens/new?scopes=repo&description=issue-field-badges-extension">github.com/settings/tokens/new</a>.</p>
+          <p>Create it at <a href="https://github.com/settings/tokens/new?scopes=repo&description=github-issue-toolkit">github.com/settings/tokens/new</a>.</p>
           <ul>
             <li>Tick the <code>repo</code> scope. Nothing else.</li>
             <li>If your organization enforces SSO, click <em>Configure SSO</em> next to the new token and authorize it for the organization. Without this step organization-only fields come back empty.</li>
-            <li>Give it a note such as <code>issue-field-badges-extension</code> so you recognise it later.</li>
+            <li>Give it a note such as <code>github-issue-toolkit</code> so you recognise it later.</li>
           </ul>
         </div>
         <div class="card">
@@ -292,7 +466,7 @@
           <ul>
             <li>Set the organization as <em>Resource owner</em>.</li>
             <li>Pick the repositories you browse, or all repositories.</li>
-            <li>Under <em>Repository permissions</em> set <code>Issues</code> to <code>Read-only</code>. GitHub adds <code>Metadata: Read-only</code> automatically.</li>
+            <li>Under <em>Repository permissions</em> set <code>Issues</code> to <code>Read-only</code>, or <code>Read and write</code> if you want to link issues to pinned epics. GitHub adds <code>Metadata: Read-only</code> automatically.</li>
           </ul>
         </div>
       </div>
@@ -303,7 +477,7 @@
   <section id="settings">
     <div class="wrap">
       <h2>Settings</h2>
-      <p class="muted">Two things to configure: the token, and the fields to show. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Nothing is shown until at least one field is added.</p>
+      <p class="muted">The token and the fields to show are the two essentials; the age badge and the pinned issues button are optional extras with their own cards. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Nothing is shown until at least one field is added or the age badge is enabled.</p>
       <figure>
         <img class="only-light" src="settings-light.png" alt="The settings page: token input and the field names chip box">
         <img class="only-dark" src="settings-dark.png" alt="The settings page in dark mode: token input and the field names chip box">
@@ -312,13 +486,26 @@
     </div>
   </section>
 
+  <section id="pins">
+    <div class="wrap">
+      <h2>Pinned issues</h2>
+      <p class="muted">Triaging a backlog usually means linking many issues to a handful of epics. The pin button in GitHub's top bar, next to the notifications bell, keeps those epics at hand. See the <a href="#ex-pins">illustration above</a>.</p>
+      <div class="grid">
+        <div class="card"><h3>Pin</h3><p>Pin the issue you are looking at, the item open in a project side panel, or paste an issue URL or <code>owner/repo#123</code>. Each pin shows its type and title.</p></div>
+        <div class="card"><h3>Link</h3><p>One click makes the current issue a sub-issue of the pinned epic through GitHub's <code>addSubIssue</code> mutation. If the issue already has another parent, you are asked before it is moved.</p></div>
+        <div class="card"><h3>Copy</h3><p>Copies <code>owner/repo#123</code> to the clipboard, ready to paste into a comment or a task list.</p></div>
+      </div>
+      <p class="muted" style="margin-top:18px">Pins are stored locally in your browser and shared across tabs; the open or closed state of the panel is per tab. A red dot on the button means the last request failed, for example because no token is set yet. The whole feature can be switched off in the settings.</p>
+    </div>
+  </section>
+
   <section id="privacy">
     <div class="wrap">
       <h2>Privacy</h2>
       <div class="grid">
-        <div class="card"><h3>What is stored</h3><p>Your token and your field list, in <code>chrome.storage.local</code>, on your device. Uninstalling removes both.</p></div>
-        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the sub-issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. Nothing else, to no one else.</p></div>
-        <div class="card"><h3>What is not</h3><p>No analytics, telemetry, crash reports, cookies or third-party services. The full policy is in <a href="https://github.com/MilosPaunovic/issue-field-badges/blob/main/PRIVACY.md">PRIVACY.md</a>.</p></div>
+        <div class="card"><h3>What is stored</h3><p>Your token, your field list, your preferences and your pinned issues, in <code>chrome.storage.local</code>, on your device. Uninstalling removes all of it.</p></div>
+        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. The only write is the sub-issue link you click yourself. Nothing else, to no one else.</p></div>
+        <div class="card"><h3>What is not</h3><p>No analytics, telemetry, crash reports, cookies or third-party services. The full policy is in <a href="https://github.com/MilosPaunovic/github-issue-toolkit/blob/main/PRIVACY.md">PRIVACY.md</a>.</p></div>
       </div>
     </div>
   </section>
@@ -327,7 +514,8 @@
     <div class="wrap">
       <h2>FAQ</h2>
       <details><summary>Why does it need a token at all?</summary><p>Because organization-only field values are not in the page HTML; GitHub loads them through its authenticated API only for members. A token is the only way an extension can read them. If your organization sets fields to "Public" visibility, a token is still required by the API, but any account's token will do.</p></details>
-      <details><summary>Does it show fields on the issues list page too?</summary><p>No. GitHub already shows pinned field values on the issues list. The extension targets the one place that has none: the sub-issues list on an issue page, including nested sub-issues once you expand them.</p></details>
+      <details><summary>Where exactly do the badges appear?</summary><p>On the sub-issues list of an issue page, including nested sub-issues once you expand them, and on GitHub Projects views: table rows and board cards. Not on the plain issues list, where GitHub already shows pinned field values.</p></details>
+      <details><summary>Does linking need extra permissions?</summary><p>Yes. Making an issue a sub-issue of a pinned epic writes to GitHub, so the token needs write access to the issue's repository: the <code>repo</code> scope on a classic token, or <code>Issues: Read and write</code> on a fine-grained one. Badges alone work with read-only access.</p></details>
       <details><summary>Sub-issues live in several repositories. Does that work?</summary><p>Yes. Rows are grouped by repository and fetched in one query. Each badge links to the search in its own repository.</p></details>
       <details><summary>A field shows no badge on some rows.</summary><p>Those issues simply have no value for that field. Check the field name on the settings page matches the organization's field name; matching is case-insensitive but the full name must match.</p></details>
       <details><summary>Badges did not update after I changed a field on GitHub.</summary><p>Values are cached for five minutes per issue. Reload the page after that, or change any setting to clear the cache immediately.</p></details>
@@ -339,8 +527,8 @@
 
   <footer>
     <div class="wrap">
-      <span>© 2026 Miloš Paunović · <a href="https://github.com/MilosPaunovic/issue-field-badges/blob/main/LICENSE">MIT License</a></span>
-      <span><a href="https://github.com/MilosPaunovic/issue-field-badges">Source</a> · <a href="https://github.com/MilosPaunovic/issue-field-badges/issues">Report an issue</a> · <a href="https://github.com/MilosPaunovic/issue-field-badges/blob/main/CHANGELOG.md">Changelog</a></span>
+      <span>© 2026 Miloš Paunović · <a href="https://github.com/MilosPaunovic/github-issue-toolkit/blob/main/LICENSE">MIT License</a></span>
+      <span><a href="https://github.com/MilosPaunovic/github-issue-toolkit">Source</a> · <a href="https://github.com/MilosPaunovic/github-issue-toolkit/issues">Report an issue</a> · <a href="https://github.com/MilosPaunovic/github-issue-toolkit/blob/main/CHANGELOG.md">Changelog</a></span>
     </div>
   </footer>
   <script>
@@ -352,6 +540,30 @@
         root.dataset.theme = next;
         try { localStorage.setItem("theme", next); } catch (e) {}
       });
+      var nav = document.getElementById("nav");
+      var menu = document.getElementById("menu-toggle");
+      function setMenu(open) {
+        nav.classList.toggle("open", open);
+        menu.setAttribute("aria-expanded", open ? "true" : "false");
+        menu.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+      }
+      menu.addEventListener("click", function () { setMenu(!nav.classList.contains("open")); });
+      nav.querySelectorAll(".links a").forEach(function (a) { a.addEventListener("click", function () { setMenu(false); }); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape") setMenu(false); });
+      var links = Array.prototype.slice.call(nav.querySelectorAll('.links a[href^="#"]'));
+      var targets = links.map(function (a) { return document.querySelector(a.getAttribute("href")); }).filter(Boolean);
+      function setActive(id) {
+        links.forEach(function (a) { a.classList.toggle("active", a.getAttribute("href") === "#" + id); });
+      }
+      if ("IntersectionObserver" in window) {
+        var visible = {};
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) { visible[en.target.id] = en.isIntersecting ? en.intersectionRatio : 0; });
+          var best = targets.slice().sort(function (a, b) { return (visible[b.id] || 0) - (visible[a.id] || 0); })[0];
+          if (best && visible[best.id] > 0) setActive(best.id);
+        }, { rootMargin: "-56px 0px -55% 0px", threshold: [0, 0.1, 0.25, 0.5] });
+        targets.forEach(function (t) { io.observe(t); });
+      }
       media.addEventListener("change", function (e) {
         var stored = null;
         try { stored = localStorage.getItem("theme"); } catch (err) {}
