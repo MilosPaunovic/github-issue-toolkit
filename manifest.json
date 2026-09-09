@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "GitHub Issue Toolkit",
   "short_name": "Issue Tools",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Custom issue field values and issue age as badges on GitHub sub-issue lists and Projects views, plus a pinned epics panel.",
   "author": "Miloš Paunović",
   "homepage_url": "https://milospaunovic.github.io/github-issue-toolkit/",
