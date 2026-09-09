@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.0.3] - 2026-09-09
+
+### Changed
+
+- The README no longer mentions the former name.
+
 ## [2.0.2] - 2026-09-09
 
 ### Added
@@ -70,7 +76,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.3
 [2.0.2]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.2
 [2.0.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.1
 [2.0.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.0

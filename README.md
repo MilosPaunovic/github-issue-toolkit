@@ -1,7 +1,5 @@
 # GitHub Issue Toolkit
 
-Formerly "GitHub Issue Field Badges".
-
 [Documentation site](https://milospaunovic.github.io/github-issue-toolkit/) · [Releases](https://github.com/MilosPaunovic/github-issue-toolkit/releases) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md)
 
 <p align="center"><img src="docs/social-preview.png" alt="GitHub Issue Toolkit: custom issue fields, issue age and pinned epics on sub-issue lists and Projects views" width="760"></p>
