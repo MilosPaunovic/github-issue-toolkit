@@ -113,6 +113,7 @@ if (hasChrome) {
   renderChips();
   renderPinsCount([]);
   pinsEnabledInput.checked = true;
+  skipShownInput.checked = true;
 }
 
 toggle.addEventListener("click", () => {
