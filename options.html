@@ -124,6 +124,13 @@
     kbd { font: 11px var(--font-mono); padding: 1px 5px; border: 1px solid var(--border-default); border-bottom-width: 2px; border-radius: 4px; background: var(--code-bg); }
     footer { color: var(--text-secondary); font-size: 12px; margin-top: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
     .mono:empty { display: none; }
+    label.check { display: flex; align-items: center; gap: 8px; font-weight: 500; margin-top: 0; }
+    label.check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+    select {
+      width: 100%; padding: 9px 12px; background: var(--bg-input); border: 1px solid var(--border-default); border-radius: 8px;
+      color: var(--text-primary); font: 14px var(--font-sans); outline: none;
+    }
+    select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.25); }
   </style>
 </head>
 <body>
@@ -136,7 +143,7 @@
         <div class="subtitle">Extension settings</div>
       </div>
     </header>
-    <p class="lead">Shows the values of custom issue fields as badges next to each sub-issue on GitHub issue pages, right beside the issue type.</p>
+    <p class="lead">Shows the values of custom issue fields and the age of issues as badges on sub-issue lists and on project views, and keeps your pinned epics one click away.</p>
 
     <section class="card access" id="access" hidden>
       <h2>Site access</h2>
@@ -167,6 +174,28 @@
         <input id="field-input" type="text" spellcheck="false" autocomplete="off" placeholder="Add a field and press Enter">
       </div>
       <p class="hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a field, <kbd>Backspace</kbd> or the × button to remove one. Nothing is shown until at least one field is added.</p>
+    </section>
+
+    <section class="card">
+      <h2>Issue age</h2>
+      <p class="desc">Adds a badge with the time elapsed since the issue was created, next to the field badges, on sub-issue lists and on project table and board views.</p>
+      <label class="check"><input id="age-enabled" type="checkbox"> Show the age of each issue</label>
+      <label for="age-unit">Unit</label>
+      <select id="age-unit">
+        <option value="months">Months (default), e.g. 3 mo</option>
+        <option value="weeks">Weeks, e.g. 14w</option>
+        <option value="days">Days, e.g. 98d</option>
+      </select>
+      <p class="hint">Hovering the badge shows the exact age in months and days and the creation date.</p>
+    </section>
+
+    <section class="card">
+      <h2>Pinned issues</h2>
+      <p class="desc">On project views and issue pages a small panel in the top right corner keeps your pinned issues, for example epics, one click away. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
+      <div class="actions" style="margin-top:0">
+        <span id="pins-count" class="hint" style="margin:0"></span>
+        <button id="pins-clear" type="button">Remove all pins</button>
+      </div>
     </section>
 
     <div class="actions">

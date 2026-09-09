@@ -3,8 +3,11 @@ const chips = document.getElementById("chips");
 const fieldInput = document.getElementById("field-input");
 const status = document.getElementById("status");
 const toggle = document.getElementById("toggle");
-const api = typeof browser !== "undefined" && browser.runtime ? browser : chrome;
-const hasChrome = typeof api !== "undefined" && api.storage && api.runtime;
+const ageEnabled = document.getElementById("age-enabled");
+const ageUnit = document.getElementById("age-unit");
+const pinsCount = document.getElementById("pins-count");
+const api = typeof browser !== "undefined" && browser.runtime ? browser : (typeof chrome !== "undefined" ? chrome : undefined);
+const hasChrome = Boolean(api && api.storage && api.runtime);
 const HOSTS = ["https://github.com/*", "https://api.github.com/*"];
 
 let fields = [];
@@ -12,6 +15,12 @@ let fields = [];
 function setStatus(text, ok) {
   status.textContent = text;
   status.className = ok ? "ok" : "err";
+}
+
+function renderPinsCount(pins) {
+  const n = Array.isArray(pins) ? pins.length : 0;
+  pinsCount.textContent = n ? `${n} pinned issue${n === 1 ? "" : "s"}.` : "No pinned issues.";
+  document.getElementById("pins-clear").disabled = !n;
 }
 
 function parseFields(raw) {
@@ -80,14 +89,25 @@ if (hasChrome) {
     setStatus(ok ? "Access to github.com granted." : "Access was not granted.", ok);
     refreshAccess();
   });
-  api.storage.local.get(["token", "fields"]).then((stored) => {
+  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "pins"]).then((stored) => {
     tokenInput.value = stored.token || "";
     fields = parseFields(stored.fields);
     renderChips();
+    ageEnabled.checked = stored.ageEnabled !== false;
+    ageUnit.value = stored.ageUnit || "months";
+    renderPinsCount(stored.pins);
+  });
+  api.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.pins) renderPinsCount(changes.pins.newValue);
+  });
+  document.getElementById("pins-clear").addEventListener("click", async () => {
+    await api.storage.local.set({ pins: [] });
+    setStatus("All pins removed.", true);
   });
   document.getElementById("version").textContent = `v${api.runtime.getManifest().version}`;
 } else {
   renderChips();
+  renderPinsCount([]);
 }
 
 toggle.addEventListener("click", () => {
@@ -101,9 +121,9 @@ document.getElementById("save").addEventListener("click", async () => {
   const token = tokenInput.value.trim();
   const fieldList = fields.join(", ");
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
-  await api.storage.local.set({ token, fields: fieldList });
+  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value });
   if (!token) setStatus("Saved without a token. Badges need one.", false);
-  else if (!fields.length) setStatus("Saved without any field. Add at least one field to show badges.", false);
+  else if (!fields.length && !ageEnabled.checked) setStatus("Saved without any field. Add a field or enable the age badge to show badges.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);
 });
 
