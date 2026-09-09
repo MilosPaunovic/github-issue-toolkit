@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.0.1] - 2026-09-09
+
+### Changed
+
+- The documentation site shows the latest release version in its header, read from the GitHub releases API with the shipped version as fallback.
+
 ## [2.0.0] - 2026-09-09
 
 A major version because the extension changes name and Firefox identity and grows from a badge renderer into a small toolkit.
@@ -54,6 +60,7 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.1
 [2.0.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.0
 [1.0.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v1.0.0

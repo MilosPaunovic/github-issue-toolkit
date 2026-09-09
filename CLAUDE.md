@@ -17,7 +17,7 @@ GitHub Issue Toolkit, a Manifest V3 browser extension (Chromium and Firefox) wit
 
 ## Releases
 
-1. Bump `version` in `manifest.json` and `manifest.firefox.json` to the same value.
+1. Bump `version` in `manifest.json` and `manifest.firefox.json` to the same value, and the fallback text of the version chip in `docs/index.html` (`id="version"`); the chip reads the latest release from the GitHub API at runtime and only shows the fallback when that fails.
 2. In `CHANGELOG.md` rename the `Unreleased` section to `[x.y.z] - YYYY-MM-DD`, add a fresh empty `Unreleased`, and add the compare and release link lines at the bottom.
 3. Commit, then `git tag vx.y.z && git push origin main vx.y.z`. The `release` workflow verifies the tag against the manifests, builds both zips with `scripts/package.sh` and publishes the GitHub release with the changelog section as notes.
 

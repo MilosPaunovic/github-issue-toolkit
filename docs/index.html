@@ -61,6 +61,9 @@
     nav img { width: 28px; height: 28px; border-radius: 7px; }
     nav .brand { font-weight: 600; color: var(--fg); white-space: nowrap; }
     nav .brand:hover { text-decoration: none; }
+    nav .version { font: 600 11px/1 var(--font-mono); color: var(--fg-muted); background: var(--bg-muted); border: 1px solid var(--border); border-radius: 999px; padding: 4px 8px; white-space: nowrap; }
+    nav .version:hover { color: var(--fg); text-decoration: none; border-color: var(--border-strong); }
+    @media (max-width: 480px) { nav .version { display: none; } }
     nav .links { display: flex; align-items: center; gap: 4px; margin-left: auto; }
     nav .link { color: var(--fg-muted); font-size: 14px; padding: 6px 10px; border-radius: 8px; line-height: 1; }
     nav .link:hover { color: var(--fg); background: var(--bg-muted); text-decoration: none; }
@@ -264,6 +267,7 @@
       <img class="only-dark" src="icon-dark-48.png" alt="">
       <img class="only-light" src="icon-light-48.png" alt="">
       <a class="brand" href="#top">GitHub Issue Toolkit</a>
+      <a class="version" id="version" href="https://github.com/MilosPaunovic/github-issue-toolkit/releases/latest" title="Latest release">v2.0.1</a>
       <div class="links" id="site-menu">
         <a class="link" href="#what">What it does</a>
         <a class="link" href="#examples">Examples</a>
@@ -564,6 +568,11 @@
         }, { rootMargin: "-56px 0px -55% 0px", threshold: [0, 0.1, 0.25, 0.5] });
         targets.forEach(function (t) { io.observe(t); });
       }
+      var version = document.getElementById("version");
+      fetch("https://api.github.com/repos/MilosPaunovic/github-issue-toolkit/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (rel) { if (rel && rel.tag_name) { version.textContent = rel.tag_name; version.href = rel.html_url; } })
+        .catch(function () {});
       media.addEventListener("change", function (e) {
         var stored = null;
         try { stored = localStorage.getItem("theme"); } catch (err) {}
