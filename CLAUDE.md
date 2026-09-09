@@ -32,6 +32,7 @@ The repository has GitHub's immutable releases setting on. Once a release is pub
 - After changing the settings page, re-render `docs/settings-dark.png` and `docs/settings-light.png`.
 - After changing a mock-up in `docs/index.html`, run `python3 scripts/render-examples.py` to refresh the README images.
 - After changing icons, run `python3 scripts/make-icons.py` (icons are shared by the manifests, the settings page and the site).
+- After changing the icon, the name or the tagline, run `python3 scripts/render-social-preview.py` and upload `docs/social-preview.png` again as the repository's social preview (Settings, General; there is no API for it).
 - README, `PRIVACY.md`, the site and the settings page describe the same behaviour; when a default or permission changes, update all four.
 
 ## Local testing

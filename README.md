@@ -4,6 +4,8 @@ Formerly "GitHub Issue Field Badges".
 
 [Documentation site](https://milospaunovic.github.io/github-issue-toolkit/) · [Releases](https://github.com/MilosPaunovic/github-issue-toolkit/releases) · [Changelog](CHANGELOG.md) · [Privacy](PRIVACY.md)
 
+<p align="center"><img src="docs/social-preview.png" alt="GitHub Issue Toolkit: custom issue fields, issue age and pinned epics on sub-issue lists and Projects views" width="760"></p>
+
 Browser extension that shows the values of your organization's custom GitHub **issue fields** as badges on every row of the **Sub-issues** list of an issue and on **Projects** views (table and board), plus the **age** of each issue. A small **Pinned issues** panel keeps your epics one click away so you can link the issue you are looking at to them. Works in Chrome, Edge, Brave and other Chromium browsers, and in Firefox.
 
 GitHub itself only shows the issue type there. This extension reads the field values through the GitHub GraphQL API, in batched queries covering all visible rows, across repositories. Everything is read-only except the optional linking of an issue to a pinned epic, which writes through the same API.
@@ -136,6 +138,7 @@ No build step. Edit the files, then reload the extension (Chromium: reload icon 
 - `manifest.json` is the Chromium manifest, `manifest.firefox.json` the Firefox one. Keep them in sync except for the `background` and `browser_specific_settings` keys.
 - `python3 scripts/make-icons.py` regenerates the icons, dark tiles for the manifests and light tiles for the settings page and the docs site (needs Pillow).
 - `python3 scripts/render-examples.py` re-renders the example images in `docs/` from the mock-ups in `docs/index.html` (needs Chrome and Pillow). Run it after changing those mock-ups.
+- `python3 scripts/render-social-preview.py` re-renders `docs/social-preview.png`, the card used by the repository's social preview and by the site's link previews. Run it after changing the icon, the name or the tagline, then upload the file again in the repository settings.
 - `scripts/package.sh` builds two zips one level above the repo (or into `OUT_DIR`): `github-issue-toolkit-<version>-chrome.zip` for Chromium browsers and `github-issue-toolkit-<version>-firefox.zip` for Firefox. Pass a `.pem` path as the first argument to also build a signed `.crx` for Chromium. Keep the key outside the repository; `.gitignore` excludes `*.pem`, `*.crx` and `*.zip`.
 
 ### Releasing
