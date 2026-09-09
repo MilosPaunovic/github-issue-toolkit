@@ -6,6 +6,7 @@ const toggle = document.getElementById("toggle");
 const ageEnabled = document.getElementById("age-enabled");
 const ageUnit = document.getElementById("age-unit");
 const pinsEnabledInput = document.getElementById("pins-enabled");
+const skipShownInput = document.getElementById("skip-shown");
 const pinsCount = document.getElementById("pins-count");
 const api = typeof browser !== "undefined" && browser.runtime ? browser : (typeof chrome !== "undefined" ? chrome : undefined);
 const hasChrome = Boolean(api && api.storage && api.runtime);
@@ -90,12 +91,13 @@ if (hasChrome) {
     setStatus(ok ? "Access to github.com granted." : "Access was not granted.", ok);
     refreshAccess();
   });
-  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "pinsEnabled", "pins"]).then((stored) => {
+  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "pinsEnabled", "skipShownFields", "pins"]).then((stored) => {
     tokenInput.value = stored.token || "";
     fields = parseFields(stored.fields);
     renderChips();
     ageEnabled.checked = stored.ageEnabled === true;
     pinsEnabledInput.checked = stored.pinsEnabled !== false;
+    skipShownInput.checked = stored.skipShownFields !== false;
     ageUnit.value = stored.ageUnit || "months";
     renderPinsCount(stored.pins);
   });
@@ -124,7 +126,7 @@ document.getElementById("save").addEventListener("click", async () => {
   const token = tokenInput.value.trim();
   const fieldList = fields.join(", ");
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
-  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, pinsEnabled: pinsEnabledInput.checked });
+  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked });
   if (!token) setStatus("Saved without a token. Badges need one.", false);
   else if (!fields.length && !ageEnabled.checked) setStatus("Saved without any field. Add a field or enable the age badge to show badges.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);

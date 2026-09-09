@@ -273,7 +273,7 @@
       <img class="only-dark" src="icon-dark-48.png" alt="">
       <img class="only-light" src="icon-light-48.png" alt="">
       <a class="brand" href="#top">GitHub Issue Toolkit</a>
-      <a class="version" id="version" href="https://github.com/MilosPaunovic/github-issue-toolkit/releases/latest" title="Latest release">v2.0.4</a>
+      <a class="version" id="version" href="https://github.com/MilosPaunovic/github-issue-toolkit/releases/latest" title="Latest release">v2.0.5</a>
       <div class="links" id="site-menu">
         <a class="link" href="#what">What it does</a>
         <a class="link" href="#examples">Examples</a>
@@ -336,7 +336,7 @@
         <div class="card"><h3>Any field, any type</h3><p>Single-select, multi-select, text, number and date fields all work. Single-select badges use the colour of the chosen option, so a red option stays red.</p></div>
         <div class="card"><h3>You pick the fields</h3><p>Choose which fields to show and in what order on the settings page. One field or five, per your workflow.</p></div>
         <div class="card"><h3>One request per page</h3><p>All visible rows, across repositories, are fetched in batched GitHub GraphQL queries of 60 issues. Results are cached for five minutes.</p></div>
-        <div class="card"><h3>Projects views too</h3><p>The same badges appear on GitHub Projects: after the issue number in the table layout, under the title on board cards. Draft items and pull requests are left alone.</p></div>
+        <div class="card"><h3>Projects views too</h3><p>The same badges appear on GitHub Projects: after the issue number in the table layout, under the title on board cards. A field the view already shows, as a column or a card field, is skipped so nothing appears twice. Draft items and pull requests are left alone.</p></div>
         <div class="card"><h3>Issue age, if you want it</h3><p>An optional gray badge shows how long ago each issue was created, in months, weeks or days. Off by default, one checkbox in the settings.</p></div>
         <div class="card"><h3>Pinned epics</h3><p>A pin button in GitHub's top bar keeps your epics one click away: copy their reference, or make the issue you are looking at a sub-issue of one. Optional as well.</p></div>
         <div class="card"><h3>Clickable</h3><p>Each badge links to the repository's issue search filtered by that field value, the same way GitHub's own field badges do.</p></div>
@@ -352,7 +352,7 @@
       <p class="muted">The same badges follow you to Projects views, an optional age badge tells you how long an issue has been open, and the pinned issues panel keeps your epics one click away. Illustrations of an invented repository, with a field named Priority as the example.</p>
 
       <h3 style="margin-top:8px">Projects table view</h3>
-      <p class="muted" style="font-size:14px">Badges come right after the issue number in the title cell, so a table needs no extra columns.</p>
+      <p class="muted" style="font-size:14px">Badges come right after the issue number in the title cell, so a table needs no extra columns. Fields that already have a column in the view are not repeated.</p>
       <div class="mock-table gh-card" id="ex-table" style="max-width:900px">
         <div class="tr th"><div class="td n"></div><div class="td"></div><div class="td">Title</div><div class="td">Status</div><div class="td">Assignees</div><div class="td">Labels</div></div>
         <div class="tr"><div class="td n">1</div><div class="td"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg></div><div class="td title"><span class="name">Search results ignore the selected date range</span><span class="num">#1482</span><span class="badge b-severe">P1: Must Have</span><span class="badge b-neutral">7 mo</span></div><div class="td"><span class="status" style="--status: var(--attention)">In progress</span></div><div class="td"><span class="avatar a1"></span></div><div class="td labels"><span class="label b-info">area/search</span></div></div>

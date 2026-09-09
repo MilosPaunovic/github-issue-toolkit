@@ -9,7 +9,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", pinsEnabled: true };
+  let settings = { ageEnabled: false, ageUnit: "months", pinsEnabled: true, skipShownFields: true };
   let pins = [];
   let pinsCollapsed = true;
 
@@ -144,6 +144,29 @@
     return rows;
   }
 
+  // Fields GitHub already displays for this row, so the badge would only repeat them:
+  // board cards list them under a "Fields" list whose chips carry a "Field: value" tooltip,
+  // table views show them as columns.
+  function shownFields(row) {
+    const names = new Set();
+    if (row.kind === "board") {
+      for (const chip of row.content.querySelectorAll('ul[aria-label="Fields"] li, [data-testid*="card-field"], [class*="cardLabel"]')) {
+        const text = (chip.querySelector('[data-component="Tooltip"]') || chip).textContent.trim();
+        const m = /^([^:]{1,60}):\s/.exec(text);
+        if (m) names.add(m[1].trim().toLowerCase());
+      }
+    } else if (row.kind === "table") {
+      const grid = row.content.closest('[role="grid"]');
+      for (const th of grid ? grid.querySelectorAll('[role="columnheader"]') : []) {
+        // The header holds the column name followed by a "<name> column options" menu label; take the first leaf.
+        const leaf = [...th.querySelectorAll("*")].find((el) => el.children.length === 0 && el.textContent.trim());
+        const text = (leaf ? leaf.textContent : th.textContent).replace(/\s*column options$/i, "").trim().toLowerCase();
+        if (text) names.add(text);
+      }
+    }
+    return names;
+  }
+
   function findAnchorSlot(row) {
     if (row.kind === "table") {
       return { parent: row.titleLink.parentElement, before: null };
@@ -194,7 +217,8 @@
   // ---------------------------------------------------------------------------
 
   function render(row, hit) {
-    const values = (hit && hit.values) || [];
+    const already = settings.skipShownFields ? shownFields(row) : new Set();
+    const values = ((hit && hit.values) || []).filter((v) => !already.has(String(v.field).toLowerCase()));
     const scope = row.content.contains(row.titleLink) ? row.content : row.titleLink.parentElement;
     scope.querySelectorAll(`.gsf-badge[data-gsf-for="${row.ref.key}"]`).forEach((el) => el.remove());
     row.titleLink.parentElement.querySelectorAll(`.gsf-badge[data-gsf-for="${row.ref.key}"]`).forEach((el) => el.remove());
@@ -831,7 +855,8 @@
 
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
-    if (changes.token || changes.fields || changes.ageEnabled || changes.ageUnit) {
+    if (changes.token || changes.fields || changes.ageEnabled || changes.ageUnit || changes.skipShownFields) {
+      if (changes.skipShownFields) settings.skipShownFields = changes.skipShownFields.newValue !== false;
       if (changes.ageEnabled) settings.ageEnabled = changes.ageEnabled.newValue === true;
       if (changes.ageUnit) settings.ageUnit = changes.ageUnit.newValue || "months";
       clearBadges();
@@ -849,7 +874,8 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "pinsEnabled", "pins"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "pinsEnabled", "skipShownFields", "pins"]).then((stored) => {
+    settings.skipShownFields = stored.skipShownFields !== false;
     settings.ageEnabled = stored.ageEnabled === true;
     settings.ageUnit = stored.ageUnit || "months";
     settings.pinsEnabled = stored.pinsEnabled !== false;
