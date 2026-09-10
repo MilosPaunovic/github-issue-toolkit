@@ -179,6 +179,8 @@
 
     /* mock-ups of the other surfaces */
     .mock-table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-card); box-shadow: var(--shadow); font-size: 13px; }
+    .mock-table-scroll { overflow-x: auto; border-radius: 12px; -webkit-overflow-scrolling: touch; }
+    @media (max-width: 760px) { .mock-table .tr { min-width: 620px; grid-template-columns: 36px 30px minmax(0, 1fr) 120px 90px; } .mock-table .td.labels { display: none; } .mock-pins .mock-box { width: min(320px, calc(100vw - 48px)); } }
     .mock-table .tr { display: grid; grid-template-columns: 34px minmax(0, 1fr) 120px 110px; align-items: center; border-top: 1px solid var(--border); min-height: 40px; }
     .mock-table .tr:first-child { border-top: 0; background: var(--bg-muted); color: var(--fg-muted); font-weight: 600; font-size: 12px; min-height: 34px; }
     .mock-table .td { padding: 6px 10px; display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
@@ -353,13 +355,13 @@
 
       <h3 style="margin-top:8px">Projects table view</h3>
       <p class="muted" style="font-size:14px">Badges come right after the issue number in the title cell, so a table needs no extra columns. Fields that already have a column in the view are not repeated.</p>
-      <div class="mock-table gh-card" id="ex-table" style="max-width:900px">
+      <div class="mock-table gh-card" id="ex-table" style="max-width:900px"><div class="mock-table-scroll">
         <div class="tr th"><div class="td n"></div><div class="td"></div><div class="td">Title</div><div class="td">Status</div><div class="td">Assignees</div><div class="td">Labels</div></div>
         <div class="tr"><div class="td n">1</div><div class="td"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg></div><div class="td title"><span class="name">Search results ignore the selected date range</span><span class="num">#1482</span><span class="badge b-severe">P1: Must Have</span><span class="badge b-neutral">7 mo</span></div><div class="td"><span class="status" style="--status: var(--attention)">In progress</span></div><div class="td"><span class="avatar a1"></span></div><div class="td labels"><span class="label b-info">area/search</span></div></div>
         <div class="tr"><div class="td n">2</div><div class="td"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg></div><div class="td title"><span class="name">Add keyboard shortcuts to the results list</span><span class="num">#1490</span><span class="badge b-severe">P1: Must Have</span><span class="badge b-neutral">5 mo</span></div><div class="td"><span class="status" style="--status: var(--info)">Backlog</span></div><div class="td"><span class="avatar a2"></span></div><div class="td labels"><span class="label b-info">area/search</span></div></div>
         <div class="tr"><div class="td n">3</div><div class="td"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg></div><div class="td title"><span class="name">Migrate the search index to the new schema</span><span class="num">#1477</span><span class="badge b-attention">P2: Should Have</span><span class="badge b-neutral">9 mo</span></div><div class="td"><span class="status" style="--status: var(--done)">Done</span></div><div class="td"><span class="avatar a3"></span></div><div class="td labels"><span class="label b-info">area/search</span></div></div>
         <div class="tr"><div class="td n">4</div><div class="td"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg></div><div class="td title"><span class="name">Highlight matched terms in result snippets</span><span class="num">#1511</span><span class="badge b-neutral">P3: Could Have</span><span class="badge b-neutral">&lt;1 mo</span></div><div class="td"><span class="status" style="--status: var(--info)">Backlog</span></div><div class="td"><span class="avatar a2"></span></div><div class="td labels"><span class="label b-info">area/search</span></div></div>
-      </div>
+      </div></div>
 
       <h3 style="margin-top:28px">Projects board view</h3>
       <p class="muted" style="font-size:14px">On board cards the badges sit under the title. The age badge is the gray one, shown here enabled.</p>
