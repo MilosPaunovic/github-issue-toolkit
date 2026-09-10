@@ -144,27 +144,30 @@
     return rows;
   }
 
-  // Fields GitHub already displays for this row, so the badge would only repeat them:
-  // board cards list them under a "Fields" list whose chips carry a "Field: value" tooltip,
-  // table views show them as columns.
-  function shownFields(row) {
-    const names = new Set();
+  // What GitHub already displays for this row, so a badge would only repeat it:
+  // board cards list their fields under a "Fields" list whose chips carry a "Field: value" tooltip,
+  // table views show fields as columns, and a board grouped by a field names that field's value in the column header.
+  function shownOnPage(row) {
+    const fields = new Set();
+    const values = new Set();
     if (row.kind === "board") {
       for (const chip of row.content.querySelectorAll('ul[aria-label="Fields"] li, [data-testid*="card-field"], [class*="cardLabel"]')) {
         const text = (chip.querySelector('[data-component="Tooltip"]') || chip).textContent.trim();
         const m = /^([^:]{1,60}):\s/.exec(text);
-        if (m) names.add(m[1].trim().toLowerCase());
+        if (m) fields.add(m[1].trim().toLowerCase());
       }
+      const column = row.content.closest("[data-board-column]");
+      if (column) values.add(String(column.getAttribute("data-board-column")).trim().toLowerCase());
     } else if (row.kind === "table") {
       const grid = row.content.closest('[role="grid"]');
       for (const th of grid ? grid.querySelectorAll('[role="columnheader"]') : []) {
         // The header holds the column name followed by a "<name> column options" menu label; take the first leaf.
         const leaf = [...th.querySelectorAll("*")].find((el) => el.children.length === 0 && el.textContent.trim());
         const text = (leaf ? leaf.textContent : th.textContent).replace(/\s*column options$/i, "").trim().toLowerCase();
-        if (text) names.add(text);
+        if (text) fields.add(text);
       }
     }
-    return names;
+    return { fields, values };
   }
 
   function findAnchorSlot(row) {
@@ -217,8 +220,8 @@
   // ---------------------------------------------------------------------------
 
   function render(row, hit) {
-    const already = settings.skipShownFields ? shownFields(row) : new Set();
-    const values = ((hit && hit.values) || []).filter((v) => !already.has(String(v.field).toLowerCase()));
+    const shown = settings.skipShownFields ? shownOnPage(row) : { fields: new Set(), values: new Set() };
+    const values = ((hit && hit.values) || []).filter((v) => !shown.fields.has(String(v.field).toLowerCase()) && !shown.values.has(String(v.value).trim().toLowerCase()));
     const scope = row.content.contains(row.titleLink) ? row.content : row.titleLink.parentElement;
     scope.querySelectorAll(`.gsf-badge[data-gsf-for="${row.ref.key}"]`).forEach((el) => el.remove());
     row.titleLink.parentElement.querySelectorAll(`.gsf-badge[data-gsf-for="${row.ref.key}"]`).forEach((el) => el.remove());

@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.0.6] - 2026-09-10
+
+### Changed
+
+- On a board grouped by a field, the badge carrying that field's value is skipped too, since the column header already says it.
+
 ## [2.0.5] - 2026-09-09
 
 ### Added
@@ -88,7 +94,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.5...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.6...HEAD
+[2.0.6]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.6
 [2.0.5]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.5
 [2.0.4]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.4
 [2.0.3]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.3

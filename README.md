@@ -60,7 +60,7 @@ Illustrations of an invented repository, rendered from the documentation site wi
 ## Features
 
 - Badges appear next to the issue type on each sub-issue row, in the option's colour.
-- The same badges appear on GitHub Projects views: after the issue number in the table layout, under the title on board cards. Fields the view already shows, as a column or as a card field, are skipped so nothing appears twice (can be turned off in the settings).
+- The same badges appear on GitHub Projects views: after the issue number in the table layout, under the title on board cards. Fields the view already shows are skipped so nothing appears twice: a column, a card field, or the field a board is grouped by (can be turned off in the settings).
 - An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days. Off by default.
 - A **Pinned issues** button in GitHub's top bar: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click. Can be switched off in the settings.
 - Any field type works: single-select, multi-select, text, number, date.
