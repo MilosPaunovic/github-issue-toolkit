@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.3.1] - 2026-09-11
+
+### Changed
+
+- The added and removed line counts in the pull request size badge use the regular weight instead of bold.
+
 ## [2.3.0] - 2026-09-11
 
 ### Added
@@ -133,7 +139,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.3.1...HEAD
+[2.3.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.3.1
 [2.3.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.3.0
 [2.2.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.2.1
 [2.2.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.2.0
