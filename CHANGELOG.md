@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.2.1] - 2026-09-11
+
+### Changed
+
+- Badges are back to GitHub's outlined field-chip style, coloured text on a tinted background, so they stay visually distinct from labels. The solid style introduced in 2.2.0 is gone.
+
 ## [2.2.0] - 2026-09-11
 
 ### Added
@@ -116,7 +122,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.2.1...HEAD
+[2.2.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.2.1
 [2.2.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.2.0
 [2.1.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.1.0
 [2.0.6]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.6

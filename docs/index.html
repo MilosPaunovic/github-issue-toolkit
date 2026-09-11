@@ -23,14 +23,6 @@
   <style>
     :root {
       color-scheme: light;
-      --solid-danger: #cf222e;
-      --solid-severe: #bc4c00;
-      --solid-attention: #9a6700;
-      --solid-success: #1a7f37;
-      --solid-info: #0969da;
-      --solid-done: #8250df;
-      --solid-pink: #bf3989;
-      --solid-neutral: #6e7781;
       --bg: #ffffff; --bg-muted: #f6f8fa; --bg-card: #ffffff;
       --border: #d0d7de; --border-strong: #8c959f;
       --fg: #1f2328; --fg-muted: #59636e; --accent: #0969da; --accent-fg: #ffffff;
@@ -52,14 +44,6 @@
         --code-bg: rgba(110,118,129,.4); --shadow: 0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
         --danger: #ff8182; --severe: #f0883e; --attention: #d29922; --info: #58a6ff; --done: #a371f7; --success: #3fb950; --neutral: #8b949e;
         --open: #3fb950; --closed: #a371f7; --pink-fg: #db61a2;
-        --solid-danger: #da3633;
-        --solid-severe: #bd561d;
-        --solid-attention: #9e6a03;
-        --solid-success: #238636;
-        --solid-info: #1f6feb;
-        --solid-done: #8957e5;
-        --solid-pink: #bf4b8a;
-        --solid-neutral: #6e7681;
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
@@ -139,13 +123,13 @@
     .row .text { flex: 1; min-width: 0; }
     .row .ref { color: var(--fg-muted); margin-left: 4px; white-space: nowrap; }
     .badge { display: inline-flex; align-items: center; height: 20px; padding: 0 7px 1px; margin-right: 4px; border: 1px solid; border-radius: 999px; font-size: 12px; font-weight: 500; line-height: 18px; vertical-align: middle; white-space: nowrap; }
-    .b-danger { color: #fff; background: var(--solid-danger); border-color: var(--solid-danger); }
-    .b-severe { color: #fff; background: var(--solid-severe); border-color: var(--solid-severe); }
-    .b-attention { color: #fff; background: var(--solid-attention); border-color: var(--solid-attention); }
-    .b-info { color: #fff; background: var(--solid-info); border-color: var(--solid-info); }
-    .b-done { color: #fff; background: var(--solid-done); border-color: var(--solid-done); }
-    .b-success { color: #fff; background: var(--solid-success); border-color: var(--solid-success); }
-    .b-neutral { color: #fff; background: var(--solid-neutral); border-color: var(--solid-neutral); }
+    .b-danger { color: var(--danger); background: var(--danger-bg); border-color: var(--danger-border); }
+    .b-severe { color: var(--severe); background: var(--severe-bg); border-color: var(--severe-border); }
+    .b-attention { color: var(--attention); background: var(--attention-bg); border-color: var(--attention-border); }
+    .b-info { color: var(--info); background: var(--info-bg); border-color: var(--info-border); }
+    .b-done { color: var(--done); background: var(--done-bg); border-color: var(--done-border); }
+    .b-success { color: var(--success); background: var(--success-bg); border-color: var(--success-border); }
+    .b-neutral { color: var(--neutral); background: var(--neutral-bg); border-color: var(--neutral-border); }
 
     /* feature grid */
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 8px; }
@@ -247,7 +231,7 @@
     .mock-box .form { display: flex; gap: 6px; padding: 8px 12px; }
     .mock-box .form .input { flex: 1; height: 28px; border: 1px solid var(--border); border-radius: 6px; padding: 0 8px; color: var(--fg-muted); display: flex; align-items: center; }
     .mock-box .status { padding: 6px 12px 8px; color: var(--success); }
-    .b-pink { color: #fff; background: var(--solid-pink); border-color: var(--solid-pink); }
+    .b-pink { color: var(--pink-fg, #bf3989); background: rgba(191, 57, 137, .12); border-color: rgba(191, 57, 137, .4); }
 
     /* GitHub-like chrome for the mock-ups */
     .gh-card .head { display: flex; align-items: center; gap: 8px; }
@@ -278,6 +262,7 @@
     .mock-card .ref .state { width: 16px; height: 16px; }
     .mock-card .bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; margin-top: 8px; }
     .mock-card .labels { margin-top: 0; flex-wrap: wrap; }
+    .label.b-success { color: var(--success); background: var(--success-bg); border-color: var(--success-border); }
     .mock-header .avatar { width: 28px; height: 28px; margin-left: 4px; }
     .row.pr-row .text { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
     .row.pr-row .pr-title { font-weight: 600; margin-right: 6px; }
@@ -300,7 +285,7 @@
       <img class="only-dark" src="icon-dark-48.png" alt="">
       <img class="only-light" src="icon-light-48.png" alt="">
       <a class="brand" href="#top">GitHub Issue Toolkit</a>
-      <a class="version" id="version" href="https://github.com/MilosPaunovic/github-issue-toolkit/releases/latest" title="Latest release">v2.2.0</a>
+      <a class="version" id="version" href="https://github.com/MilosPaunovic/github-issue-toolkit/releases/latest" title="Latest release">v2.2.1</a>
       <div class="links" id="site-menu">
         <a class="link" href="#what">What it does</a>
         <a class="link" href="#examples">Examples</a>
@@ -368,7 +353,7 @@
         <div class="card"><h3>Pull request badges</h3><p>On the pull request list and on Projects views that contain pull requests: whether the author is a first-time contributor, external, a contributor, a collaborator, a member or a bot, plus optional badges for forks, size and merge state.</p></div>
         <div class="card"><h3>Pinned epics</h3><p>A pin button in GitHub's top bar keeps your epics one click away: copy their reference, or make the issue you are looking at a sub-issue of one. Optional as well.</p></div>
         <div class="card"><h3>Clickable</h3><p>Each badge links to the repository's issue search filtered by that field value, the same way GitHub's own field badges do.</p></div>
-        <div class="card"><h3>Looks native</h3><p>Badges use the same solid pill style and colour tokens as GitHub's labels, so they match light and dark themes and every colour blindness setting GitHub offers.</p></div>
+        <div class="card"><h3>Looks native</h3><p>Badges reuse GitHub's own colour tokens, so they match light and dark themes and every colour blindness setting GitHub offers.</p></div>
         <div class="card"><h3>Private by design</h3><p>No analytics, no third-party servers. Your token stays in your browser and only ever talks to <code>api.github.com</code>. The only write is the sub-issue link you trigger yourself.</p></div>
       </div>
     </div>

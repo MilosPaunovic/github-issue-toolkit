@@ -5,7 +5,7 @@
   max-width: 100%;
   padding: 0 7px 1px;
   margin-right: 4px;
-  border: 1px solid transparent;
+  border: 1px solid;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 500;
@@ -22,14 +22,14 @@
 .gsf-badge:hover {
   text-decoration: underline !important;
 }
-.gsf-badge[data-gsf-color="RED"] { --gsf-fg: var(--fgColor-onEmphasis, #fff); --gsf-bg: var(--bgColor-danger-emphasis); --gsf-border: var(--bgColor-danger-emphasis); }
-.gsf-badge[data-gsf-color="ORANGE"] { --gsf-fg: var(--fgColor-onEmphasis, #fff); --gsf-bg: var(--bgColor-severe-emphasis); --gsf-border: var(--bgColor-severe-emphasis); }
-.gsf-badge[data-gsf-color="YELLOW"] { --gsf-fg: var(--fgColor-onEmphasis, #fff); --gsf-bg: var(--bgColor-attention-emphasis); --gsf-border: var(--bgColor-attention-emphasis); }
-.gsf-badge[data-gsf-color="GREEN"] { --gsf-fg: var(--fgColor-onEmphasis, #fff); --gsf-bg: var(--bgColor-success-emphasis); --gsf-border: var(--bgColor-success-emphasis); }
-.gsf-badge[data-gsf-color="BLUE"] { --gsf-fg: var(--fgColor-onEmphasis, #fff); --gsf-bg: var(--bgColor-accent-emphasis); --gsf-border: var(--bgColor-accent-emphasis); }
-.gsf-badge[data-gsf-color="PURPLE"] { --gsf-fg: var(--fgColor-onEmphasis, #fff); --gsf-bg: var(--bgColor-done-emphasis); --gsf-border: var(--bgColor-done-emphasis); }
-.gsf-badge[data-gsf-color="PINK"] { --gsf-fg: var(--fgColor-onEmphasis, #fff); --gsf-bg: var(--bgColor-sponsors-emphasis); --gsf-border: var(--bgColor-sponsors-emphasis); }
-.gsf-badge[data-gsf-color="GRAY"] { --gsf-fg: var(--fgColor-onEmphasis, #fff); --gsf-bg: var(--bgColor-neutral-emphasis); --gsf-border: var(--bgColor-neutral-emphasis); }
+.gsf-badge[data-gsf-color="RED"]    { --gsf-fg: var(--fgColor-danger);    --gsf-bg: var(--bgColor-danger-muted);    --gsf-border: var(--borderColor-danger-muted); }
+.gsf-badge[data-gsf-color="ORANGE"] { --gsf-fg: var(--fgColor-severe);    --gsf-bg: var(--bgColor-severe-muted);    --gsf-border: var(--borderColor-severe-muted); }
+.gsf-badge[data-gsf-color="YELLOW"] { --gsf-fg: var(--fgColor-attention); --gsf-bg: var(--bgColor-attention-muted); --gsf-border: var(--borderColor-attention-muted); }
+.gsf-badge[data-gsf-color="GREEN"]  { --gsf-fg: var(--fgColor-success);   --gsf-bg: var(--bgColor-success-muted);   --gsf-border: var(--borderColor-success-muted); }
+.gsf-badge[data-gsf-color="BLUE"]   { --gsf-fg: var(--fgColor-accent);    --gsf-bg: var(--bgColor-accent-muted);    --gsf-border: var(--borderColor-accent-muted); }
+.gsf-badge[data-gsf-color="PURPLE"] { --gsf-fg: var(--fgColor-done);      --gsf-bg: var(--bgColor-done-muted);      --gsf-border: var(--borderColor-done-muted); }
+.gsf-badge[data-gsf-color="PINK"]   { --gsf-fg: var(--fgColor-sponsors);  --gsf-bg: var(--bgColor-sponsors-muted);  --gsf-border: var(--borderColor-sponsors-muted); }
+.gsf-badge[data-gsf-color="GRAY"]   { --gsf-fg: var(--fgColor-muted);     --gsf-bg: var(--bgColor-neutral-muted);   --gsf-border: var(--borderColor-muted); }
 
 .gsf-notice {
   display: flex;
