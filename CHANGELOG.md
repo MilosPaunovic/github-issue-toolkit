@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.2.0] - 2026-09-11
+
+### Added
+
+- Pull request badges on Projects views: table rows and board cards whose item is a pull request get the same author, fork, size and merge state badges as the pull request list.
+
+### Changed
+
+- Badges are solid pills like GitHub's labels instead of outlined, tinted chips, so they sit naturally among labels on pull request lists and project cards.
+- The first option on the Pull requests settings card is shorter; the possible values are documented on the site and in the README.
+
 ## [2.1.0] - 2026-09-11
 
 ### Added
@@ -105,7 +116,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.2.0
 [2.1.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.1.0
 [2.0.6]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.6
 [2.0.5]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.5

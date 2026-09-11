@@ -71,7 +71,7 @@ Illustrations of an invented repository, rendered from the documentation site wi
 - Badges appear next to the issue type on each sub-issue row, in the option's colour.
 - The same badges appear on GitHub Projects views: after the issue number in the table layout, under the title on board cards. Fields the view already shows are skipped so nothing appears twice: a column, a card field, or the field a board is grouped by (can be turned off in the settings).
 - An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days. Off by default.
-- **Pull request badges** on the pull request list: the author's relation to the repository (first-time contributor, external, contributor, collaborator, member, bot) on by default, plus optional badges for forks, size and merge state.
+- **Pull request badges** on the pull request list and on Projects views that contain pull requests: the author's relation to the repository (first-time contributor, external, contributor, collaborator, member, bot) on by default, plus optional badges for forks, size and merge state.
 - A **Pinned issues** button in GitHub's top bar: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click. Can be switched off in the settings.
 - Any field type works: single-select, multi-select, text, number, date.
 - Choose which fields to show and in what order; nothing is shown until you pick at least one field or enable the age badge.

@@ -379,15 +379,33 @@
     return { owner: m[1], repo: m[2], number: Number(m[3]), key: `${m[1]}/${m[2]}!${m[3]}` };
   }
 
-  // Rows of the pull request list (repository /pulls and the global /pulls pages).
+  // Pull request rows: the pull request list (repository /pulls and the global /pulls pages),
+  // and Projects views whose items are pull requests (table title cells and board cards).
   function collectPullRows() {
     const rows = [];
+    const seen = new Set();
     for (const link of document.querySelectorAll('li a[data-testid="listitem-title-link"], li a[data-testid="issue-pr-title-link"]')) {
       const ref = pullRef(link);
+      const li = ref && link.closest("li");
+      if (!li || seen.has(li)) continue;
+      seen.add(li);
+      rows.push({ kind: "list", li, titleLink: link, ref });
+    }
+    for (const cell of document.querySelectorAll('[role="grid"] [role="rowheader"]')) {
+      if (seen.has(cell)) continue;
+      const link = [...cell.querySelectorAll("a[href]")].find((a) => pullRef(a) && !a.closest(".gsf-badge"));
+      if (!link) continue;
+      seen.add(cell);
+      rows.push({ kind: "table", li: cell, titleLink: link, ref: pullRef(link) });
+    }
+    for (const h3 of document.querySelectorAll('h3[id^="board-card-title-"]')) {
+      const link = h3.closest("a[href]");
+      const ref = link && pullRef(link);
       if (!ref) continue;
-      const li = link.closest("li");
-      if (!li) continue;
-      rows.push({ li, titleLink: link, ref });
+      const card = link.parentElement.closest('[role="button"]') || link.parentElement;
+      if (seen.has(card)) continue;
+      seen.add(card);
+      rows.push({ kind: "board", li: card, titleLink: link, ref });
     }
     return rows;
   }
@@ -428,9 +446,20 @@
     const badges = pullBadges(info);
     row.li.dataset.gsfPr = "done";
     if (!badges.length) return;
-    const container = row.titleLink.closest('[class*="Title-module__container"]');
-    const slot = container ? container.querySelector('[class*="trailingBadgesContainer"]') : null;
-    const parent = slot || (container || row.titleLink.parentElement);
+    let parent;
+    if (row.kind === "board") {
+      parent = row.titleLink.parentElement.querySelector(":scope > .gsf-badges");
+      if (!parent) {
+        parent = document.createElement("div");
+        parent.className = "gsf-badges";
+        row.titleLink.parentElement.insertBefore(parent, row.titleLink.nextSibling);
+      }
+    } else if (row.kind === "table") {
+      parent = row.titleLink.parentElement;
+    } else {
+      const container = row.titleLink.closest('[class*="Title-module__container"]');
+      parent = (container && container.querySelector('[class*="trailingBadgesContainer"]')) || container || row.titleLink.parentElement;
+    }
     const frag = document.createDocumentFragment();
     for (const [text, color, title] of badges) {
       const badge = document.createElement("span");
@@ -441,8 +470,7 @@
       badge.title = title;
       frag.appendChild(badge);
     }
-    if (slot) slot.appendChild(frag);
-    else parent.appendChild(frag);
+    parent.appendChild(frag);
   }
 
   async function scanPulls() {
