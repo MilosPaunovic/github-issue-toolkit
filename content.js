@@ -1,6 +1,7 @@
 (() => {
   const api = typeof browser !== "undefined" && browser.runtime ? browser : chrome;
   const ISSUE_PATH = /^\/([^/]+)\/([^/]+)\/issues\/(\d+)\/?$/;
+  const PULL_PATH = /^\/([^/]+)\/([^/]+)\/pull\/(\d+)\/?$/;
   const PROJECT_PATH = /^\/(?:orgs|users)\/[^/]+\/projects\/\d+(?:\/|$)|^\/[^/]+\/[^/]+\/projects\/\d+(?:\/|$)/;
   const CACHE_TTL_MS = 5 * 60 * 1000;
   const DAY_MS = 24 * 60 * 60 * 1000;
@@ -9,7 +10,9 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", pinsEnabled: true, skipShownFields: true };
+  let settings = { ageEnabled: false, ageUnit: "months", pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false };
+  const prCache = new Map(); // "owner/repo!n" -> { at, info }
+  const prPending = new Set();
   let pins = [];
   let pinsCollapsed = true;
 
@@ -296,6 +299,7 @@
   async function scan() {
     scheduled = null;
     syncPanel();
+    scanPulls().catch((err) => console.warn("[github-issue-toolkit]", err));
     const rows = collectRows();
     if (!rows.length) return;
 
@@ -358,8 +362,136 @@
     }
   }
 
+
+  // ---------------------------------------------------------------------------
+  // Pull request lists: author association, fork, size and merge state badges
+  // ---------------------------------------------------------------------------
+
+  function prEnabled() {
+    return settings.prAssociation || settings.prFork || settings.prSize || settings.prMergeState;
+  }
+
+  function pullRef(anchor) {
+    let path;
+    try { path = new URL(anchor.href, location.origin).pathname; } catch { return null; }
+    const m = PULL_PATH.exec(path);
+    if (!m) return null;
+    return { owner: m[1], repo: m[2], number: Number(m[3]), key: `${m[1]}/${m[2]}!${m[3]}` };
+  }
+
+  // Rows of the pull request list (repository /pulls and the global /pulls pages).
+  function collectPullRows() {
+    const rows = [];
+    for (const link of document.querySelectorAll('li a[data-testid="listitem-title-link"], li a[data-testid="issue-pr-title-link"]')) {
+      const ref = pullRef(link);
+      if (!ref) continue;
+      const li = link.closest("li");
+      if (!li) continue;
+      rows.push({ li, titleLink: link, ref });
+    }
+    return rows;
+  }
+
+  const ASSOCIATION = {
+    FIRST_TIMER: ["First PR on GitHub", "GREEN", "This is the author's first pull request on GitHub"],
+    FIRST_TIME_CONTRIBUTOR: ["First-time contributor", "GREEN", "First pull request from this author to this repository"],
+    NONE: ["External", "PURPLE", "The author has no previous contributions to this repository"],
+    CONTRIBUTOR: ["Contributor", "GRAY", "The author has contributed to this repository before"],
+    COLLABORATOR: ["Collaborator", "BLUE", "The author has write access to this repository"],
+    MEMBER: ["Member", "BLUE", "The author is a member of the organization"],
+    OWNER: ["Owner", "BLUE", "The author owns the repository"]
+  };
+  const MERGE_STATE = {
+    CLEAN: ["Mergeable", "GREEN", "All requirements are met"],
+    BEHIND: ["Behind base", "YELLOW", "The branch is behind its base branch"],
+    BLOCKED: ["Blocked", "RED", "Branch rules are not satisfied yet"],
+    DIRTY: ["Conflicts", "RED", "The branch has merge conflicts"],
+    UNSTABLE: ["Checks failing", "YELLOW", "Required checks are failing or pending"]
+  };
+
+  function pullBadges(info) {
+    const out = [];
+    if (settings.prAssociation) {
+      if (info.bot) out.push(["Bot", "GRAY", "Opened by an app"]);
+      else if (ASSOCIATION[info.association]) out.push(ASSOCIATION[info.association]);
+    }
+    if (settings.prFork && info.fork) out.push(["From fork", "GRAY", "Opened from a fork of the repository"]);
+    if (settings.prSize && Number.isFinite(info.additions)) {
+      out.push([`+${info.additions} -${info.deletions}`, "GRAY", `${info.files} changed file${info.files === 1 ? "" : "s"}`]);
+    }
+    if (settings.prMergeState && !info.draft && MERGE_STATE[info.mergeState]) out.push(MERGE_STATE[info.mergeState]);
+    return out;
+  }
+
+  function renderPull(row, info) {
+    row.li.querySelectorAll(`.gsf-badge[data-gsf-for="${row.ref.key}"]`).forEach((el) => el.remove());
+    const badges = pullBadges(info);
+    row.li.dataset.gsfPr = "done";
+    if (!badges.length) return;
+    const container = row.titleLink.closest('[class*="Title-module__container"]');
+    const slot = container ? container.querySelector('[class*="trailingBadgesContainer"]') : null;
+    const parent = slot || (container || row.titleLink.parentElement);
+    const frag = document.createDocumentFragment();
+    for (const [text, color, title] of badges) {
+      const badge = document.createElement("span");
+      badge.className = "gsf-badge gsf-pr";
+      badge.dataset.gsfColor = color;
+      badge.dataset.gsfFor = row.ref.key;
+      badge.textContent = text;
+      badge.title = title;
+      frag.appendChild(badge);
+    }
+    if (slot) slot.appendChild(frag);
+    else parent.appendChild(frag);
+  }
+
+  async function scanPulls() {
+    if (!prEnabled()) return;
+    const rows = collectPullRows();
+    if (!rows.length) return;
+    const now = Date.now();
+    const toFetch = new Map();
+    for (const row of rows) {
+      const hit = prCache.get(row.ref.key);
+      if (hit && now - hit.at < CACHE_TTL_MS) {
+        if (!row.li.querySelector(`.gsf-badge[data-gsf-for="${row.ref.key}"]`) && row.li.dataset.gsfPr !== "done") renderPull(row, hit.info);
+        continue;
+      }
+      if (!prPending.has(row.ref.key)) toFetch.set(row.ref.key, row.ref);
+    }
+    if (!toFetch.size) return;
+    for (const key of toFetch.keys()) prPending.add(key);
+    const pulls = [...toFetch.values()].map(({ owner, repo, number }) => ({ owner, repo, number }));
+    const chunks = [];
+    for (let i = 0; i < pulls.length; i += FETCH_CHUNK) chunks.push(pulls.slice(i, i + FETCH_CHUNK));
+    let response;
+    try {
+      const parts = await Promise.all(chunks.map((chunk) => api.runtime.sendMessage({ type: "fetchPullRequests", pulls: chunk })));
+      const failed = parts.find((part) => !part || part.error);
+      response = failed || parts.reduce((acc, part) => Object.assign(acc, part.pulls || {}), {});
+      if (!failed) response = { pulls: response };
+    } catch (err) {
+      response = { error: err && err.message ? err.message : String(err) };
+    } finally {
+      for (const key of toFetch.keys()) prPending.delete(key);
+    }
+    if (!response || response.error) {
+      if (response && response.error === "NO_TOKEN") flagHeaderButton("GitHub Issue Toolkit: add a GitHub token in the extension settings to show pull request badges.");
+      else flagHeaderButton(`GitHub Issue Toolkit: ${response ? response.error : "unknown error"}`);
+      return;
+    }
+    const at = Date.now();
+    for (const key of toFetch.keys()) prCache.set(key, { at, info: response.pulls[key] || null });
+    for (const row of collectPullRows()) {
+      const hit = prCache.get(row.ref.key);
+      if (hit && hit.info && toFetch.has(row.ref.key)) renderPull(row, hit.info);
+    }
+  }
+
   function clearBadges() {
     cache.clear();
+    prCache.clear();
+    document.querySelectorAll("[data-gsf-pr]").forEach((el) => delete el.dataset.gsfPr);
     noticeShown = false;
     if (headerButton) {
       headerButton.classList.remove("gsf-has-error");
@@ -858,8 +990,12 @@
 
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
-    if (changes.token || changes.fields || changes.ageEnabled || changes.ageUnit || changes.skipShownFields) {
+    if (changes.token || changes.fields || changes.ageEnabled || changes.ageUnit || changes.skipShownFields || changes.prAssociation || changes.prFork || changes.prSize || changes.prMergeState) {
       if (changes.skipShownFields) settings.skipShownFields = changes.skipShownFields.newValue !== false;
+      if (changes.prAssociation) settings.prAssociation = changes.prAssociation.newValue !== false;
+      if (changes.prFork) settings.prFork = changes.prFork.newValue === true;
+      if (changes.prSize) settings.prSize = changes.prSize.newValue === true;
+      if (changes.prMergeState) settings.prMergeState = changes.prMergeState.newValue === true;
       if (changes.ageEnabled) settings.ageEnabled = changes.ageEnabled.newValue === true;
       if (changes.ageUnit) settings.ageUnit = changes.ageUnit.newValue || "months";
       clearBadges();
@@ -877,8 +1013,12 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "pinsEnabled", "skipShownFields", "pins"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins"]).then((stored) => {
     settings.skipShownFields = stored.skipShownFields !== false;
+    settings.prAssociation = stored.prAssociation !== false;
+    settings.prFork = stored.prFork === true;
+    settings.prSize = stored.prSize === true;
+    settings.prMergeState = stored.prMergeState === true;
     settings.ageEnabled = stored.ageEnabled === true;
     settings.ageUnit = stored.ageUnit || "months";
     settings.pinsEnabled = stored.pinsEnabled !== false;

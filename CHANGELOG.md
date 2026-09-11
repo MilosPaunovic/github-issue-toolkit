@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.1.0] - 2026-09-11
+
+### Added
+
+- **Pull request badges** on the pull request list, among the labels of each row. On by default: the author's relation to the repository (`First-time contributor`, `First PR on GitHub`, `External`, `Contributor`, `Collaborator`, `Member`, or `Bot` for apps). Optional, each with its own checkbox on the new Pull requests settings card: `From fork`, size as added and removed lines with the changed file count on hover, and merge state (`Mergeable`, `Behind base`, `Blocked`, `Conflicts`, `Checks failing`).
+- Documentation: a pull request list example on the site and in the README, and an FAQ entry explaining each badge.
+
+### Changed
+
+- The manifest description and the site mention pull request badges.
+
 ## [2.0.6] - 2026-09-10
 
 ### Changed
@@ -94,7 +105,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.0.6...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.1.0
 [2.0.6]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.6
 [2.0.5]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.5
 [2.0.4]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.0.4

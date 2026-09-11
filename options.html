@@ -191,6 +191,15 @@
     </section>
 
     <section class="card">
+      <h2>Pull requests</h2>
+      <p class="desc">Badges on the pull request list, next to the labels of each row. Everything comes from the same read-only API access as the field badges.</p>
+      <label class="check"><input id="pr-association" type="checkbox"> Author's relation to the repository: first-time contributor, external, contributor, collaborator, member, or bot</label>
+      <label class="check" style="margin-top:8px"><input id="pr-fork" type="checkbox"> Opened from a fork</label>
+      <label class="check" style="margin-top:8px"><input id="pr-size" type="checkbox"> Size: added and removed lines, changed files on hover</label>
+      <label class="check" style="margin-top:8px"><input id="pr-merge-state" type="checkbox"> Merge state: mergeable, behind base, blocked, conflicts, checks failing</label>
+    </section>
+
+    <section class="card">
       <h2>Pinned issues</h2>
       <p class="desc">A pin button in GitHub's top bar, next to the notifications bell, opens a panel with your pinned issues, for example epics. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
       <label class="check"><input id="pins-enabled" type="checkbox"> Show the pinned issues button in GitHub's top bar</label>

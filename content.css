@@ -299,3 +299,12 @@
   background: var(--bgColor-danger-emphasis, #cf222e);
   pointer-events: none;
 }
+
+/* Pull request list badges sit among GitHub's labels */
+[class*="trailingBadgesContainer"] > .gsf-badge.gsf-pr {
+  margin: 0 0 0 4px;
+  vertical-align: middle;
+}
+.gsf-badge.gsf-pr {
+  cursor: default;
+}

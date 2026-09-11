@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GitHub Issue Toolkit</title>
-  <meta name="description" content="Chrome extension that shows custom issue field values as badges on the sub-issues list of GitHub issues, next to the issue type.">
+  <meta name="description" content="Browser extension that shows custom issue fields, issue age and pull request badges on GitHub lists and Projects views, with a pinned epics panel.">
   <link rel="icon" href="icon-dark-32.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="GitHub Issue Toolkit">
-  <meta property="og:description" content="Custom issue fields, issue age and pinned epics on sub-issue lists and Projects views, right inside GitHub.">
+  <meta property="og:description" content="Custom issue fields, issue age, pull request badges and pinned epics on GitHub lists and Projects views.">
   <meta property="og:url" content="https://milospaunovic.github.io/github-issue-toolkit/">
   <meta property="og:image" content="https://milospaunovic.github.io/github-issue-toolkit/social-preview.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -264,6 +264,16 @@
     .mock-card .labels { margin-top: 0; flex-wrap: wrap; }
     .label.b-success { color: var(--success); background: var(--success-bg); border-color: var(--success-border); }
     .mock-header .avatar { width: 28px; height: 28px; margin-left: 4px; }
+    .row.pr-row .text { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
+    .row.pr-row .pr-title { font-weight: 600; margin-right: 6px; }
+    .row.pr-row .label { margin-right: 4px; }
+    .row.pr-row .pr-meta { flex-basis: 100%; color: var(--fg-muted); font-size: 12px; margin-top: 2px; }
+    .row .state.pr { fill: var(--open); }
+    .row .state.pr.draft { fill: var(--fg-muted); }
+    .row .extras .check { font-weight: 700; }
+    .row .extras .check.ok { color: var(--success); }
+    .row .extras .check.fail { color: var(--danger); }
+    .row .extras .review { color: var(--attention); }
     .example-caption { text-align: center; color: var(--fg-muted); font-size: 13px; margin: 10px 0 0; }
     footer { padding: 32px 0 48px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 14px; }
     footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
@@ -275,7 +285,7 @@
       <img class="only-dark" src="icon-dark-48.png" alt="">
       <img class="only-light" src="icon-light-48.png" alt="">
       <a class="brand" href="#top">GitHub Issue Toolkit</a>
-      <a class="version" id="version" href="https://github.com/MilosPaunovic/github-issue-toolkit/releases/latest" title="Latest release">v2.0.6</a>
+      <a class="version" id="version" href="https://github.com/MilosPaunovic/github-issue-toolkit/releases/latest" title="Latest release">v2.1.0</a>
       <div class="links" id="site-menu">
         <a class="link" href="#what">What it does</a>
         <a class="link" href="#examples">Examples</a>
@@ -301,7 +311,7 @@
       <img class="only-dark" src="icon-dark-128.png" alt="">
       <img class="only-light" src="icon-light-128.png" alt="">
       <h1>GitHub Issue Toolkit</h1>
-      <p class="lead">See your organization's <strong>custom issue fields</strong> on every sub-issue of an epic and on every row of a Projects view, right where GitHub shows only the issue type.</p>
+      <p class="lead">See your organization's <strong>custom issue fields</strong> on every sub-issue of an epic and on every row of a Projects view, and who is behind each <strong>pull request</strong>, right where GitHub shows only the issue type.</p>
       <div class="btns">
         <a class="btn primary" href="#install">Install</a>
         <a class="btn" href="https://github.com/MilosPaunovic/github-issue-toolkit">View on GitHub</a>
@@ -340,6 +350,7 @@
         <div class="card"><h3>One request per page</h3><p>All visible rows, across repositories, are fetched in batched GitHub GraphQL queries of 60 issues. Results are cached for five minutes.</p></div>
         <div class="card"><h3>Projects views too</h3><p>The same badges appear on GitHub Projects: after the issue number in the table layout, under the title on board cards. A field the view already shows, as a column, a card field or the field the board is grouped by, is skipped so nothing appears twice. Draft items and pull requests are left alone.</p></div>
         <div class="card"><h3>Issue age, if you want it</h3><p>An optional gray badge shows how long ago each issue was created, in months, weeks or days. Off by default, one checkbox in the settings.</p></div>
+        <div class="card"><h3>Pull request badges</h3><p>On the pull request list: whether the author is a first-time contributor, external, a contributor, a collaborator, a member or a bot, plus optional badges for forks, size and merge state.</p></div>
         <div class="card"><h3>Pinned epics</h3><p>A pin button in GitHub's top bar keeps your epics one click away: copy their reference, or make the issue you are looking at a sub-issue of one. Optional as well.</p></div>
         <div class="card"><h3>Clickable</h3><p>Each badge links to the repository's issue search filtered by that field value, the same way GitHub's own field badges do.</p></div>
         <div class="card"><h3>Looks native</h3><p>Badges reuse GitHub's own colour tokens, so they match light and dark themes and every colour blindness setting GitHub offers.</p></div>
@@ -387,6 +398,16 @@
       </div>
       <p class="example-caption">Months, weeks and days shown side by side; in practice one unit applies to every row.</p>
 
+      <h3 style="margin-top:28px">Pull request list</h3>
+      <p class="muted" style="font-size:14px">Badges sit among the labels of each row. The author's relation to the repository is on by default; fork, size and merge state are optional.</p>
+      <div class="panel gh-card" id="ex-pulls" style="max-width:820px">
+        <div class="row pr-row"><svg class="state pr" viewBox="0 0 16 16" aria-label="Open pull request" role="img"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg><div class="text"><span class="pr-title">Add retry policy to the webhook sender</span><span class="label b-info">area/backend</span><span class="badge b-success">First-time contributor</span><span class="badge b-neutral">From fork</span><span class="badge b-neutral">+231 -13</span><span class="badge b-attention">Behind base</span><div class="pr-meta">#1521 opened 2 days ago by t-nakamura</div></div><div class="extras"><span class="check ok" title="All checks passed">&#10003;</span><span class="review" title="Review required">&#9679;</span></div></div>
+        <div class="row pr-row"><svg class="state pr" viewBox="0 0 16 16" aria-label="Open pull request" role="img"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg><div class="text"><span class="pr-title">Keyboard shortcuts for the results list</span><span class="label b-info">area/search</span><span class="label b-success">enhancement</span><span class="badge b-info">Member</span><span class="badge b-neutral">+539 -69</span><span class="badge b-success">Mergeable</span><div class="pr-meta">#1518 opened 3 days ago by m.ortega</div></div><div class="extras"><span class="check ok" title="All checks passed">&#10003;</span></div></div>
+        <div class="row pr-row"><svg class="state pr draft" viewBox="0 0 16 16" aria-label="Draft pull request" role="img"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg><div class="text"><span class="pr-title">Migrate the search index to the new schema</span><span class="label b-info">area/search</span><span class="badge b-neutral">Contributor</span><span class="badge b-neutral">+1204 -877</span><div class="pr-meta">#1509 opened last week by priya-s &middot; Draft</div></div><div class="extras"><span class="check fail" title="Some checks failed">&#10005;</span></div></div>
+        <div class="row pr-row"><svg class="state pr" viewBox="0 0 16 16" aria-label="Open pull request" role="img"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354Z"/></svg><div class="text"><span class="pr-title">chore(deps): bump vite from 6.1.0 to 6.2.1</span><span class="label b-info">dependencies</span><span class="badge b-neutral">Bot</span><span class="badge b-neutral">+4 -4</span><span class="badge b-danger">Conflicts</span><div class="pr-meta">#1503 opened last week by dependabot</div></div><div class="extras"><span class="check ok" title="All checks passed">&#10003;</span></div></div>
+      </div>
+      <p class="example-caption">All four badge kinds enabled here for the illustration; only the author badge is on by default.</p>
+
       <h3 style="margin-top:28px">Pinned issues</h3>
       <p class="muted" style="font-size:14px">The pin button sits next to the notifications bell with the number of pins. The dropdown lists your epics with their type; Link makes the issue you are looking at a sub-issue of one, Copy puts its reference on the clipboard.</p>
       <div class="mock-pins" id="ex-pins">
@@ -411,7 +432,7 @@
       <p class="muted">A handful of plain files, no build step, one code base for Chromium and Firefox. The extension never scrapes the field values from the page, because organization-only fields are not in the HTML. It asks the GitHub API instead.</p>
       <div class="flow">
         <div class="step"><h3>Detect the rows</h3><p>A content script on <code>github.com</code> watches the page for sub-issue lists, project table rows and board cards, and collects the issue links: owner, repository, number.</p></div>
-        <div class="step"><h3>One batched query</h3><p>The background script (a service worker on Chromium, an event page on Firefox) groups those issues by repository and runs one GraphQL query per batch of 60 using <code>Issue.issueFieldValues</code> and <code>createdAt</code>, with your token.</p></div>
+        <div class="step"><h3>One batched query</h3><p>The background script (a service worker on Chromium, an event page on Firefox) groups those issues by repository and runs one GraphQL query per batch of 60 using <code>Issue.issueFieldValues</code> and <code>createdAt</code>, with your token. Pull request lists get the same treatment with <code>authorAssociation</code>, size and <code>mergeStateStatus</code>.</p></div>
         <div class="step"><h3>Keep what you chose</h3><p>From the returned values it keeps only the fields you configured, in your order, and hands back <code>field</code>, <code>value</code>, <code>colour</code> and the creation date per issue.</p></div>
         <div class="step"><h3>Render badges</h3><p>The content script inserts a badge per value right after the issue type badge, after the issue number in project tables, or under the title on board cards, plus the age badge when enabled. It re-renders when GitHub redraws the page.</p></div>
       </div>
@@ -489,7 +510,7 @@
   <section id="settings">
     <div class="wrap">
       <h2>Settings</h2>
-      <p class="muted">The token and the fields to show are the two essentials; the age badge and the pinned issues button are optional extras with their own cards. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Nothing is shown until at least one field is added or the age badge is enabled.</p>
+      <p class="muted">The token and the fields to show are the two essentials; the age badge, the pull request badges and the pinned issues button are optional extras with their own cards. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Nothing is shown until at least one field is added or the age badge is enabled.</p>
       <figure>
         <img class="only-light" src="settings-light.png" alt="The settings page: token input and the field names chip box">
         <img class="only-dark" src="settings-dark.png" alt="The settings page in dark mode: token input and the field names chip box">
@@ -527,6 +548,7 @@
       <h2>FAQ</h2>
       <details><summary>Why does it need a token at all?</summary><p>Because organization-only field values are not in the page HTML; GitHub loads them through its authenticated API only for members. A token is the only way an extension can read them. If your organization sets fields to "Public" visibility, a token is still required by the API, but any account's token will do.</p></details>
       <details><summary>Where exactly do the badges appear?</summary><p>On the sub-issues list of an issue page, including nested sub-issues once you expand them, and on GitHub Projects views: table rows and board cards. Not on the plain issues list, where GitHub already shows pinned field values.</p></details>
+      <details><summary>What do the pull request badges mean?</summary><p><em>First-time contributor</em> is the author's first pull request to this repository, <em>First PR on GitHub</em> their first anywhere, <em>External</em> someone with no previous contribution here, <em>Contributor</em> someone with merged work, <em>Collaborator</em> someone with write access, <em>Member</em> an organization member, <em>Bot</em> an app. The optional badges show a fork origin, added and removed lines, and the merge state GitHub reports: mergeable, behind base, blocked by rules, conflicts, or failing checks.</p></details>
       <details><summary>Does linking need extra permissions?</summary><p>Yes. Making an issue a sub-issue of a pinned epic writes to GitHub, so the token needs write access to the issue's repository: the <code>repo</code> scope on a classic token, or <code>Issues: Read and write</code> on a fine-grained one. Badges alone work with read-only access.</p></details>
       <details><summary>Sub-issues live in several repositories. Does that work?</summary><p>Yes. Rows are grouped by repository and fetched in one query. Each badge links to the search in its own repository.</p></details>
       <details><summary>A field shows no badge on some rows.</summary><p>Those issues simply have no value for that field. Check the field name on the settings page matches the organization's field name; matching is case-insensitive but the full name must match.</p></details>

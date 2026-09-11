@@ -12,6 +12,42 @@ async function getSettings() {
   };
 }
 
+// pulls: [{owner, repo, number}] -> { "owner/repo!number": { association, bot, login, fork, additions, deletions, files, mergeState, draft } }
+async function fetchPullRequests(pulls) {
+  const { token } = await getSettings();
+  if (!token) return { error: "NO_TOKEN" };
+  const byRepo = new Map();
+  for (const it of pulls) {
+    const key = `${it.owner}/${it.repo}`;
+    if (!byRepo.has(key)) byRepo.set(key, { owner: it.owner, repo: it.repo, numbers: new Set() });
+    byRepo.get(key).numbers.add(Number(it.number));
+  }
+  const parts = [];
+  let r = 0;
+  for (const { owner, repo, numbers } of byRepo.values()) {
+    const items = [...numbers].map((n) => `p${n}: pullRequest(number: ${n}) { number isDraft authorAssociation author { __typename login } isCrossRepository additions deletions changedFiles mergeStateStatus }`);
+    parts.push(`r${r++}: repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repo)}) { nameWithOwner ${items.join("\n")} }`);
+  }
+  const data = await graphql(token, `{ ${parts.join("\n")} }`, { partial: true });
+  const result = {};
+  for (const repoNode of Object.values(data)) {
+    if (!repoNode || !repoNode.nameWithOwner) continue;
+    for (const [alias, pr] of Object.entries(repoNode)) {
+      if (!alias.startsWith("p") || !pr || typeof pr !== "object") continue;
+      result[`${repoNode.nameWithOwner}!${pr.number}`] = {
+        association: pr.authorAssociation || "NONE",
+        bot: Boolean(pr.author && pr.author.__typename === "Bot"),
+        login: pr.author ? pr.author.login : null,
+        fork: Boolean(pr.isCrossRepository),
+        additions: pr.additions, deletions: pr.deletions, files: pr.changedFiles,
+        mergeState: pr.mergeStateStatus || "UNKNOWN",
+        draft: Boolean(pr.isDraft)
+      };
+    }
+  }
+  return { pulls: result };
+}
+
 function parseFields(raw) {
   return String(raw || "")
     .split(",")
@@ -180,6 +216,9 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (!msg) return false;
   if (msg.type === "fetchFieldValues") {
     return reply(fetchFieldValues(msg.issues || []), sendResponse);
+  }
+  if (msg.type === "fetchPullRequests") {
+    return reply(fetchPullRequests(msg.pulls || []), sendResponse);
   }
   if (msg.type === "fetchIssueMeta") {
     return reply(fetchIssueMeta(msg.issue), sendResponse);
