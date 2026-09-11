@@ -29,11 +29,10 @@ The repository has GitHub's immutable releases setting on. Once a release is pub
 ## Keep in sync
 
 - `manifest.json` and `manifest.firefox.json` differ only in `background` and `browser_specific_settings`. The Firefox add-on id `github-issue-toolkit@milospaunovic.github.io` must never change.
-- After changing the settings page, re-render `docs/settings-dark.png` and `docs/settings-light.png`.
-- After changing a mock-up in `docs/index.html`, run `python3 scripts/render-examples.py` to refresh the README images.
-- After changing icons, run `python3 scripts/make-icons.py` (icons are shared by the manifests, the settings page and the site).
-- After changing the icon, the name or the tagline, run `python3 scripts/render-social-preview.py` and upload `docs/social-preview.png` again as the repository's social preview (Settings, General; there is no API for it).
-- README, `PRIVACY.md`, the site and the settings page describe the same behaviour; when a default or permission changes, update all four.
+- **Every commit that touches the extension UI, the settings page, the site, the icon, the name or the tagline is preceded by `scripts/render-all.sh`.** It regenerates all rendered artefacts: the example images in `docs/` from the mock-ups in `docs/index.html`, both settings screenshots from `options.html`, and `docs/social-preview.png`. Commit the regenerated files together with the change; never leave a screenshot or example image behind the code or the mock-up it depicts.
+- When `render-all.sh` reports that `docs/social-preview.png` changed, upload it again as the repository's social preview (Settings, General; there is no API for it) in the same session.
+- A visual or behavioural change also gets its documentation in the same commit: README, `PRIVACY.md`, the site and the settings page describe the same behaviour, and the badge reference in the site's examples lists every badge kind and colour. When a badge, a default or a permission changes, update all of them.
+- After changing icons, run `python3 scripts/make-icons.py` (icons are shared by the manifests, the settings page and the site), then `scripts/render-all.sh`.
 
 ## Local testing
 

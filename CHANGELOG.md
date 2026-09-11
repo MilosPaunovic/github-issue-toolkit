@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.3.0] - 2026-09-11
+
+### Added
+
+- Age threshold: the age badge turns yellow once an issue has been open longer than a number of days set on the Issue age card, 90 by default; 0 turns the highlight off. The hover text says when the threshold is exceeded.
+- A badge reference on the site and in the README showing every badge and what its colour means.
+
+### Changed
+
+- The pull request size badge shows added lines in green and removed lines in red, like GitHub's own diff counters.
+
 ## [2.2.1] - 2026-09-11
 
 ### Changed
@@ -122,7 +133,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.2.1...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.3.0
 [2.2.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.2.1
 [2.2.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.2.0
 [2.1.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.1.0

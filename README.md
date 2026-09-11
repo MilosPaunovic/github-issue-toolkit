@@ -39,7 +39,7 @@ Illustrations of an invented repository, rendered from the documentation site wi
 </picture>
 </p>
 
-**Issue age** (optional, off by default): a gray badge with the time since the issue was created, in months, weeks or days.
+**Issue age** (optional, off by default): a gray badge with the time since the issue was created, in months, weeks or days; yellow once the issue is older than the threshold, 90 days by default.
 
 <p align="center">
 <picture>
@@ -57,6 +57,15 @@ Illustrations of an invented repository, rendered from the documentation site wi
 </picture>
 </p>
 
+**Every badge at a glance**: what each colour means across all features.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-palette-dark.png">
+  <img src="docs/example-palette-light.png" alt="All badge kinds grouped by feature with their colours" width="760">
+</picture>
+</p>
+
 **Pinned issues**: a pin button next to the notifications bell opens your pinned epics; Link makes the current issue a sub-issue of one, Copy copies its reference.
 
 <p align="center">
@@ -70,8 +79,8 @@ Illustrations of an invented repository, rendered from the documentation site wi
 
 - Badges appear next to the issue type on each sub-issue row, in the option's colour.
 - The same badges appear on GitHub Projects views: after the issue number in the table layout, under the title on board cards. Fields the view already shows are skipped so nothing appears twice: a column, a card field, or the field a board is grouped by (can be turned off in the settings).
-- An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days. Off by default.
-- **Pull request badges** on the pull request list and on Projects views that contain pull requests: the author's relation to the repository (first-time contributor, external, contributor, collaborator, member, bot) on by default, plus optional badges for forks, size and merge state.
+- An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days, and turns yellow once an issue has been open longer than a threshold you choose (90 days by default). Off by default.
+- **Pull request badges** on the pull request list and on Projects views that contain pull requests: the author's relation to the repository (first-time contributor, external, contributor, collaborator, member, bot) on by default, plus optional badges for forks, size (added lines in green, removed in red) and merge state.
 - A **Pinned issues** button in GitHub's top bar: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click. Can be switched off in the settings.
 - Any field type works: single-select, multi-select, text, number, date.
 - Choose which fields to show and in what order; nothing is shown until you pick at least one field or enable the age badge.
@@ -114,7 +123,7 @@ Minimum version: Firefox 140, required by the `data_collection_permissions` mani
    - **Fine-grained**: https://github.com/settings/personal-access-tokens/new. Set the organization as resource owner, pick the repositories, and under Repository permissions set `Issues` to `Read-only` (or `Read and write` if you want to link issues to pinned epics from the panel).
 2. Paste the token on the settings page, click **Test token**, then **Save**.
 3. Add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. No badges appear until at least one field is added or the age badge is enabled.
-4. Optionally enable the **Issue age** badge (off by default) and pick its unit, choose which **Pull request** badges you want (author relation on by default; fork, size and merge state off), and decide whether you want the **Pinned issues** button in GitHub's top bar (on by default).
+4. Optionally enable the **Issue age** badge (off by default), pick its unit and the age after which it turns yellow (90 days by default), choose which **Pull request** badges you want (author relation on by default; fork, size and merge state off), and decide whether you want the **Pinned issues** button in GitHub's top bar (on by default).
 5. Open any issue with sub-issues, or a project view such as `https://github.com/orgs/<org>/projects/<n>/views/<v>`.
 
 ### Pinned issues

@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 ROOT = Path(__file__).resolve().parent.parent
-WIDTHS = {"ex-sub": 640, "ex-table": 900, "ex-board": 760, "ex-age": 680, "ex-pulls": 820, "ex-pins": 420}
+WIDTHS = {"ex-sub": 640, "ex-table": 900, "ex-board": 760, "ex-age": 680, "ex-pulls": 820, "ex-palette": 760, "ex-pins": 420}
 CHROME = "google-chrome"
 
 

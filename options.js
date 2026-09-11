@@ -5,6 +5,7 @@ const status = document.getElementById("status");
 const toggle = document.getElementById("toggle");
 const ageEnabled = document.getElementById("age-enabled");
 const ageUnit = document.getElementById("age-unit");
+const ageWarn = document.getElementById("age-warn");
 const pinsEnabledInput = document.getElementById("pins-enabled");
 const skipShownInput = document.getElementById("skip-shown");
 const prInputs = {
@@ -97,7 +98,7 @@ if (hasChrome) {
     setStatus(ok ? "Access to github.com granted." : "Access was not granted.", ok);
     refreshAccess();
   });
-  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins"]).then((stored) => {
+  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins"]).then((stored) => {
     tokenInput.value = stored.token || "";
     fields = parseFields(stored.fields);
     renderChips();
@@ -109,6 +110,7 @@ if (hasChrome) {
     prInputs.prSize.checked = stored.prSize === true;
     prInputs.prMergeState.checked = stored.prMergeState === true;
     ageUnit.value = stored.ageUnit || "months";
+    ageWarn.value = stored.ageWarnDays === undefined ? 90 : stored.ageWarnDays;
     renderPinsCount(stored.pins);
   });
   api.storage.onChanged.addListener((changes, area) => {
@@ -125,6 +127,7 @@ if (hasChrome) {
   pinsEnabledInput.checked = true;
   skipShownInput.checked = true;
   prInputs.prAssociation.checked = true;
+  ageWarn.value = 90;
 }
 
 toggle.addEventListener("click", () => {
@@ -138,7 +141,7 @@ document.getElementById("save").addEventListener("click", async () => {
   const token = tokenInput.value.trim();
   const fieldList = fields.join(", ");
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
-  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked });
+  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked });
   if (!token) setStatus("Saved without a token. Badges need one.", false);
   else if (!fields.length && !ageEnabled.checked) setStatus("Saved without any field. Add a field or enable the age badge to show badges.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);

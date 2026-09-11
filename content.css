@@ -308,3 +308,8 @@
 .gsf-badge.gsf-pr {
   cursor: default;
 }
+
+/* Pull request size badge: green additions, red deletions */
+.gsf-badge.gsf-size { font-variant-numeric: tabular-nums; gap: 0.35em; }
+.gsf-badge .gsf-add { color: var(--fgColor-success); font-weight: 600; }
+.gsf-badge .gsf-del { color: var(--fgColor-danger); font-weight: 600; }

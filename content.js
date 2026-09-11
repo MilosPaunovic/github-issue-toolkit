@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -214,8 +214,10 @@
       text = months < 1 ? "<1 mo" : `${months} mo`;
     }
     const months = Math.floor(days / 30.4375);
-    const title = `Age: ${months} month${months === 1 ? "" : "s"} (${days} day${days === 1 ? "" : "s"}), created ${created.toISOString().slice(0, 10)}`;
-    return { text, title, days };
+    const warn = settings.ageWarnDays > 0 && days >= settings.ageWarnDays;
+    const title = `Age: ${months} month${months === 1 ? "" : "s"} (${days} day${days === 1 ? "" : "s"}), created ${created.toISOString().slice(0, 10)}`
+      + (warn ? `. Open for more than ${settings.ageWarnDays} days.` : "");
+    return { text, title, days, color: warn ? "YELLOW" : "GRAY" };
   }
 
   // ---------------------------------------------------------------------------
@@ -251,7 +253,7 @@
     if (age) {
       const badge = document.createElement("span");
       badge.className = "gsf-badge gsf-age";
-      badge.dataset.gsfColor = "GRAY";
+      badge.dataset.gsfColor = age.color;
       badge.dataset.gsfFor = row.ref.key;
       badge.textContent = age.text;
       badge.title = age.title;
@@ -435,7 +437,7 @@
     }
     if (settings.prFork && info.fork) out.push(["From fork", "GRAY", "Opened from a fork of the repository"]);
     if (settings.prSize && Number.isFinite(info.additions)) {
-      out.push([`+${info.additions} -${info.deletions}`, "GRAY", `${info.files} changed file${info.files === 1 ? "" : "s"}`]);
+      out.push([{ additions: info.additions, deletions: info.deletions }, "GRAY", `${info.files} changed file${info.files === 1 ? "" : "s"}`]);
     }
     if (settings.prMergeState && !info.draft && MERGE_STATE[info.mergeState]) out.push(MERGE_STATE[info.mergeState]);
     return out;
@@ -466,8 +468,20 @@
       badge.className = "gsf-badge gsf-pr";
       badge.dataset.gsfColor = color;
       badge.dataset.gsfFor = row.ref.key;
-      badge.textContent = text;
       badge.title = title;
+      if (typeof text === "object") {
+        // diffstat: green additions, red deletions, like GitHub's own file counters
+        const add = document.createElement("span");
+        add.className = "gsf-add";
+        add.textContent = `+${text.additions}`;
+        const del = document.createElement("span");
+        del.className = "gsf-del";
+        del.textContent = `-${text.deletions}`;
+        badge.classList.add("gsf-size");
+        badge.append(add, " ", del);
+      } else {
+        badge.textContent = text;
+      }
       frag.appendChild(badge);
     }
     parent.appendChild(frag);
@@ -1018,7 +1032,8 @@
 
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
-    if (changes.token || changes.fields || changes.ageEnabled || changes.ageUnit || changes.skipShownFields || changes.prAssociation || changes.prFork || changes.prSize || changes.prMergeState) {
+    if (changes.token || changes.fields || changes.ageEnabled || changes.ageUnit || changes.ageWarnDays || changes.skipShownFields || changes.prAssociation || changes.prFork || changes.prSize || changes.prMergeState) {
+      if (changes.ageWarnDays) settings.ageWarnDays = Number.isFinite(Number(changes.ageWarnDays.newValue)) ? Number(changes.ageWarnDays.newValue) : 90;
       if (changes.skipShownFields) settings.skipShownFields = changes.skipShownFields.newValue !== false;
       if (changes.prAssociation) settings.prAssociation = changes.prAssociation.newValue !== false;
       if (changes.prFork) settings.prFork = changes.prFork.newValue === true;
@@ -1041,7 +1056,8 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins"]).then((stored) => {
+    settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
     settings.prFork = stored.prFork === true;
