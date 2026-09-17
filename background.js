@@ -176,7 +176,13 @@ async function fetchFieldValues(issues) {
 const SUB_ISSUE_PAGE = 100;
 const SUB_ISSUE_MAX_PAGES = 5;
 // Whether this GitHub knows the option list of a single-select field: unknown until one query has answered.
+// A deployment that does not know it is asked again after a while, so one passing error never disables the
+// column order and the drag targets for the rest of the worker's life.
 let selectOptionsKnown = null;
+let selectOptionsRetryAt = 0;
+const SELECT_OPTIONS_RETRY_MS = 10 * 60 * 1000;
+// The validation error GraphQL returns for a selection the schema does not have, and nothing else.
+const UNKNOWN_OPTIONS_SELECTION = /Field 'options' doesn't exist on type 'IssueFieldSingleSelect'/;
 
 function subIssueQuery(ref, cursor, withOptions) {
   return `{ r: repository(owner: ${JSON.stringify(ref.owner)}, name: ${JSON.stringify(ref.repo)}) {
@@ -199,6 +205,7 @@ function subIssueQuery(ref, cursor, withOptions) {
 }
 
 async function subIssuePage(token, ref, cursor) {
+  if (selectOptionsKnown === false && Date.now() >= selectOptionsRetryAt) selectOptionsKnown = null;
   if (selectOptionsKnown !== false) {
     try {
       const data = await graphql(token, subIssueQuery(ref, cursor, true), { partial: true });
@@ -206,8 +213,9 @@ async function subIssuePage(token, ref, cursor) {
       return data;
     } catch (err) {
       // Only an unknown `options` selection is worth a second, plainer attempt; anything else is the real answer.
-      if (!/\boptions\b/.test(err.message || "")) throw err;
+      if (!UNKNOWN_OPTIONS_SELECTION.test(err.message || "")) throw err;
       selectOptionsKnown = false;
+      selectOptionsRetryAt = Date.now() + SELECT_OPTIONS_RETRY_MS;
     }
   }
   return graphql(token, subIssueQuery(ref, cursor, false), { partial: true });
@@ -269,8 +277,10 @@ async function moveIssue(move) {
   if (!token) return { error: "NO_TOKEN" };
   const issueId = JSON.stringify(String(move.issueId || ""));
   if (move.kind === "state") {
+    // An issue that was closed as not planned is closed that way again; everything else is completed.
+    const reason = move.stateReason === "NOT_PLANNED" ? "NOT_PLANNED" : "COMPLETED";
     const mutation = move.state === "CLOSED"
-      ? `mutation { closeIssue(input: { issueId: ${issueId}, stateReason: COMPLETED }) { issue { number state } } }`
+      ? `mutation { closeIssue(input: { issueId: ${issueId}, stateReason: ${reason} }) { issue { number state } } }`
       : `mutation { reopenIssue(input: { issueId: ${issueId} }) { issue { number state } } }`;
     await graphql(token, mutation);
     return { ok: true };
