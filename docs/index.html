@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GitHub Issue Toolkit</title>
-  <meta name="description" content="Browser extension that shows custom issue fields, issue age and pull request badges on GitHub lists and Projects views, with a pinned epics panel.">
+  <meta name="description" content="Browser extension that shows custom issue fields, issue age and pull request badges on GitHub lists and Projects views, turns an epic's sub-issues into a kanban board, and keeps pinned epics one click away.">
   <link rel="icon" href="icon-dark-32.png">
   <meta property="og:type" content="website">
   <meta property="og:title" content="GitHub Issue Toolkit">
-  <meta property="og:description" content="Custom issue fields, issue age, pull request badges and pinned epics on GitHub lists and Projects views.">
+  <meta property="og:description" content="Custom issue fields, issue age, pull request badges, an epic kanban board and pinned epics on GitHub lists and Projects views.">
   <meta property="og:url" content="https://milospaunovic.github.io/github-issue-toolkit/">
   <meta property="og:image" content="https://milospaunovic.github.io/github-issue-toolkit/social-preview.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -262,6 +262,21 @@
     .mock-card .ref .state { width: 16px; height: 16px; }
     .mock-card .bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; margin-top: 8px; }
     .mock-card .labels { margin-top: 0; flex-wrap: wrap; }
+    .mock-kanban { padding: 12px; }
+    .mock-kanban-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 12px; color: var(--fg-muted); }
+    .mock-kanban-bar .seg { display: inline-flex; }
+    .mock-kanban-bar .seg span { border: 1px solid var(--border); background: var(--bg-card); color: var(--fg); padding: 5px 10px; font-weight: 500; }
+    .mock-kanban-bar .seg span:first-child { border-radius: 6px 0 0 6px; }
+    .mock-kanban-bar .seg span:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
+    .mock-kanban-bar .seg span.on { background: var(--bg-muted); font-weight: 600; }
+    .mock-kanban-bar .ctl { display: inline-flex; align-items: center; gap: 4px; }
+    .mock-kanban-bar .select { display: inline-flex; align-items: center; gap: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: var(--fg); padding: 4px 8px; }
+    .mock-kanban-bar .select.dir { gap: 0; padding: 4px 7px; }
+    .mock-kanban-bar .spacer { flex: 1; }
+    .mock-kanban .mock-card .ref .spacer { flex: 1; }
+    .mock-kanban .mock-card .title { font-size: 12px; }
+    .mock-kanban .mock-card .ref svg.closed { fill: var(--closed); }
+    .mock-kanban .mock-card.done .title { color: var(--fg-muted); text-decoration: line-through; }
     .label.b-success { color: var(--success); background: var(--success-bg); border-color: var(--success-border); }
     .mock-header .avatar { width: 28px; height: 28px; margin-left: 4px; }
     .row.pr-row .text { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
@@ -318,7 +333,7 @@
       <img class="only-dark" src="icon-dark-128.png" alt="">
       <img class="only-light" src="icon-light-128.png" alt="">
       <h1>GitHub Issue Toolkit</h1>
-      <p class="lead">See your organization's <strong>custom issue fields</strong> on every sub-issue of an epic and on every row of a Projects view, and who is behind each <strong>pull request</strong>, right where GitHub shows only the issue type.</p>
+      <p class="lead">See your organization's <strong>custom issue fields</strong> on every sub-issue of an epic and on every row of a Projects view, and who is behind each <strong>pull request</strong>, right where GitHub shows only the issue type. Read an epic's sub-issues as a <strong>kanban board</strong> and drag a card to move it.</p>
       <div class="btns">
         <a class="btn primary" href="#install">Install</a>
         <a class="btn" href="https://github.com/MilosPaunovic/github-issue-toolkit">View on GitHub</a>
@@ -358,6 +373,8 @@
         <div class="card"><h3>Projects views too</h3><p>The same badges appear on GitHub Projects: after the issue number in the table layout, under the title on board cards. A field the view already shows, as a column, a card field or the field the board is grouped by, is skipped so nothing appears twice. Draft items and pull requests are left alone.</p></div>
         <div class="card"><h3>Issue age, if you want it</h3><p>An optional gray badge shows how long ago each issue was created, in months, weeks or days, and turns yellow once an issue has been open longer than a threshold you set, 90 days by default. Off by default, one checkbox in the settings.</p></div>
         <div class="card"><h3>Pull request badges</h3><p>On the pull request list and on Projects views that contain pull requests: whether the author is a first-time contributor, external, a contributor, a collaborator, a member or a bot, plus optional badges for forks, size and merge state.</p></div>
+        <div class="card"><h3>Epics as a board</h3><p>An issue with sub-issues gets a List and Kanban toggle. The board groups the sub-issues by any field they carry, orders each column by another, and filters everything down to one value of a third. Drag a card to another column and the field value, or the issue state, is written back to GitHub.</p></div>
+        <div class="card"><h3>Sidebar out of the way</h3><p>A chevron in the gutter hides an issue's whole metadata column, and the issue body and the board take the width. It holds on every issue until you press it again.</p></div>
         <div class="card"><h3>Pinned epics</h3><p>A pin button in GitHub's top bar keeps your epics one click away: copy their reference, or make the issue you are looking at a sub-issue of one. Optional as well.</p></div>
         <div class="card"><h3>Clickable</h3><p>Each badge links to the repository's issue search filtered by that field value, the same way GitHub's own field badges do.</p></div>
         <div class="card"><h3>Looks native</h3><p>Badges reuse GitHub's own colour tokens, so they match light and dark themes and every colour blindness setting GitHub offers.</p></div>
@@ -392,6 +409,34 @@
         <div class="mock-column"><h4><span class="dot" style="background:var(--attention)"></span> In progress <span class="count">1</span><span class="spacer"></span><span class="kebab" aria-hidden="true">···</span></h4>
           <div class="mock-card"><div class="ref"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg> acme/webapp #1482</div><div class="title">Search results ignore the selected date range</div><div class="badges"><span class="badge b-severe">P1: Must Have</span><span class="badge b-info">3.2</span><span class="badge b-neutral">7 mo</span></div><div class="bottom"><div class="labels"><span class="label b-danger">bug</span><span class="label b-info">area/search</span></div><span class="avatar a1"></span></div></div>
           <div class="add">+ Add item</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:28px">Epic kanban</h3>
+      <p class="muted" style="font-size:14px">On an issue with sub-issues, the toggle above the list swaps it for a board. You choose the field that forms the columns, the field that orders the cards inside each one, and a value to filter everything down to; the columns follow the order your organization gave the field's options. Dragging a card to another column writes the new value back to GitHub.</p>
+      <div class="mock-kanban gh-card" id="ex-kanban" style="max-width:820px">
+        <div class="mock-kanban-bar">
+          <span class="seg"><span>List</span><span class="on">Kanban</span></span>
+          <span class="ctl">Columns <span class="select">Stage <span aria-hidden="true">&#9662;</span></span></span>
+          <span class="ctl">Sort <span class="select">Priority <span aria-hidden="true">&#9662;</span></span></span>
+          <span class="select dir" aria-hidden="true">&#8593;</span>
+          <span class="ctl">Filter <span class="select">Priority <span aria-hidden="true">&#9662;</span></span></span>
+          <span class="select">Any value <span aria-hidden="true">&#9662;</span></span>
+          <span class="spacer"></span>
+          <span>5 sub-issues</span>
+        </div>
+        <div class="mock-board">
+          <div class="mock-column"><h4><span class="dot" style="background:var(--danger)"></span> Triage <span class="count">2</span></h4>
+            <div class="mock-card"><div class="ref"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg> #1490<span class="spacer"></span><span class="avatar a2"></span></div><div class="title">Add keyboard shortcuts to the results list</div><div class="badges"><span class="badge b-severe">P1: Must Have</span><span class="badge b-info">Feature</span><span class="badge b-neutral">5 mo</span></div></div>
+            <div class="mock-card"><div class="ref"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg> #1511<span class="spacer"></span></div><div class="title">Highlight matched terms in result snippets</div><div class="badges"><span class="badge b-neutral">P3: Could Have</span><span class="badge b-info">Feature</span><span class="badge b-neutral">&lt;1 mo</span></div></div>
+          </div>
+          <div class="mock-column"><h4><span class="dot" style="background:var(--attention)"></span> In progress <span class="count">2</span></h4>
+            <div class="mock-card"><div class="ref"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg> #1482<span class="spacer"></span><span class="avatar a1"></span></div><div class="title">Search results ignore the selected date range</div><div class="badges"><span class="badge b-severe">P1: Must Have</span><span class="badge b-danger">Bug</span><span class="badge b-attention">7 mo</span></div></div>
+            <div class="mock-card"><div class="ref"><svg class="state" viewBox="0 0 16 16" aria-label="Open" role="img"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"/></svg> #1503<span class="spacer"></span><span class="avatar a3"></span></div><div class="title">Index refresh runs twice on deploy</div><div class="badges"><span class="badge b-attention">P2: Should Have</span><span class="badge b-danger">Bug</span><span class="badge b-neutral">2 mo</span></div></div>
+          </div>
+          <div class="mock-column"><h4><span class="dot" style="background:var(--success)"></span> Done <span class="count">1</span></h4>
+            <div class="mock-card done"><div class="ref"><svg class="state closed" viewBox="0 0 16 16" aria-label="Closed as completed" role="img"><path d="M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"/></svg> #1477<span class="spacer"></span><span class="avatar a3"></span></div><div class="title">Migrate the search index to the new schema</div><div class="badges"><span class="badge b-attention">P2: Should Have</span><span class="badge b-neutral">9 mo</span></div></div>
+          </div>
         </div>
       </div>
 
@@ -447,6 +492,7 @@
         <div class="step"><h3>Detect the rows</h3><p>A content script on <code>github.com</code> watches the page for sub-issue lists, project table rows and board cards, and collects the issue links: owner, repository, number.</p></div>
         <div class="step"><h3>One batched query</h3><p>The background script (a service worker on Chromium, an event page on Firefox) groups those issues by repository and runs one GraphQL query per batch of 60 using <code>Issue.issueFieldValues</code> and <code>createdAt</code>, with your token. Pull request lists get the same treatment with <code>authorAssociation</code>, size and <code>mergeStateStatus</code>.</p></div>
         <div class="step"><h3>Keep what you chose</h3><p>From the returned values it keeps only the fields you configured, in your order, and hands back <code>field</code>, <code>value</code>, <code>colour</code> and the creation date per issue.</p></div>
+        <div class="step"><h3>Or draw a board</h3><p>When the kanban toggle is on, the sub-issues of the open issue are read in one <code>subIssues</code> query with every field value they carry, and drawn as columns in place of the list. Grouping, ordering and filtering happen in the page, so switching any of them is instant. Dropping a card in another column is the one write: <code>createIssueFieldValue</code> for a field, <code>closeIssue</code> or <code>reopenIssue</code> for the state, with the card moving back if GitHub refuses.</p></div>
         <div class="step"><h3>Render badges</h3><p>The content script inserts a badge per value right after the issue type badge, after the issue number in project tables, or under the title on board cards, plus the age badge when enabled. It re-renders when GitHub redraws the page.</p></div>
       </div>
       <pre><code>{ r0: repository(owner: "org", name: "repo") {
@@ -523,7 +569,7 @@
   <section id="settings">
     <div class="wrap">
       <h2>Settings</h2>
-      <p class="muted">The token and the fields to show are the two essentials; the age badge, the pull request badges and the pinned issues button are optional extras with their own cards. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Nothing is shown until at least one field is added or the age badge is enabled.</p>
+      <p class="muted">The token and the fields to show are the two essentials; the age badge, the pull request badges, the epic kanban toggle, the sidebar button and the pinned issues button are optional extras with their own cards. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Nothing is shown until at least one field is added or the age badge is enabled.</p>
       <figure>
         <img class="only-light" src="settings-light.png" alt="The settings page: token input and the field names chip box">
         <img class="only-dark" src="settings-dark.png" alt="The settings page in dark mode: token input and the field names chip box">
@@ -550,7 +596,7 @@
       <h2>Privacy</h2>
       <div class="grid">
         <div class="card"><h3>What is stored</h3><p>Your token, your field list, your preferences and your pinned issues, in <code>chrome.storage.local</code>, on your device. Uninstalling removes all of it.</p></div>
-        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. The only write is the sub-issue link you click yourself. Nothing else, to no one else.</p></div>
+        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. The only writes are the sub-issue link you click and the card you drag on the board. Nothing else, to no one else.</p></div>
         <div class="card"><h3>What is not</h3><p>No analytics, telemetry, crash reports, cookies or third-party services. The full policy is in <a href="https://github.com/MilosPaunovic/github-issue-toolkit/blob/main/PRIVACY.md">PRIVACY.md</a>.</p></div>
       </div>
     </div>
@@ -562,6 +608,10 @@
       <details><summary>Why does it need a token at all?</summary><p>Because organization-only field values are not in the page HTML; GitHub loads them through its authenticated API only for members. A token is the only way an extension can read them. If your organization sets fields to "Public" visibility, a token is still required by the API, but any account's token will do.</p></details>
       <details><summary>Where exactly do the badges appear?</summary><p>On the sub-issues list of an issue page, including nested sub-issues once you expand them, and on GitHub Projects views: table rows and board cards. Not on the plain issues list, where GitHub already shows pinned field values.</p></details>
       <details><summary>What do the pull request badges mean?</summary><p><em>First-time contributor</em> is the author's first pull request to this repository, <em>First PR on GitHub</em> their first anywhere, <em>External</em> someone with no previous contribution here, <em>Contributor</em> someone with merged work, <em>Collaborator</em> someone with write access, <em>Member</em> an organization member, <em>Bot</em> an app. The optional badges show a fork origin, added lines in green and removed lines in red, and the merge state GitHub reports: mergeable, behind base, blocked by rules, conflicts, or failing checks.</p></details>
+      <details><summary>Can I move a card on the kanban board?</summary><p>Yes, when the columns come from a single-select field or from the issue state: dragging a card writes the new field value, or closes and reopens the issue, through the GitHub API. Dropping it in the "No <em>field</em>" column clears the value. Columns made of types or assignees are not drop targets, and cards there cannot be dragged. Dragging needs a token with write access; it can be switched off in the settings, and nothing is ever written unless you drag.</p></details>
+      <details><summary>Can I see only one sprint, or only the P1 issues?</summary><p>Yes. The Filter control keeps one value of any dimension, the same ones the columns can be made of, and the count in the toolbar says how many of the epic's sub-issues are left. Filtering happens in the page, so the columns stay as they are and switching back costs nothing.</p></details>
+      <details><summary>The kanban board says the epic has more sub-issues than it shows.</summary><p>The board loads up to 500 sub-issues, in pages of 100. Beyond that the count in the toolbar reads "500 of 640" and the rest is left out.</p></details>
+      <details><summary>Where does the sidebar go when I hide it?</summary><p>Nowhere: the extension sets <code>display: none</code> on GitHub's metadata column, the same thing GitHub does when its own artifacts panel opens, and its content area grows into the space by itself. The chevron stays in the gutter, so pressing it again brings the sidebar straight back. Nothing is changed on GitHub's side and nothing is sent anywhere.</p></details>
       <details><summary>Does linking need extra permissions?</summary><p>Yes. Making an issue a sub-issue of a pinned epic writes to GitHub, so the token needs write access to the issue's repository: the <code>repo</code> scope on a classic token, or <code>Issues: Read and write</code> on a fine-grained one. Badges alone work with read-only access.</p></details>
       <details><summary>Sub-issues live in several repositories. Does that work?</summary><p>Yes. Rows are grouped by repository and fetched in one query. Each badge links to the search in its own repository.</p></details>
       <details><summary>A field shows no badge on some rows.</summary><p>Those issues simply have no value for that field. Check the field name on the settings page matches the organization's field name; matching is case-insensitive but the full name must match.</p></details>

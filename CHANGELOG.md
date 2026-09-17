@@ -4,7 +4,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- Epic kanban: a List and Kanban toggle above the sub-issues list of an issue draws those sub-issues as a board. The columns come from any field the sub-issues carry, or from their state, type or assignee, and follow the order the organization gave a single-select field's options; the cards inside a column are ordered by the field, number, creation date, title, state, type or assignee you pick, in either direction. Both choices and the toggle are remembered. The board reads up to 500 sub-issues. On by default, one checkbox in the settings turns it off.
+- Issue sidebar toggle: a chevron in the gutter between an issue and its metadata column hides that column, assignees, labels, type, fields, projects and the rest, leaving the width to the issue body and the board. The button keeps its place either way, the choice holds on every issue and in every tab, and it is not shown on a narrow window where GitHub stacks the sidebar anyway. On by default, one checkbox in the settings turns it off.
+- Kanban filter: one value of any of those same dimensions keeps only the matching sub-issues, and the toolbar count says how many of the epic are left. Filtering happens in the page, without another request.
+- Kanban drag and drop: a card dragged to another column writes the new value to GitHub when the columns come from a single-select field (`createIssueFieldValue`, or `deleteIssueFieldValue` for the "No field" column) or from the issue state (`closeIssue`, `reopenIssue`). The card moves first and returns to its column with the reason in the toolbar if the write fails, columns made of types or assignees are not drop targets, and a second checkbox in the settings turns dragging off. This is the only part of the board that writes, and it needs a token with write access.
 
 ## [2.3.1] - 2026-09-11
 

@@ -22,14 +22,14 @@
 .gsf-badge:hover {
   text-decoration: underline !important;
 }
-.gsf-badge[data-gsf-color="RED"]    { --gsf-fg: var(--fgColor-danger);    --gsf-bg: var(--bgColor-danger-muted);    --gsf-border: var(--borderColor-danger-muted); }
-.gsf-badge[data-gsf-color="ORANGE"] { --gsf-fg: var(--fgColor-severe);    --gsf-bg: var(--bgColor-severe-muted);    --gsf-border: var(--borderColor-severe-muted); }
-.gsf-badge[data-gsf-color="YELLOW"] { --gsf-fg: var(--fgColor-attention); --gsf-bg: var(--bgColor-attention-muted); --gsf-border: var(--borderColor-attention-muted); }
-.gsf-badge[data-gsf-color="GREEN"]  { --gsf-fg: var(--fgColor-success);   --gsf-bg: var(--bgColor-success-muted);   --gsf-border: var(--borderColor-success-muted); }
-.gsf-badge[data-gsf-color="BLUE"]   { --gsf-fg: var(--fgColor-accent);    --gsf-bg: var(--bgColor-accent-muted);    --gsf-border: var(--borderColor-accent-muted); }
-.gsf-badge[data-gsf-color="PURPLE"] { --gsf-fg: var(--fgColor-done);      --gsf-bg: var(--bgColor-done-muted);      --gsf-border: var(--borderColor-done-muted); }
-.gsf-badge[data-gsf-color="PINK"]   { --gsf-fg: var(--fgColor-sponsors);  --gsf-bg: var(--bgColor-sponsors-muted);  --gsf-border: var(--borderColor-sponsors-muted); }
-.gsf-badge[data-gsf-color="GRAY"]   { --gsf-fg: var(--fgColor-muted);     --gsf-bg: var(--bgColor-neutral-muted);   --gsf-border: var(--borderColor-muted); }
+[data-gsf-color="RED"]    { --gsf-fg: var(--fgColor-danger);    --gsf-bg: var(--bgColor-danger-muted);    --gsf-border: var(--borderColor-danger-muted); }
+[data-gsf-color="ORANGE"] { --gsf-fg: var(--fgColor-severe);    --gsf-bg: var(--bgColor-severe-muted);    --gsf-border: var(--borderColor-severe-muted); }
+[data-gsf-color="YELLOW"] { --gsf-fg: var(--fgColor-attention); --gsf-bg: var(--bgColor-attention-muted); --gsf-border: var(--borderColor-attention-muted); }
+[data-gsf-color="GREEN"]  { --gsf-fg: var(--fgColor-success);   --gsf-bg: var(--bgColor-success-muted);   --gsf-border: var(--borderColor-success-muted); }
+[data-gsf-color="BLUE"]   { --gsf-fg: var(--fgColor-accent);    --gsf-bg: var(--bgColor-accent-muted);    --gsf-border: var(--borderColor-accent-muted); }
+[data-gsf-color="PURPLE"] { --gsf-fg: var(--fgColor-done);      --gsf-bg: var(--bgColor-done-muted);      --gsf-border: var(--borderColor-done-muted); }
+[data-gsf-color="PINK"]   { --gsf-fg: var(--fgColor-sponsors);  --gsf-bg: var(--bgColor-sponsors-muted);  --gsf-border: var(--borderColor-sponsors-muted); }
+[data-gsf-color="GRAY"]   { --gsf-fg: var(--fgColor-muted);     --gsf-bg: var(--bgColor-neutral-muted);   --gsf-border: var(--borderColor-muted); }
 
 .gsf-notice {
   display: flex;
@@ -237,7 +237,9 @@
   border-radius: 6px;
   background: var(--button-default-bgColor-rest, var(--bgColor-default));
   color: var(--fgColor-default);
-  font: 500 11px/1 inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
   font-family: inherit;
   padding: 4px 8px;
   cursor: pointer;
@@ -269,7 +271,7 @@
   border-radius: 6px;
   background: var(--bgColor-default);
   color: var(--fgColor-default);
-  font: 12px inherit;
+  font-size: 12px;
   font-family: inherit;
 }
 .gsf-pins-form input:focus {
@@ -313,3 +315,229 @@
 .gsf-badge.gsf-size { font-variant-numeric: tabular-nums; gap: 0.35em; }
 .gsf-badge .gsf-add { color: var(--fgColor-success); }
 .gsf-badge .gsf-del { color: var(--fgColor-danger); }
+
+/* Epic kanban: the sub-issues of an issue as a board */
+.gsf-kanban-hidden { display: none !important; }
+.gsf-kanban-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 16px 10px;
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  color: var(--fgColor-muted);
+}
+.gsf-kanban-toggle { display: inline-flex; }
+.gsf-kanban-bar button {
+  border: 1px solid var(--button-default-borderColor-rest, var(--borderColor-default));
+  border-radius: 6px;
+  background: var(--button-default-bgColor-rest, var(--bgColor-default));
+  color: var(--fgColor-default);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  font-family: inherit;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.gsf-kanban-bar button:hover { background: var(--button-default-bgColor-hover, var(--bgColor-muted)); }
+.gsf-kanban-toggle button:first-child { border-radius: 6px 0 0 6px; }
+.gsf-kanban-toggle button:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
+.gsf-kanban-toggle button[data-active="true"] {
+  background: var(--control-bgColor-active, var(--bgColor-neutral-muted));
+  font-weight: 600;
+}
+.gsf-kanban-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gsf-kanban-controls[hidden] { display: none; }
+.gsf-kanban-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gsf-kanban-select {
+  max-width: 180px;
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 6px;
+  background: var(--bgColor-default);
+  color: var(--fgColor-default);
+  font-size: 12px;
+  font-family: inherit;
+}
+.gsf-kanban-bar .gsf-kanban-dir {
+  width: 26px;
+  padding: 0;
+  line-height: 24px;
+}
+.gsf-kanban-select[hidden] { display: none; }
+.gsf-kanban-note { color: var(--fgColor-muted); }
+.gsf-kanban-note[data-error="true"] { color: var(--fgColor-danger); }
+.gsf-kanban-status { margin-left: auto; }
+.gsf-kanban {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 16px 12px;
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+.gsf-kanban-message {
+  margin: 0;
+  padding: 8px 16px 16px;
+  color: var(--fgColor-muted);
+  font-size: 12px;
+}
+.gsf-kanban-col {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 240px;
+  max-height: 70vh;
+  border: 1px solid var(--borderColor-muted);
+  border-radius: 8px;
+  background: var(--bgColor-muted, var(--bgColor-inset));
+}
+.gsf-kanban-col-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--borderColor-muted);
+}
+.gsf-kanban-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gsf-fg, var(--fgColor-muted));
+}
+.gsf-kanban-col-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fgColor-default);
+  font-weight: 600;
+}
+.gsf-kanban-count {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  border-radius: 9999px;
+  background: var(--bgColor-neutral-muted);
+  color: var(--fgColor-muted);
+  font-variant-numeric: tabular-nums;
+}
+.gsf-kanban-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  overflow-y: auto;
+}
+.gsf-kanban-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 6px;
+  background: var(--bgColor-default);
+  color: var(--fgColor-default);
+  text-decoration: none !important;
+}
+.gsf-kanban-card:hover { border-color: var(--borderColor-accent-emphasis, var(--fgColor-accent)); }
+.gsf-kanban-card[draggable="true"] { cursor: grab; }
+.gsf-kanban-card[draggable="true"]:active { cursor: grabbing; }
+.gsf-kanban-card.gsf-dragging { opacity: 0.4; }
+.gsf-kanban-col.gsf-over {
+  border-color: var(--borderColor-accent-emphasis, var(--fgColor-accent));
+  box-shadow: inset 0 0 0 1px var(--borderColor-accent-emphasis, var(--fgColor-accent));
+}
+.gsf-kanban-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fgColor-muted);
+  font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.gsf-kanban-state {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  fill: var(--fgColor-success);
+}
+.gsf-kanban-state[data-state="closed"] { fill: var(--fgColor-done); }
+.gsf-kanban-state[data-state="skipped"] { fill: var(--fgColor-muted); }
+.gsf-kanban-ref {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gsf-kanban-assignees { display: inline-flex; flex: 0 0 auto; }
+.gsf-kanban-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--bgColor-default);
+}
+.gsf-kanban-avatar + .gsf-kanban-avatar { margin-left: -4px; }
+.gsf-kanban-title {
+  color: var(--fgColor-default);
+  font-size: 12px;
+  font-weight: 500;
+}
+.gsf-kanban-card:hover .gsf-kanban-title { color: var(--fgColor-accent); }
+.gsf-kanban-card[data-closed="true"] .gsf-kanban-title {
+  color: var(--fgColor-muted);
+  text-decoration: line-through;
+}
+.gsf-kanban-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.gsf-kanban-badges .gsf-badge { margin-right: 0; }
+.gsf-kanban-card:hover .gsf-badge { text-decoration: none !important; }
+
+/* Issue sidebar: the rail holding the collapse button, and the hidden metadata column */
+.gsf-sidebar-hidden { display: none !important; }
+.gsf-sidebar-rail {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 24px;
+  /* Sit in the gutter GitHub already leaves between the issue and its sidebar, rather than widening it. */
+  margin-left: calc(-1 * var(--stack-gap-spacious, 24px));
+}
+.gsf-sidebar-toggle {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--fgColor-muted);
+  cursor: pointer;
+}
+.gsf-sidebar-toggle:hover {
+  border-color: var(--borderColor-default);
+  background: var(--button-default-bgColor-hover, var(--bgColor-muted));
+  color: var(--fgColor-default);
+}
+.gsf-sidebar-chevron {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}

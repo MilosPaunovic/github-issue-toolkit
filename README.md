@@ -4,9 +4,9 @@
 
 <p align="center"><img src="docs/social-preview.png" alt="GitHub Issue Toolkit: custom issue fields, issue age and pinned epics on sub-issue lists and Projects views" width="760"></p>
 
-Browser extension that shows the values of your organization's custom GitHub **issue fields** as badges on every row of the **Sub-issues** list of an issue and on **Projects** views (table and board), plus the **age** of each issue and **pull request** badges that tell you who is behind each PR. A small **Pinned issues** panel keeps your epics one click away so you can link the issue you are looking at to them. Works in Chrome, Edge, Brave and other Chromium browsers, and in Firefox.
+Browser extension that shows the values of your organization's custom GitHub **issue fields** as badges on every row of the **Sub-issues** list of an issue and on **Projects** views (table and board), plus the **age** of each issue and **pull request** badges that tell you who is behind each PR. An epic's sub-issues can be read as a **kanban board** grouped, ordered and filtered by the fields you choose, where dragging a card writes the new value back, and a small **Pinned issues** panel keeps your epics one click away so you can link the issue you are looking at to them. Works in Chrome, Edge, Brave and other Chromium browsers, and in Firefox.
 
-GitHub itself only shows the issue type there. This extension reads the field values through the GitHub GraphQL API, in batched queries covering all visible rows, across repositories. Everything is read-only except the optional linking of an issue to a pinned epic, which writes through the same API.
+GitHub itself only shows the issue type there. This extension reads the field values through the GitHub GraphQL API, in batched queries covering all visible rows, across repositories. Everything is read-only except two things you do yourself: linking an issue to a pinned epic, and dragging a card to another column on the kanban board, both of which write through the same API.
 
 ## What it looks like
 
@@ -36,6 +36,15 @@ Illustrations of an invented repository, rendered from the documentation site wi
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/example-board-dark.png">
   <img src="docs/example-board-light.png" alt="Project board cards with Priority and age badges under the title" width="760">
+</picture>
+</p>
+
+**Epic kanban**: a List and Kanban toggle above the sub-issues list turns an epic into a board; you pick the field that forms the columns, the field that orders the cards inside each column, and a value to filter the whole board down to. Dragging a card to another column writes the new field value, or closes and reopens the issue.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-kanban-dark.png">
+  <img src="docs/example-kanban-light.png" alt="Sub-issues of an epic as a kanban board grouped by Stage and sorted by Priority" width="760">
 </picture>
 </p>
 
@@ -81,6 +90,8 @@ Illustrations of an invented repository, rendered from the documentation site wi
 - The same badges appear on GitHub Projects views: after the issue number in the table layout, under the title on board cards. Fields the view already shows are skipped so nothing appears twice: a column, a card field, or the field a board is grouped by (can be turned off in the settings).
 - An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days, and turns yellow once an issue has been open longer than a threshold you choose (90 days by default). Off by default.
 - **Pull request badges** on the pull request list and on Projects views that contain pull requests: the author's relation to the repository (first-time contributor, external, contributor, collaborator, member, bot) on by default, plus optional badges for forks, size (added lines in green, removed in red) and merge state.
+- An **epic kanban**: above the sub-issues list of an issue, a List and Kanban toggle draws those sub-issues as a board. The columns come from any field the sub-issues carry (or their state, type or assignee), the cards inside a column are ordered by another, and a filter keeps one value of a third; every choice is remembered. Dragging a card to another column writes the field value back to GitHub, or closes and reopens the issue. Both the board and the dragging can be switched off in the settings.
+- A button that **hides the issue sidebar**: one press folds away the whole metadata column, assignees, labels, type, fields, projects and the rest, and gives the issue body and the board that width. The button sits in the gutter between the two, so it does not move when the sidebar goes, and what you chose holds on every issue. Can be switched off in the settings.
 - A **Pinned issues** button in GitHub's top bar: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click. Can be switched off in the settings.
 - Any field type works: single-select, multi-select, text, number, date.
 - Choose which fields to show and in what order; nothing is shown until you pick at least one field or enable the age badge.
@@ -120,11 +131,31 @@ Minimum version: Firefox 140, required by the `data_collection_permissions` mani
 
 1. Create a GitHub personal access token:
    - **Classic** (recommended): https://github.com/settings/tokens/new with the `repo` scope. If the organization enforces SSO, click "Configure SSO" next to the new token and authorize it for the organization.
-   - **Fine-grained**: https://github.com/settings/personal-access-tokens/new. Set the organization as resource owner, pick the repositories, and under Repository permissions set `Issues` to `Read-only` (or `Read and write` if you want to link issues to pinned epics from the panel).
+   - **Fine-grained**: https://github.com/settings/personal-access-tokens/new. Set the organization as resource owner, pick the repositories, and under Repository permissions set `Issues` to `Read-only` (or `Read and write` if you want to link issues to pinned epics from the panel, or drag cards on the kanban board).
 2. Paste the token on the settings page, click **Test token**, then **Save**.
 3. Add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. No badges appear until at least one field is added or the age badge is enabled.
-4. Optionally enable the **Issue age** badge (off by default), pick its unit and the age after which it turns yellow (90 days by default), choose which **Pull request** badges you want (author relation on by default; fork, size and merge state off), and decide whether you want the **Pinned issues** button in GitHub's top bar (on by default).
+4. Optionally enable the **Issue age** badge (off by default), pick its unit and the age after which it turns yellow (90 days by default), choose which **Pull request** badges you want (author relation on by default; fork, size and merge state off), and decide whether you want the **Epic kanban** toggle, dragging cards on it, the button that hides the **Issue sidebar**, and the **Pinned issues** button in GitHub's top bar (all on by default).
 5. Open any issue with sub-issues, or a project view such as `https://github.com/orgs/<org>/projects/<n>/views/<v>`.
+
+### Epic kanban
+
+An issue that has sub-issues gets a **List** and **Kanban** toggle above the list. Kanban replaces the list with a board of the same sub-issues, read in one query with every field value they carry, so the board can group by a field you never added to the badge list.
+
+- **Columns** picks what forms the columns: any field the sub-issues carry, or their state, type or assignee. A single-select field's columns follow the order the organization gave its options, and keep the empty ones when there are ten or fewer, so a stage nothing sits in is still visible. Issues without a value land in a last column, for example `No Stage`.
+- **Sort** picks what orders the cards inside each column: the issue number, the creation date, the title, the state, the type, the assignee or any field; the arrow button flips the direction. Items with no value for the sort field stay at the bottom either way.
+- **Filter** keeps one value of any of those same dimensions, so you can read a single sprint or the P1 issues alone. The count in the toolbar then says how many of the epic's sub-issues are left, and the columns stay as they are. Filtering happens in the page, with no extra request.
+- **Dragging** a card to another column moves it, when the columns come from a single-select field or from the issue state: the field value is written with `createIssueFieldValue`, the "No <field>" column clears it with `deleteIssueFieldValue`, and the state columns use `closeIssue` and `reopenIssue`. The card moves first and slides back with the reason in the toolbar if GitHub refuses. Columns made of types or assignees are not drop targets. This is the only part of the board that writes, it needs a token with write access, and the whole behaviour can be switched off in the settings.
+- Each card shows the issue state, its number, its assignees, the title and the badges for your configured fields, the issue type and the age when enabled. The field that forms the columns is not repeated on the cards.
+- Both choices and the toggle itself are remembered across issues and tabs. Up to 500 sub-issues are loaded, in pages of 100; beyond that the toolbar count says how many of the total are shown.
+- Apart from a card you drag yourself, the board only reads. A change made elsewhere shows up once the five-minute cache expires or the page is reloaded.
+
+### Issue sidebar
+
+A small chevron in the gutter between an issue and its sidebar hides the metadata column: assignees, labels, type, the custom fields, projects, milestone, everything. The issue body and the kanban board take the freed width, GitHub's own layout does the reflowing, and the button stays where it was so pressing it again brings the sidebar back.
+
+- The choice holds on every issue and in every tab until you press the button again.
+- On a narrow window, where GitHub already stacks the sidebar under the issue instead of beside it, the button is not shown; there is nothing to gain there.
+- The whole thing can be switched off on the settings page.
 
 ### Pinned issues
 
@@ -145,6 +176,8 @@ The token is stored with `chrome.storage.local` on your device and is only ever 
 - `content.js` watches the page for sub-issue lists, project table rows (`role="rowheader"` cells), board cards and pull request list rows, collects the issue and pull request links, and asks the background script for the field values, creation dates and pull request details.
 - `background.js` groups the issues by repository and runs one GraphQL query per batch of 60 issues using `Issue.issueFieldValues` and `createdAt`, then returns only the configured fields. Without a token or without anything to show it answers with a hint that `content.js` shows above the sub-issues list or in the pins panel. For pull requests it reads `authorAssociation`, whether the head is a fork, additions, deletions, changed files and `mergeStateStatus`. It also resolves pinned issues (title, type) and runs the `addSubIssue` mutation. It runs as a service worker on Chromium and as an event page on Firefox.
 - `content.js` renders a badge per value after the issue type badge (or after the issue number in project tables, under the title on board cards), plus the age badge, styled by `content.css` with GitHub's colour tokens. It also renders the pinned issues panel; the current issue is taken from the page URL or from the `issue=owner|repo|number` parameter GitHub adds when a project side panel is open.
+- The kanban has its own path: `background.js` reads the open issue's `subIssues` connection, paginated by 100 up to 500 sub-issues, returning every field value each one carries plus its state, type, assignees and creation date. `content.js` groups, orders and filters those in the page and draws the board in place of the list, so changing any of the three redraws without another request. A dropped card is the exception: it writes through `createIssueFieldValue`, `deleteIssueFieldValue`, `closeIssue` or `reopenIssue`, updating the board first and reverting it if the write fails. The result is cached per epic like everything else.
+- The sidebar button is a small rail `content.js` inserts between GitHub's content area and its metadata column, both flex items of the same row. Collapsing sets `display: none` on the metadata column, which is what GitHub itself does when its artifacts panel opens, and its content area grows into the space on its own.
 - `options.html` / `options.js` provide the settings page, including the one-time site-access prompt Firefox needs.
 - All scripts start with `const api = browser ?? chrome`, so the same code runs on both engines.
 

@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -69,7 +69,7 @@
     const dialog = document.querySelector('[role="dialog"][class*="SidePanel"], [role="dialog"] [class*="SidePanel"]');
     if (dialog) {
       for (const a of dialog.querySelectorAll("a[href]")) {
-        if (a.closest(".gsf-pins")) continue;
+        if (a.closest(".gsf-pins, .gsf-kanban")) continue;
         const ref = issueRef(a);
         if (ref) return ref;
       }
@@ -85,7 +85,7 @@
     }
     const suffix = `/${ref.owner}/${ref.repo}/issues/${ref.number}`;
     for (const a of document.querySelectorAll("a[href]")) {
-      if (a.closest(".gsf-pins, .gsf-badge")) continue;
+      if (a.closest(".gsf-pins, .gsf-badge, .gsf-kanban")) continue;
       let path;
       try { path = new URL(a.href, location.origin).pathname.replace(/\/$/, ""); } catch { continue; }
       if (path !== suffix) continue;
@@ -111,6 +111,8 @@
 
     const containers = document.querySelectorAll('[data-testid="sub-issues-issue-container"], [data-testid*="sub-issues"]');
     for (const container of containers) {
+      // A list the kanban board has replaced is hidden: its rows are not worth a query or a badge.
+      if (container.closest(".gsf-kanban-hidden")) continue;
       for (const li of container.querySelectorAll('li[role="treeitem"]')) {
         if (seen.has(li)) continue;
         seen.add(li);
@@ -301,6 +303,8 @@
   async function scan() {
     scheduled = null;
     syncPanel();
+    syncKanban();
+    syncSidebar();
     scanPulls().catch((err) => console.warn("[github-issue-toolkit]", err));
     const rows = collectRows();
     if (!rows.length) return;
@@ -533,6 +537,8 @@
   function clearBadges() {
     cache.clear();
     prCache.clear();
+    epicCache.clear();
+    boardSignature = null;
     document.querySelectorAll("[data-gsf-pr]").forEach((el) => delete el.dataset.gsfPr);
     noticeShown = false;
     if (headerButton) {
@@ -541,6 +547,759 @@
     }
     document.querySelectorAll(".gsf-badge, .gsf-badges, .gsf-notice").forEach((el) => el.remove());
     document.querySelectorAll("[data-gsf-state]").forEach((el) => delete el.dataset.gsfState);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Epic kanban: the sub-issues of an issue shown as a board
+  // ---------------------------------------------------------------------------
+
+  const SUB_ISSUES_LIST = '[data-testid*="sub-issues-issue-container"]';
+  const STATE_ICONS = {
+    open: ["M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z", "M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"],
+    closed: ["M11.28 6.78a.75.75 0 0 0-1.06-1.06L7.25 8.69 5.78 7.22a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l3.5-3.5Z", "M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0Zm-1.5 0a6.5 6.5 0 1 0-13 0 6.5 6.5 0 0 0 13 0Z"]
+  };
+  const GROUP_BUILTINS = [
+    { id: "state", label: "State" },
+    { id: "type", label: "Type" },
+    { id: "assignee", label: "Assignee" }
+  ];
+  const SORT_BUILTINS = [
+    { id: "number", label: "Issue number" },
+    { id: "created", label: "Creation date" },
+    { id: "title", label: "Title" },
+    { id: "state", label: "State" },
+    { id: "type", label: "Type" },
+    { id: "assignee", label: "Assignee" }
+  ];
+  // A short option list keeps its empty columns, because a stage nothing sits in is worth seeing;
+  // a long one would push the board off screen, so only the columns that hold something are drawn.
+  const EMPTY_COLUMN_LIMIT = 10;
+
+  // `filterValue` is a column key, so "" is a real value (the items with nothing) and "*" means every value.
+  let kanban = { on: false, groupBy: "", sortBy: "number", sortDir: "asc", filterBy: "", filterValue: "*" };
+  const epicCache = new Map(); // "owner/repo#n" -> { at, items, total, fields, fieldDefs }
+  const epicPending = new Set();
+  let barParts = null;
+  let boardRoot = null;
+  let boardEpicKey = null;
+  let boardSignature = null;
+  let noteTimer = null;
+  let dragKey = null;
+  const moving = new Set();
+
+  // The sub-issues list of the issue page we are on, if GitHub has rendered one.
+  function epicList() {
+    if (!refFromPath(location.pathname)) return null;
+    return document.querySelector(SUB_ISSUES_LIST);
+  }
+
+  function saveKanbanView() {
+    api.storage.local.set({ kanban: { ...kanban } });
+  }
+
+  // Keeping only one dimension's value is enough to answer "show me just S1": the columns still say the rest.
+  function matchesFilter(item) {
+    if (!kanban.filterBy || kanban.filterValue === "*") return true;
+    const bucket = bucketOf(item, kanban.filterBy);
+    return (bucket ? bucket.key : "") === kanban.filterValue;
+  }
+
+  // The values that dimension actually holds, in column order, each with how many issues carry it.
+  function filterValueChoices(data) {
+    if (!kanban.filterBy) return [];
+    const columns = columnsOf(data.items, kanban.filterBy, data.fieldDefs).filter((column) => column.items.length);
+    return [{ id: "*", label: "Any value" }, ...columns.map((column) => ({ id: column.key, label: `${column.label} (${column.items.length})` }))];
+  }
+
+  function valueOf(item, field) {
+    const name = String(field).toLowerCase();
+    return item.values.find((v) => v.field.toLowerCase() === name) || null;
+  }
+
+  // The fields the loaded sub-issues carry, with the id and option list of the single-select ones, taken
+  // once from the fetched payload: a board grouped by a field keeps its columns and stays droppable even
+  // after the last card holding a value for it is dragged into the "No field" column.
+  function fieldDefsOf(items) {
+    const defs = new Map();
+    for (const item of items) {
+      for (const v of item.values) {
+        const key = v.field.toLowerCase();
+        const def = defs.get(key) || { name: v.field, fieldId: null, options: [] };
+        if (!def.fieldId && v.fieldId) def.fieldId = v.fieldId;
+        if (!def.options.length && v.options && v.options.length) def.options = v.options;
+        defs.set(key, def);
+      }
+    }
+    return defs;
+  }
+
+  // Everything the loaded sub-issues can be grouped or ordered by: the fields they carry, in the order the
+  // settings list them so the field you care about comes first, then the ones GitHub gives every issue.
+  function fieldChoices(data) {
+    const configured = (data.fields || []).map((f) => f.toLowerCase());
+    const found = new Map();
+    for (const [key, def] of data.fieldDefs || []) found.set(key, def.name);
+    for (const item of data.items) {
+      for (const v of item.values) if (!found.has(v.field.toLowerCase())) found.set(v.field.toLowerCase(), v.field);
+    }
+    const names = [...found.entries()]
+      .sort((a, b) => {
+        const ia = configured.indexOf(a[0]);
+        const ib = configured.indexOf(b[0]);
+        if (ia !== ib) return (ia < 0 ? configured.length : ia) - (ib < 0 ? configured.length : ib);
+        return a[1].localeCompare(b[1]);
+      })
+      .map(([, name]) => name);
+    return names.map((name) => ({ id: `field:${name}`, label: name }));
+  }
+
+  function groupChoices(data) {
+    return [...fieldChoices(data), ...GROUP_BUILTINS];
+  }
+
+  function sortChoices(data) {
+    return [...SORT_BUILTINS, ...fieldChoices(data)];
+  }
+
+  // The column an item belongs to, or null when it has no value for the grouping.
+  function bucketOf(item, groupBy) {
+    if (groupBy === "state") {
+      const closed = item.state === "CLOSED";
+      return { key: closed ? "closed" : "open", label: closed ? "Closed" : "Open", color: closed ? "PURPLE" : "GREEN" };
+    }
+    if (groupBy === "type") {
+      return item.type ? { key: `type:${item.type}`, label: item.type, color: item.typeColor || "GRAY" } : null;
+    }
+    if (groupBy === "assignee") {
+      const who = item.assignees[0];
+      return who ? { key: `user:${who.login}`, label: who.login, color: "GRAY" } : null;
+    }
+    const value = valueOf(item, groupBy.slice(6));
+    return value ? { key: `value:${value.value}`, label: value.value, color: value.color || "GRAY" } : null;
+  }
+
+  function emptyLabel(groupBy) {
+    if (groupBy === "assignee") return "Unassigned";
+    if (groupBy === "type") return "No type";
+    return `No ${groupBy.startsWith("field:") ? groupBy.slice(6) : groupBy}`;
+  }
+
+  // Columns in the order the organization defined the field's options, so a board grouped by a stage reads
+  // left to right the way the stage does. Without an option list there is nothing to follow but the labels.
+  function columnsOf(items, groupBy, fieldDefs) {
+    const columns = new Map();
+    const none = { key: "", label: emptyLabel(groupBy), color: "GRAY", items: [] };
+    const order = [];
+    let trimEmpty = false;
+    const seed = (column) => {
+      order.push(column.key);
+      columns.set(column.key, column);
+    };
+    if (groupBy === "state") {
+      seed({ key: "open", label: "Open", color: "GREEN", state: "OPEN", items: [] });
+      seed({ key: "closed", label: "Closed", color: "PURPLE", state: "CLOSED", items: [] });
+    } else if (groupBy.startsWith("field:")) {
+      const name = groupBy.slice(6);
+      const def = fieldDefs ? fieldDefs.get(name.toLowerCase()) : null;
+      const defined = def && def.options.length ? def : items.map((item) => valueOf(item, name)).find((v) => v && v.options && v.options.length);
+      const options = defined ? defined.options : [];
+      none.fieldId = defined ? defined.fieldId : null;
+      none.options = options;
+      // Every option gets a column carrying the ids a drop needs, whatever the length of the list; whether
+      // the empty ones are drawn is decided below.
+      for (const option of options) {
+        seed({ key: `value:${option.name}`, label: option.name, color: option.color || "GRAY", fieldId: none.fieldId, optionId: option.id, options, items: [] });
+      }
+      trimEmpty = options.length > EMPTY_COLUMN_LIMIT;
+    }
+    for (const item of items) {
+      const bucket = bucketOf(item, groupBy);
+      if (!bucket) {
+        none.items.push(item);
+        continue;
+      }
+      if (!columns.has(bucket.key)) columns.set(bucket.key, { ...bucket, items: [] });
+      columns.get(bucket.key).items.push(item);
+    }
+    let list = [...columns.values()];
+    if (trimEmpty) list = list.filter((column) => column.items.length);
+    if (order.length) {
+      const rank = (column) => (order.indexOf(column.key) < 0 ? order.length : order.indexOf(column.key));
+      list.sort((a, b) => rank(a) - rank(b));
+    } else {
+      list.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+    }
+    if (none.items.length) list.push(none);
+    return list;
+  }
+
+  // What to order by within a column. `missing` keeps the items without a value at the bottom in both
+  // directions, and the comparison stays inside one type because every item is measured on the same key.
+  function sortKeyOf(item, sortBy) {
+    if (sortBy === "number") return { value: item.number };
+    if (sortBy === "created") return { value: new Date(item.createdAt).getTime() || 0 };
+    if (sortBy === "title") return { value: item.title.toLowerCase() };
+    if (sortBy === "state") return { value: item.state === "CLOSED" ? 1 : 0 };
+    if (sortBy === "type") return item.type ? { value: item.type.toLowerCase() } : { value: "", missing: true };
+    if (sortBy === "assignee") return item.assignees[0] ? { value: item.assignees[0].login.toLowerCase() } : { value: "", missing: true };
+    const value = valueOf(item, sortBy.slice(6));
+    if (!value) return { value: "", missing: true };
+    if (value.options && value.options.length) {
+      const index = value.options.findIndex((o) => o.name === value.value);
+      return { value: index < 0 ? value.options.length : index };
+    }
+    if (value.kind === "number") return { value: Number(value.value) || 0 };
+    if (value.kind === "date") return { value: new Date(value.value).getTime() || 0 };
+    return { value: value.value.toLowerCase() };
+  }
+
+  function sortItems(items, sortBy, sortDir) {
+    return items.sort((a, b) => {
+      const ka = sortKeyOf(a, sortBy);
+      const kb = sortKeyOf(b, sortBy);
+      if (Boolean(ka.missing) !== Boolean(kb.missing)) return ka.missing ? 1 : -1;
+      let order = ka.value < kb.value ? -1 : ka.value > kb.value ? 1 : a.number - b.number;
+      return sortDir === "desc" ? -order : order;
+    });
+  }
+
+  // A column can take a dropped card when the move is one GitHub can be asked to make: the state of an
+  // issue, or a single-select field whose options carry their ids. Everything else is read-only.
+  function canDrop(column, groupBy) {
+    if (!settings.kanbanDrag) return false;
+    if (groupBy === "state") return Boolean(column.state);
+    return Boolean(column.fieldId) && Boolean(column.optionId || column.key === "");
+  }
+
+  function moveOf(item, groupBy, column) {
+    if (groupBy === "state") return { kind: "state", issueId: item.id, state: column.state };
+    return { kind: "field", issueId: item.id, fieldId: column.fieldId, optionId: column.optionId || null };
+  }
+
+  // The same move applied to the copy the board holds, so the card lands in its new column right away.
+  function applyMove(item, groupBy, column) {
+    if (groupBy === "state") {
+      item.state = column.state;
+      item.stateReason = column.state === "CLOSED" ? "COMPLETED" : null;
+      return;
+    }
+    const name = groupBy.slice(6);
+    const current = valueOf(item, name);
+    if (!column.optionId) {
+      item.values = item.values.filter((v) => v !== current);
+      return;
+    }
+    if (current) {
+      current.value = column.label;
+      current.color = column.color;
+      return;
+    }
+    item.values.push({ field: name, value: column.label, color: column.color, kind: "singleselect", options: column.options || null, fieldId: column.fieldId });
+  }
+
+  async function moveCard(key, column, groupBy) {
+    const epic = refFromPath(location.pathname);
+    const data = epic && epicCache.get(epic.key);
+    const item = data && data.items.find((candidate) => candidate.key === key);
+    if (!item || moving.has(key)) return;
+    const from = bucketOf(item, groupBy);
+    if ((from ? from.key : "") === column.key) return;
+
+    const before = { state: item.state, stateReason: item.stateReason, values: item.values.map((v) => ({ ...v })) };
+    applyMove(item, groupBy, column);
+    moving.add(key);
+    setBoardNote(`Moving #${item.number} to ${column.label}...`, false);
+    redrawBoard();
+
+    let response;
+    try {
+      response = await api.runtime.sendMessage({ type: "moveIssue", move: moveOf(item, groupBy, column) });
+    } catch (err) {
+      response = { error: err && err.message ? err.message : String(err) };
+    }
+    moving.delete(key);
+    if (!response || response.error) {
+      Object.assign(item, before);
+      setBoardNote(response && response.error === "NO_TOKEN"
+        ? "Add a GitHub token in the extension settings to move cards."
+        : `Could not move #${item.number}: ${response ? response.error : "unknown error"}`, true);
+      redrawBoard();
+      return;
+    }
+    setBoardNote(`#${item.number} moved to ${column.label}.`, false);
+  }
+
+  function stateIcon(item) {
+    const closed = item.state === "CLOSED";
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("class", "gsf-kanban-state");
+    svg.dataset.state = closed ? (item.stateReason === "NOT_PLANNED" ? "skipped" : "closed") : "open";
+    for (const d of STATE_ICONS[closed ? "closed" : "open"]) {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d);
+      svg.appendChild(path);
+    }
+    return svg;
+  }
+
+  function kanbanBadge(text, color, title, extraClass) {
+    const badge = document.createElement("span");
+    badge.className = `gsf-badge${extraClass ? ` ${extraClass}` : ""}`;
+    badge.dataset.gsfColor = color || "GRAY";
+    badge.textContent = text;
+    if (title) badge.title = title;
+    return badge;
+  }
+
+  function kanbanCard(item, data, groupBy, movable) {
+    const card = document.createElement("a");
+    card.className = "gsf-kanban-card";
+    card.href = item.url || `/${item.owner}/${item.repo}/issues/${item.number}`;
+    card.dataset.closed = String(item.state === "CLOSED");
+    if (movable && item.id) {
+      // An anchor drags its own link by default, so the card says what it carries instead.
+      card.draggable = true;
+      card.addEventListener("dragstart", (e) => {
+        dragKey = item.key;
+        card.classList.add("gsf-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", item.key);
+        e.stopPropagation();
+      });
+      card.addEventListener("dragend", () => {
+        dragKey = null;
+        card.classList.remove("gsf-dragging");
+        if (boardRoot) boardRoot.querySelectorAll(".gsf-over").forEach((el) => el.classList.remove("gsf-over"));
+      });
+    }
+
+    const head = document.createElement("span");
+    head.className = "gsf-kanban-card-head";
+    head.appendChild(stateIcon(item));
+    const ref = document.createElement("span");
+    ref.className = "gsf-kanban-ref";
+    const repo = currentRepo();
+    const sameRepo = repo && repo.owner === item.owner && repo.repo === item.repo;
+    ref.textContent = sameRepo ? `#${item.number}` : `${item.key}`;
+    head.appendChild(ref);
+    if (item.assignees.length) {
+      const who = document.createElement("span");
+      who.className = "gsf-kanban-assignees";
+      for (const assignee of item.assignees) {
+        if (!assignee.avatarUrl) continue;
+        const avatar = document.createElement("img");
+        avatar.className = "gsf-kanban-avatar";
+        avatar.src = assignee.avatarUrl;
+        avatar.alt = "";
+        avatar.title = assignee.login;
+        avatar.loading = "lazy";
+        who.appendChild(avatar);
+      }
+      if (who.childElementCount) head.appendChild(who);
+    }
+    card.appendChild(head);
+
+    const title = document.createElement("span");
+    title.className = "gsf-kanban-title";
+    title.textContent = item.title;
+    card.appendChild(title);
+
+    // The column already says what the grouping field holds, so the badges repeat the other fields only.
+    const grouped = groupBy.startsWith("field:") ? groupBy.slice(6).toLowerCase() : "";
+    const badges = document.createElement("span");
+    badges.className = "gsf-kanban-badges";
+    for (const name of data.fields || []) {
+      if (settings.skipShownFields && name.toLowerCase() === grouped) continue;
+      const value = valueOf(item, name);
+      if (value) badges.appendChild(kanbanBadge(value.value, value.color, `${value.field}: ${value.value}`));
+    }
+    if (item.type && groupBy !== "type") badges.appendChild(kanbanBadge(item.type, item.typeColor || "GRAY", `Type: ${item.type}`));
+    const age = settings.ageEnabled ? ageOf(item.createdAt) : null;
+    if (age) badges.appendChild(kanbanBadge(age.text, age.color, age.title, "gsf-age"));
+    if (badges.childElementCount) card.appendChild(badges);
+    return card;
+  }
+
+  function kanbanColumn(column, data, groupBy, movable) {
+    const col = document.createElement("section");
+    col.className = "gsf-kanban-col";
+    if (canDrop(column, groupBy)) {
+      col.addEventListener("dragover", (e) => {
+        if (!dragKey) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        col.classList.add("gsf-over");
+      });
+      col.addEventListener("dragleave", (e) => {
+        if (!col.contains(e.relatedTarget)) col.classList.remove("gsf-over");
+      });
+      col.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        col.classList.remove("gsf-over");
+        const key = dragKey || e.dataTransfer.getData("text/plain");
+        dragKey = null;
+        if (key) moveCard(key, column, groupBy).catch((err) => console.warn("[github-issue-toolkit]", err));
+      });
+    }
+
+    const head = document.createElement("header");
+    head.className = "gsf-kanban-col-head";
+    const dot = document.createElement("span");
+    dot.className = "gsf-kanban-dot";
+    dot.dataset.gsfColor = column.color || "GRAY";
+    const name = document.createElement("span");
+    name.className = "gsf-kanban-col-name";
+    name.textContent = column.label;
+    name.title = column.label;
+    const count = document.createElement("span");
+    count.className = "gsf-kanban-count";
+    count.textContent = String(column.items.length);
+    head.append(dot, name, count);
+    col.appendChild(head);
+
+    const cards = document.createElement("div");
+    cards.className = "gsf-kanban-cards";
+    for (const item of column.items) cards.appendChild(kanbanCard(item, data, groupBy, movable));
+    col.appendChild(cards);
+    return col;
+  }
+
+  function setBarStatus(message) {
+    if (!barParts) return;
+    barParts.status.textContent = message || "";
+  }
+
+  // What a move is doing, or why it did not happen. An error stays until the next one; progress fades.
+  function setBoardNote(message, isError) {
+    if (!barParts) return;
+    const { note } = barParts;
+    note.textContent = message || "";
+    note.dataset.error = String(Boolean(isError));
+    clearTimeout(noteTimer);
+    if (message && !isError) noteTimer = setTimeout(() => { note.textContent = ""; }, 5000);
+  }
+
+  function redrawBoard() {
+    boardSignature = null;
+    syncKanban();
+  }
+
+  function fillSelect(select, choices, selected) {
+    select.textContent = "";
+    for (const choice of choices) {
+      const option = document.createElement("option");
+      option.value = choice.id;
+      option.textContent = choice.label;
+      select.appendChild(option);
+    }
+    select.value = selected;
+  }
+
+  function buildBar() {
+    const root = document.createElement("div");
+    root.className = "gsf-kanban-bar";
+
+    const toggle = document.createElement("div");
+    toggle.className = "gsf-kanban-toggle";
+    toggle.setAttribute("role", "group");
+    toggle.setAttribute("aria-label", "Sub-issues view");
+    const views = {};
+    for (const [view, label] of [["list", "List"], ["board", "Kanban"]]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        if (kanban.on === (view === "board")) return;
+        kanban.on = view === "board";
+        saveKanbanView();
+        boardSignature = null;
+        schedule();
+      });
+      views[view] = button;
+      toggle.appendChild(button);
+    }
+    root.appendChild(toggle);
+
+    const controls = document.createElement("div");
+    controls.className = "gsf-kanban-controls";
+    const group = document.createElement("select");
+    const sort = document.createElement("select");
+    const filter = document.createElement("select");
+    const filterValue = document.createElement("select");
+    for (const [select, label, key] of [[group, "Columns", "groupBy"], [sort, "Sort", "sortBy"]]) {
+      const wrap = document.createElement("label");
+      wrap.className = "gsf-kanban-field";
+      const text = document.createElement("span");
+      text.textContent = label;
+      select.className = "gsf-kanban-select";
+      // GitHub's keyboard shortcuts must not fire while the select has focus.
+      select.addEventListener("keydown", (e) => e.stopPropagation());
+      select.addEventListener("change", () => {
+        kanban[key] = select.value;
+        saveKanbanView();
+        boardSignature = null;
+        schedule();
+      });
+      wrap.append(text, select);
+      controls.appendChild(wrap);
+    }
+    const dir = document.createElement("button");
+    dir.type = "button";
+    dir.className = "gsf-kanban-dir";
+    dir.addEventListener("click", () => {
+      kanban.sortDir = kanban.sortDir === "desc" ? "asc" : "desc";
+      saveKanbanView();
+      boardSignature = null;
+      schedule();
+    });
+    controls.appendChild(dir);
+
+    const filterWrap = document.createElement("label");
+    filterWrap.className = "gsf-kanban-field";
+    const filterText = document.createElement("span");
+    filterText.textContent = "Filter";
+    filterWrap.append(filterText, filter, filterValue);
+    for (const [select, key] of [[filter, "filterBy"], [filterValue, "filterValue"]]) {
+      select.className = "gsf-kanban-select";
+      select.addEventListener("keydown", (e) => e.stopPropagation());
+      select.addEventListener("change", () => {
+        kanban[key] = select.value;
+        // A new dimension starts unfiltered rather than on a value it may not have.
+        if (key === "filterBy") kanban.filterValue = "*";
+        saveKanbanView();
+        boardSignature = null;
+        schedule();
+      });
+    }
+    controls.appendChild(filterWrap);
+    root.appendChild(controls);
+
+    const note = document.createElement("span");
+    note.className = "gsf-kanban-note";
+    root.appendChild(note);
+
+    const status = document.createElement("span");
+    status.className = "gsf-kanban-status";
+    root.appendChild(status);
+
+    barParts = { root, views, group, sort, dir, filter, filterValue, status, note, controls };
+    return root;
+  }
+
+  function syncBar(list, data) {
+    if (!barParts) buildBar();
+    const { root, views, group, sort, dir, filter, filterValue, controls } = barParts;
+    if (!root.isConnected || root.nextElementSibling !== list) list.before(root);
+    views.list.dataset.active = String(!kanban.on);
+    views.board.dataset.active = String(kanban.on);
+    controls.hidden = !kanban.on || (!data && !group.options.length);
+    dir.textContent = kanban.sortDir === "desc" ? "↓" : "↑";
+    dir.title = kanban.sortDir === "desc" ? "Descending, click for ascending" : "Ascending, click for descending";
+    dir.setAttribute("aria-label", dir.title);
+    if (!kanban.on || !data || !data.items.length) return;
+    const groups = groupChoices(data);
+    const sorts = sortChoices(data);
+    if (!groups.some((c) => c.id === kanban.groupBy)) kanban.groupBy = groups.length ? groups[0].id : "state";
+    if (!sorts.some((c) => c.id === kanban.sortBy)) kanban.sortBy = "number";
+    fillSelect(group, groups, kanban.groupBy);
+    fillSelect(sort, sorts, kanban.sortBy);
+
+    const dimensions = [{ id: "", label: "No filter" }, ...groups];
+    if (!dimensions.some((choice) => choice.id === kanban.filterBy)) kanban.filterBy = "";
+    fillSelect(filter, dimensions, kanban.filterBy);
+    const values = filterValueChoices(data);
+    if (!values.some((choice) => choice.id === kanban.filterValue)) kanban.filterValue = "*";
+    fillSelect(filterValue, values, kanban.filterValue);
+    filterValue.hidden = !kanban.filterBy;
+  }
+
+  function boardBody() {
+    if (!boardRoot) {
+      boardRoot = document.createElement("div");
+      boardRoot.className = "gsf-kanban";
+    }
+    boardRoot.textContent = "";
+    return boardRoot;
+  }
+
+  function showBoardMessage(list, message) {
+    const root = boardBody();
+    const note = document.createElement("p");
+    note.className = "gsf-kanban-message";
+    note.textContent = message;
+    root.appendChild(note);
+    if (!root.isConnected || root.previousElementSibling !== list) list.after(root);
+  }
+
+  function renderBoard(list, epic, data) {
+    syncBar(list, data);
+    const signature = [epic.key, data.at, kanban.groupBy, kanban.sortBy, kanban.sortDir, kanban.filterBy, kanban.filterValue,
+      settings.ageEnabled, settings.ageUnit, settings.ageWarnDays, settings.skipShownFields].join("|");
+    if (boardRoot && boardRoot.isConnected && boardRoot.previousElementSibling === list && boardSignature === signature) return;
+    boardSignature = signature;
+
+    boardBody();
+    const items = data.error ? [] : data.items.filter(matchesFilter);
+    if (data.error || !data.items.length || !items.length) {
+      showBoardMessage(list, data.error
+        || (data.items.length ? "No sub-issue matches the filter." : "This issue has no sub-issues yet."));
+      setBarStatus(data.items.length ? `0 of ${data.items.length} sub-issues` : "");
+      return;
+    }
+    const root = boardRoot;
+    const columns = columnsOf(items, kanban.groupBy, data.fieldDefs);
+    const movable = columns.some((column) => canDrop(column, kanban.groupBy));
+    root.title = movable || !settings.kanbanDrag
+      ? ""
+      : "Cards move between columns when the columns come from a single-select field or from the issue state.";
+    for (const column of columns) {
+      sortItems(column.items, kanban.sortBy, kanban.sortDir);
+      root.appendChild(kanbanColumn(column, data, kanban.groupBy, movable));
+    }
+    if (!root.isConnected || root.previousElementSibling !== list) list.after(root);
+    const loaded = data.items.length;
+    setBarStatus(items.length < loaded || data.total > loaded
+      ? `${items.length} of ${Math.max(loaded, data.total)} sub-issues`
+      : `${loaded} sub-issue${loaded === 1 ? "" : "s"}`);
+  }
+
+  async function loadEpic(list, epic) {
+    if (epicPending.has(epic.key)) return;
+    epicPending.add(epic.key);
+    setBarStatus("Loading sub-issues...");
+    if (!boardRoot || !boardRoot.isConnected || !boardRoot.childElementCount) showBoardMessage(list, "Loading sub-issues...");
+    let response;
+    try {
+      response = await api.runtime.sendMessage({ type: "fetchEpic", issue: { owner: epic.owner, repo: epic.repo, number: epic.number } });
+    } catch (err) {
+      response = { error: err && err.message ? err.message : String(err) };
+    } finally {
+      epicPending.delete(epic.key);
+    }
+    if (!response || response.error) {
+      const message = response && response.error === "NO_TOKEN"
+        ? "Add a GitHub token in the extension settings to show the board."
+        : `Could not load the sub-issues: ${response ? response.error : "unknown error"}`;
+      epicCache.set(epic.key, { at: Date.now(), items: [], total: 0, fields: [], fieldDefs: new Map(), error: message });
+      boardSignature = null;
+      schedule();
+      return;
+    }
+    const items = response.items || [];
+    epicCache.set(epic.key, { at: Date.now(), items, total: response.total || 0, fields: response.fields || [], fieldDefs: fieldDefsOf(items) });
+    boardSignature = null;
+    schedule();
+  }
+
+  function removeBoard(list) {
+    if (list) list.classList.remove("gsf-kanban-hidden");
+    if (boardRoot && boardRoot.isConnected) boardRoot.remove();
+    boardSignature = null;
+  }
+
+  // Put the view toggle above the sub-issues list, and swap the list for the board when it is on.
+  function syncKanban() {
+    const list = epicList();
+    const epic = list ? refFromPath(location.pathname) : null;
+    if (!settings.kanbanEnabled || !epic) {
+      if (barParts && barParts.root.isConnected) barParts.root.remove();
+      removeBoard(list || document.querySelector(SUB_ISSUES_LIST));
+      return;
+    }
+    if (!kanban.on) {
+      syncBar(list, null);
+      removeBoard(list);
+      return;
+    }
+    list.classList.add("gsf-kanban-hidden");
+    if (boardEpicKey !== epic.key) {
+      // Another epic: the previous board and the choices its fields offered must not linger while this one loads.
+      boardEpicKey = epic.key;
+      boardSignature = null;
+      if (boardRoot) boardBody();
+      if (barParts) for (const select of [barParts.group, barParts.sort, barParts.filter, barParts.filterValue]) select.textContent = "";
+    }
+    const hit = epicCache.get(epic.key);
+    if (hit && Date.now() - hit.at < CACHE_TTL_MS) renderBoard(list, epic, hit);
+    else {
+      syncBar(list, null);
+      loadEpic(list, epic).catch((err) => console.warn("[github-issue-toolkit]", err));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Issue sidebar: a button that hides the metadata column
+  // ---------------------------------------------------------------------------
+
+  // The metadata column of the issue page, and the flex row holding it next to the issue itself.
+  const SIDEBAR_COLUMN = '[data-testid="issue-viewer-metadata-container"]';
+  const CHEVRON_RIGHT = "M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z";
+  const CHEVRON_LEFT = "M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L6.06 8l3.72 3.72a.75.75 0 0 1 0 1.06Z";
+
+  let sidebarCollapsed = false;
+  let railParts = null;
+
+  function chevronIcon(collapsed) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("class", "gsf-sidebar-chevron");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", collapsed ? CHEVRON_LEFT : CHEVRON_RIGHT);
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function buildRail() {
+    const rail = document.createElement("div");
+    rail.className = "gsf-sidebar-rail";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "gsf-sidebar-toggle";
+    button.addEventListener("click", () => {
+      sidebarCollapsed = !sidebarCollapsed;
+      api.storage.local.set({ sidebarCollapsed });
+      syncSidebar();
+    });
+    rail.appendChild(button);
+    railParts = { rail, button };
+    return rail;
+  }
+
+  function renderRail(sidebar) {
+    const { button } = railParts;
+    button.textContent = "";
+    button.appendChild(chevronIcon(sidebarCollapsed));
+    button.title = sidebarCollapsed ? "Show the issue sidebar" : "Hide the issue sidebar";
+    button.setAttribute("aria-label", button.title);
+    button.setAttribute("aria-expanded", String(!sidebarCollapsed));
+    sidebar.classList.toggle("gsf-sidebar-hidden", sidebarCollapsed);
+  }
+
+  function unmountRail(sidebar) {
+    if (railParts && railParts.rail.isConnected) railParts.rail.remove();
+    if (sidebar) sidebar.classList.remove("gsf-sidebar-hidden");
+  }
+
+  // The button lives in a rail of its own between the issue and the sidebar, so it stays in the same place
+  // whether the sidebar is there or not. Only the wide layout has the two side by side; stacked, it is skipped.
+  function syncSidebar() {
+    const sidebar = refFromPath(location.pathname) ? document.querySelector(SIDEBAR_COLUMN) : null;
+    if (!settings.sidebarToggle || !sidebar || !sidebar.parentElement) {
+      unmountRail(sidebar || document.querySelector(SIDEBAR_COLUMN));
+      return;
+    }
+    const row = getComputedStyle(sidebar.parentElement);
+    if (row.display !== "flex" || row.flexDirection !== "row") {
+      unmountRail(sidebar);
+      return;
+    }
+    if (!railParts) buildRail();
+    if (railParts.rail.nextElementSibling !== sidebar) sidebar.parentElement.insertBefore(railParts.rail, sidebar);
+    renderRail(sidebar);
   }
 
   // ---------------------------------------------------------------------------
@@ -1015,12 +1774,16 @@
     scheduled = setTimeout(() => scan().catch((err) => console.warn("[github-issue-toolkit]", err)), 250);
   }
 
+  // Everything this extension adds to the page, so its own mutations never schedule another scan.
+  const OURS = ["gsf-badge", "gsf-badges", "gsf-notice", "gsf-pins", "gsf-pins-header-btn", "gsf-kanban", "gsf-kanban-bar", "gsf-sidebar-rail"];
+  const OURS_SELECTOR = OURS.map((name) => `.${name}`).join(", ");
+
   const observer = new MutationObserver((mutations) => {
     for (const m of mutations) {
-      if (m.target && m.target.closest && m.target.closest(".gsf-badge, .gsf-badges, .gsf-notice, .gsf-pins, .gsf-pins-header-btn")) continue;
+      if (m.target && m.target.closest && m.target.closest(OURS_SELECTOR)) continue;
       let ours = true;
       for (const n of m.addedNodes) {
-        if (!(n.nodeType === 1 && n.classList && (n.classList.contains("gsf-badge") || n.classList.contains("gsf-badges") || n.classList.contains("gsf-notice") || n.classList.contains("gsf-pins") || n.classList.contains("gsf-pins-header-btn")))) { ours = false; break; }
+        if (!(n.nodeType === 1 && n.classList && OURS.some((name) => n.classList.contains(name)))) { ours = false; break; }
       }
       if (ours && m.addedNodes.length) continue;
       schedule();
@@ -1029,6 +1792,7 @@
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener("popstate", schedule);
+  window.addEventListener("resize", schedule);
 
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
@@ -1044,6 +1808,22 @@
       clearBadges();
       schedule();
     }
+    if (changes.sidebarToggle || changes.sidebarCollapsed) {
+      if (changes.sidebarToggle) settings.sidebarToggle = changes.sidebarToggle.newValue !== false;
+      if (changes.sidebarCollapsed) sidebarCollapsed = changes.sidebarCollapsed.newValue === true;
+      syncSidebar();
+    }
+    if (changes.kanbanEnabled || changes.kanbanDrag) {
+      if (changes.kanbanEnabled) settings.kanbanEnabled = changes.kanbanEnabled.newValue !== false;
+      if (changes.kanbanDrag) settings.kanbanDrag = changes.kanbanDrag.newValue !== false;
+      boardSignature = null;
+      schedule();
+    }
+    if (changes.kanban) {
+      kanban = { ...kanban, ...(changes.kanban.newValue || {}) };
+      boardSignature = null;
+      schedule();
+    }
     if (changes.pinsEnabled) {
       settings.pinsEnabled = changes.pinsEnabled.newValue !== false;
       lastHref = null;
@@ -1056,7 +1836,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -1066,6 +1846,11 @@
     settings.ageEnabled = stored.ageEnabled === true;
     settings.ageUnit = stored.ageUnit || "months";
     settings.pinsEnabled = stored.pinsEnabled !== false;
+    settings.kanbanEnabled = stored.kanbanEnabled !== false;
+    settings.kanbanDrag = stored.kanbanDrag !== false;
+    settings.sidebarToggle = stored.sidebarToggle !== false;
+    sidebarCollapsed = stored.sidebarCollapsed === true;
+    kanban = { ...kanban, ...(stored.kanban || {}) };
     pins = Array.isArray(stored.pins) ? stored.pins : [];
     lastHref = null;
     schedule();
