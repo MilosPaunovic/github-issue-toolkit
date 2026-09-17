@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.4.0] - 2026-09-17
+
 ### Added
 
 - Epic kanban: a List and Kanban toggle above the sub-issues list of an issue draws those sub-issues as a board. The columns come from any field the sub-issues carry, or from their state, type or assignee, and follow the order the organization gave a single-select field's options; the cards inside a column are ordered by the field, number, creation date, title, state, type or assignee you pick, in either direction. Both choices and the toggle are remembered. The board reads up to 500 sub-issues. On by default, one checkbox in the settings turns it off.
@@ -144,7 +148,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.3.1...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.4.0
 [2.3.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.3.1
 [2.3.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.3.0
 [2.2.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.2.1
