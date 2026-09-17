@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.4.1] - 2026-09-17
+
 ### Changed
 
 - Kanban: an issue that had been closed as not planned is closed as not planned again when its card is dragged back to the Closed column, instead of always as completed.
@@ -154,7 +158,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.1...HEAD
+[2.4.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.4.1
 [2.4.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.4.0
 [2.3.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.3.1
 [2.3.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.3.0
