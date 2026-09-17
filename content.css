@@ -378,6 +378,7 @@
 .gsf-kanban-select[hidden] { display: none; }
 .gsf-kanban-note { color: var(--fgColor-muted); }
 .gsf-kanban-note[data-error="true"] { color: var(--fgColor-danger); }
+.gsf-kanban-hint { color: var(--fgColor-muted); }
 .gsf-kanban-status { margin-left: auto; }
 .gsf-kanban {
   display: flex;

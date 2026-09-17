@@ -4,7 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- Kanban: an issue that had been closed as not planned is closed as not planned again when its card is dragged back to the Closed column, instead of always as completed.
+- Kanban: the note saying when cards can be dragged sits in the toolbar rather than as a tooltip over the whole board, the List and Kanban buttons announce which one is pressed, and the filter value select has a name for screen readers.
+- Kanban: a GitHub deployment that does not know the option list of single-select fields is asked again after ten minutes, and only that exact schema error triggers the plainer query, so column order and dragging are never switched off for good by an unrelated error.
+- Kanban: sub-issue lists of epics visited more than five minutes ago are dropped from memory when a fresh one is loaded.
+- Issue sidebar: the layout of the issue page is measured once per page and after a resize rather than on every scan.
 
 ## [2.4.0] - 2026-09-17
 

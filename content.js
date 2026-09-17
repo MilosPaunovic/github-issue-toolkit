@@ -772,15 +772,17 @@
   }
 
   function moveOf(item, groupBy, column) {
-    if (groupBy === "state") return { kind: "state", issueId: item.id, state: column.state };
+    if (groupBy === "state") return { kind: "state", issueId: item.id, state: column.state, stateReason: item.closedReason || null };
     return { kind: "field", issueId: item.id, fieldId: column.fieldId, optionId: column.optionId || null };
   }
 
   // The same move applied to the copy the board holds, so the card lands in its new column right away.
   function applyMove(item, groupBy, column) {
     if (groupBy === "state") {
+      // Reopening remembers how the issue had been closed, so closing it again keeps a "not planned".
+      if (item.state === "CLOSED" && item.stateReason) item.closedReason = item.stateReason;
       item.state = column.state;
-      item.stateReason = column.state === "CLOSED" ? "COMPLETED" : null;
+      item.stateReason = column.state === "CLOSED" ? item.closedReason || "COMPLETED" : null;
       return;
     }
     const name = groupBy.slice(6);
@@ -805,7 +807,7 @@
     const from = bucketOf(item, groupBy);
     if ((from ? from.key : "") === column.key) return;
 
-    const before = { state: item.state, stateReason: item.stateReason, values: item.values.map((v) => ({ ...v })) };
+    const before = { state: item.state, stateReason: item.stateReason, closedReason: item.closedReason || null, values: item.values.map((v) => ({ ...v })) };
     applyMove(item, groupBy, column);
     moving.add(key);
     setBoardNote(`Moving #${item.number} to ${column.label}...`, false);
@@ -1029,6 +1031,7 @@
     const sort = document.createElement("select");
     const filter = document.createElement("select");
     const filterValue = document.createElement("select");
+    filterValue.setAttribute("aria-label", "Filter value");
     for (const [select, label, key] of [[group, "Columns", "groupBy"], [sort, "Sort", "sortBy"]]) {
       const wrap = document.createElement("label");
       wrap.className = "gsf-kanban-field";
@@ -1081,11 +1084,15 @@
     note.className = "gsf-kanban-note";
     root.appendChild(note);
 
+    const hint = document.createElement("span");
+    hint.className = "gsf-kanban-hint";
+    root.appendChild(hint);
+
     const status = document.createElement("span");
     status.className = "gsf-kanban-status";
     root.appendChild(status);
 
-    barParts = { root, views, group, sort, dir, filter, filterValue, status, note, controls };
+    barParts = { root, views, group, sort, dir, filter, filterValue, status, note, hint, controls };
     return root;
   }
 
@@ -1095,6 +1102,9 @@
     if (!root.isConnected || root.nextElementSibling !== list) list.before(root);
     views.list.dataset.active = String(!kanban.on);
     views.board.dataset.active = String(kanban.on);
+    views.list.setAttribute("aria-pressed", String(!kanban.on));
+    views.board.setAttribute("aria-pressed", String(kanban.on));
+    if (!kanban.on) barParts.hint.textContent = "";
     controls.hidden = !kanban.on || (!data && !group.options.length);
     dir.textContent = kanban.sortDir === "desc" ? "↓" : "↑";
     dir.title = kanban.sortDir === "desc" ? "Descending, click for ascending" : "Ascending, click for descending";
@@ -1144,6 +1154,7 @@
     boardBody();
     const items = data.error ? [] : data.items.filter(matchesFilter);
     if (data.error || !data.items.length || !items.length) {
+      barParts.hint.textContent = "";
       showBoardMessage(list, data.error
         || (data.items.length ? "No sub-issue matches the filter." : "This issue has no sub-issues yet."));
       setBarStatus(data.items.length ? `0 of ${data.items.length} sub-issues` : "");
@@ -1152,7 +1163,7 @@
     const root = boardRoot;
     const columns = columnsOf(items, kanban.groupBy, data.fieldDefs);
     const movable = columns.some((column) => canDrop(column, kanban.groupBy));
-    root.title = movable || !settings.kanbanDrag
+    barParts.hint.textContent = movable || !settings.kanbanDrag
       ? ""
       : "Cards move between columns when the columns come from a single-select field or from the issue state.";
     for (const column of columns) {
@@ -1189,9 +1200,19 @@
       return;
     }
     const items = response.items || [];
+    pruneEpicCache(epic.key);
     epicCache.set(epic.key, { at: Date.now(), items, total: response.total || 0, fields: response.fields || [], fieldDefs: fieldDefsOf(items) });
     boardSignature = null;
     schedule();
+  }
+
+  // Entries past their time are dropped whenever a fresh one comes in, so a long-lived tab that visited many
+  // epics does not keep every one of their sub-issue lists. The epic being drawn is kept until it is replaced.
+  function pruneEpicCache(keep) {
+    const now = Date.now();
+    for (const [key, entry] of epicCache) {
+      if (key !== keep && now - entry.at >= CACHE_TTL_MS) epicCache.delete(key);
+    }
   }
 
   function removeBoard(list) {
@@ -1241,6 +1262,19 @@
 
   let sidebarCollapsed = false;
   let railParts = null;
+  // Whether the row holding the issue and its sidebar lays them side by side, measured once per row element
+  // and again after a resize or a remount: getComputedStyle forces a layout flush, and scan runs often.
+  let sidebarLayout = { row: null, wide: false };
+  let sidebarLayoutStale = true;
+
+  function sidebarSideBySide(row) {
+    if (sidebarLayoutStale || sidebarLayout.row !== row || !railParts || !railParts.rail.isConnected) {
+      const style = getComputedStyle(row);
+      sidebarLayout = { row, wide: style.display === "flex" && style.flexDirection === "row" };
+      sidebarLayoutStale = false;
+    }
+    return sidebarLayout.wide;
+  }
 
   function chevronIcon(collapsed) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1292,8 +1326,7 @@
       unmountRail(sidebar || document.querySelector(SIDEBAR_COLUMN));
       return;
     }
-    const row = getComputedStyle(sidebar.parentElement);
-    if (row.display !== "flex" || row.flexDirection !== "row") {
+    if (!sidebarSideBySide(sidebar.parentElement)) {
       unmountRail(sidebar);
       return;
     }
@@ -1792,7 +1825,10 @@
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener("popstate", schedule);
-  window.addEventListener("resize", schedule);
+  window.addEventListener("resize", () => {
+    sidebarLayoutStale = true;
+    schedule();
+  });
 
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
