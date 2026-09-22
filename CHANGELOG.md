@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.4.2] - 2026-09-22
+
 ### Changed
 
 - The age badge reads `today`, `this week` or `this month` for an issue younger than the chosen unit, instead of `0d`, `<1w` and `<1 mo`.
@@ -160,7 +164,9 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.1...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.2...HEAD
+[2.4.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.1...v2.4.2
+[2.4.2]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.4.2
 [2.4.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.4.1
 [2.4.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.4.0
 [2.3.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.3.1
