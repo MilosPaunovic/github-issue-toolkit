@@ -48,7 +48,7 @@ Illustrations of an invented repository, rendered from the documentation site wi
 </picture>
 </p>
 
-**Issue age** (optional, off by default): a gray badge with the time since the issue was created, in months, weeks or days; yellow once the issue is older than the threshold, 90 days by default.
+**Issue age** (optional, off by default): a gray badge with the time since the issue was created, in months, weeks or days, or today, this week or this month for an issue younger than the unit; yellow once the issue is older than the threshold, 90 days by default.
 
 <p align="center">
 <picture>
@@ -88,7 +88,7 @@ Illustrations of an invented repository, rendered from the documentation site wi
 
 - Badges appear next to the issue type on each sub-issue row, in the option's colour.
 - The same badges appear on GitHub Projects views: after the issue number in the table layout, under the title on board cards. Fields the view already shows are skipped so nothing appears twice: a column, a card field, or the field a board is grouped by (can be turned off in the settings).
-- An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days, and turns yellow once an issue has been open longer than a threshold you choose (90 days by default). Off by default.
+- An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days, reads `today`, `this week` or `this month` for an issue younger than the unit, and turns yellow once an issue has been open longer than a threshold you choose (90 days by default). Off by default.
 - **Pull request badges** on the pull request list and on Projects views that contain pull requests: the author's relation to the repository (first-time contributor, external, contributor, collaborator, member, bot) on by default, plus optional badges for forks, size (added lines in green, removed in red) and merge state.
 - An **epic kanban**: above the sub-issues list of an issue, a List and Kanban toggle draws those sub-issues as a board. The columns come from any field the sub-issues carry (or their state, type or assignee), the cards inside a column are ordered by another, and a filter keeps one value of a third; every choice is remembered. Dragging a card to another column writes the field value back to GitHub, or closes and reopens the issue. Both the board and the dragging can be switched off in the settings.
 - A button that **hides the issue sidebar**: one press folds away the whole metadata column, assignees, labels, type, fields, projects and the rest, and gives the issue body and the board that width. The button sits in the gutter between the two, so it does not move when the sidebar goes, and what you chose holds on every issue. Can be switched off in the settings.
