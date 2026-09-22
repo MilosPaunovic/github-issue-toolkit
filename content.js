@@ -207,13 +207,13 @@
     const days = Math.max(0, Math.floor((Date.now() - created.getTime()) / DAY_MS));
     let text;
     if (settings.ageUnit === "days") {
-      text = `${days}d`;
+      text = days === 0 ? "today" : `${days}d`;
     } else if (settings.ageUnit === "weeks") {
       const weeks = Math.floor(days / 7);
-      text = weeks < 1 ? "<1w" : `${weeks}w`;
+      text = weeks < 1 ? "this week" : `${weeks}w`;
     } else {
       const months = Math.floor(days / 30.4375);
-      text = months < 1 ? "<1 mo" : `${months} mo`;
+      text = months < 1 ? "this month" : `${months} mo`;
     }
     const months = Math.floor(days / 30.4375);
     const warn = settings.ageWarnDays > 0 && days >= settings.ageWarnDays;

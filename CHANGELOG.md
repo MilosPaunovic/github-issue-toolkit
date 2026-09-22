@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The age badge reads `today`, `this week` or `this month` for an issue younger than the chosen unit, instead of `0d`, `<1w` and `<1 mo`.
 
 ## [2.4.1] - 2026-09-17
 
