@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- An optional setting, off by default, hides GitHub's **Projects** section of the issue sidebar on every issue, leaving the rest of the sidebar in place. The issue stays in its projects; only the box is hidden.
 
 ## [2.5.0] - 2026-09-24
 
