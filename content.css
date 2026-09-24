@@ -376,6 +376,8 @@
   line-height: 24px;
 }
 .gsf-kanban-select[hidden] { display: none; }
+.gsf-kanban-check { gap: 6px; cursor: pointer; }
+.gsf-kanban-check input { margin: 0; }
 .gsf-kanban-note { color: var(--fgColor-muted); }
 .gsf-kanban-note[data-error="true"] { color: var(--fgColor-danger); }
 .gsf-kanban-hint { color: var(--fgColor-muted); }

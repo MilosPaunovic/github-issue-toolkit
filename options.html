@@ -195,7 +195,7 @@
 
     <section class="card">
       <h2>Epic kanban</h2>
-      <p class="desc">Adds a List and Kanban toggle above the sub-issues list of an issue. The board reads every field the sub-issues carry, not only the ones above: you pick the field that forms the columns and the one that orders the cards inside each column, and both choices are remembered. Columns follow the order the organization gave the field's options. Filter the board down to one value of any dimension to see a single sprint or priority at a time.</p>
+      <p class="desc">Adds a List and Kanban toggle above the sub-issues list of an issue. The board reads every field the sub-issues carry, not only the ones above: you pick the field that forms the columns and the one that orders the cards inside each column, and both choices are remembered. Columns follow the order the organization gave the field's options. Filter the board down to one value of any dimension to see a single sprint or priority at a time, or hide the closed sub-issues with the checkbox in the toolbar.</p>
       <label class="check"><input id="kanban-enabled" type="checkbox"> Show the kanban toggle on sub-issue lists</label>
       <label class="check" style="margin-top:8px"><input id="kanban-drag" type="checkbox"> Move a card by dragging it to another column, when the columns come from a single-select field or the issue state</label>
       <p class="hint">Dragging writes to GitHub: it sets the field value, or closes and reopens the issue. The token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones). Nothing is written unless you drag a card.</p>
