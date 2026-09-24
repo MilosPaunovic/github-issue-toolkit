@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.5.0] - 2026-09-24
+
 ### Added
 
 - A **Hide closed** checkbox in the kanban toolbar takes every closed sub-issue off the board, whatever the columns are made of. The choice is remembered like the other board settings.
@@ -166,8 +170,10 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.2...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.1...v2.4.2
+[2.5.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.5.0
 [2.4.2]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.4.2
 [2.4.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.4.1
 [2.4.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.4.0
