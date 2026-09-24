@@ -576,7 +576,8 @@
   const EMPTY_COLUMN_LIMIT = 10;
 
   // `filterValue` is a column key, so "" is a real value (the items with nothing) and "*" means every value.
-  let kanban = { on: false, groupBy: "", sortBy: "number", sortDir: "asc", filterBy: "", filterValue: "*" };
+  // `hideClosed` takes the finished sub-issues off the board whatever the columns are made of.
+  let kanban = { on: false, groupBy: "", sortBy: "number", sortDir: "asc", filterBy: "", filterValue: "*", hideClosed: false };
   const epicCache = new Map(); // "owner/repo#n" -> { at, items, total, fields, fieldDefs }
   const epicPending = new Set();
   let barParts = null;
@@ -599,6 +600,7 @@
 
   // Keeping only one dimension's value is enough to answer "show me just S1": the columns still say the rest.
   function matchesFilter(item) {
+    if (kanban.hideClosed && item.state === "CLOSED") return false;
     if (!kanban.filterBy || kanban.filterValue === "*") return true;
     const bucket = bucketOf(item, kanban.filterBy);
     return (bucket ? bucket.key : "") === kanban.filterValue;
@@ -1078,6 +1080,22 @@
       });
     }
     controls.appendChild(filterWrap);
+
+    const hideWrap = document.createElement("label");
+    hideWrap.className = "gsf-kanban-field gsf-kanban-check";
+    const hideClosed = document.createElement("input");
+    hideClosed.type = "checkbox";
+    hideClosed.addEventListener("keydown", (e) => e.stopPropagation());
+    hideClosed.addEventListener("change", () => {
+      kanban.hideClosed = hideClosed.checked;
+      saveKanbanView();
+      boardSignature = null;
+      schedule();
+    });
+    const hideText = document.createElement("span");
+    hideText.textContent = "Hide closed";
+    hideWrap.append(hideClosed, hideText);
+    controls.appendChild(hideWrap);
     root.appendChild(controls);
 
     const note = document.createElement("span");
@@ -1092,13 +1110,13 @@
     status.className = "gsf-kanban-status";
     root.appendChild(status);
 
-    barParts = { root, views, group, sort, dir, filter, filterValue, status, note, hint, controls };
+    barParts = { root, views, group, sort, dir, filter, filterValue, hideClosed, status, note, hint, controls };
     return root;
   }
 
   function syncBar(list, data) {
     if (!barParts) buildBar();
-    const { root, views, group, sort, dir, filter, filterValue, controls } = barParts;
+    const { root, views, group, sort, dir, filter, filterValue, hideClosed, controls } = barParts;
     if (!root.isConnected || root.nextElementSibling !== list) list.before(root);
     views.list.dataset.active = String(!kanban.on);
     views.board.dataset.active = String(kanban.on);
@@ -1109,6 +1127,7 @@
     dir.textContent = kanban.sortDir === "desc" ? "↓" : "↑";
     dir.title = kanban.sortDir === "desc" ? "Descending, click for ascending" : "Ascending, click for descending";
     dir.setAttribute("aria-label", dir.title);
+    hideClosed.checked = kanban.hideClosed === true;
     if (!kanban.on || !data || !data.items.length) return;
     const groups = groupChoices(data);
     const sorts = sortChoices(data);
@@ -1146,7 +1165,7 @@
 
   function renderBoard(list, epic, data) {
     syncBar(list, data);
-    const signature = [epic.key, data.at, kanban.groupBy, kanban.sortBy, kanban.sortDir, kanban.filterBy, kanban.filterValue,
+    const signature = [epic.key, data.at, kanban.groupBy, kanban.sortBy, kanban.sortDir, kanban.filterBy, kanban.filterValue, kanban.hideClosed,
       settings.ageEnabled, settings.ageUnit, settings.ageWarnDays, settings.skipShownFields].join("|");
     if (boardRoot && boardRoot.isConnected && boardRoot.previousElementSibling === list && boardSignature === signature) return;
     boardSignature = signature;
@@ -1155,8 +1174,10 @@
     const items = data.error ? [] : data.items.filter(matchesFilter);
     if (data.error || !data.items.length || !items.length) {
       barParts.hint.textContent = "";
+      const filtered = kanban.filterBy && kanban.filterValue !== "*";
       showBoardMessage(list, data.error
-        || (data.items.length ? "No sub-issue matches the filter." : "This issue has no sub-issues yet."));
+        || (!data.items.length ? "This issue has no sub-issues yet."
+          : filtered ? "No sub-issue matches the filter." : "Every sub-issue is closed."));
       setBarStatus(data.items.length ? `0 of ${data.items.length} sub-issues` : "");
       return;
     }

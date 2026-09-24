@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- A **Hide closed** checkbox in the kanban toolbar takes every closed sub-issue off the board, whatever the columns are made of. The choice is remembered like the other board settings.
 
 ## [2.4.2] - 2026-09-22
 
