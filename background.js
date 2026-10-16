@@ -263,7 +263,6 @@ const SEARCH_KINDS = {
   pr: { label: "Pull requests", type: "pullrequests", qualifier: "is:pr" }
 };
 const SEARCH_LIMIT = 8;
-const SEARCH_DEBOUNCE_MS = 250;
 const OWNER_REPOS_TTL_MS = 10 * 60 * 1000;
 const OWNER_REPOS_PAGES = 5;
 const OPEN_SETTINGS = "github-issue-toolkit:settings";
@@ -482,9 +481,12 @@ function itemSuggestion(item, icon) {
   return { content: item.url, description: describe([[icon, ""], [ref, "url"], [item.title, "match"], [details, "dim"]]) };
 }
 
+// Chrome drops suggestions that come too long after the keystroke, so a repository list still being read
+// is not waited for: GitHub search answers this keystroke, and the list serves the next ones.
 async function searchRepos(token, shortcut, words) {
-  const local = Promise.all(repoOwners(shortcut).map((owner) => ownerRepos(token, owner)))
-    .then((lists) => rankRepos(lists.flat(), words));
+  const owners = repoOwners(shortcut);
+  owners.forEach((owner) => ownerRepos(token, owner).catch(() => {}));
+  const local = Promise.resolve(rankRepos(owners.map(cachedRepos).filter(Boolean).flat(), words));
   const request = repoSearchRequest(shortcut, words);
   const remote = request
     ? cachedGraphql(token, request).then((data) => ((data.s && data.s.nodes) || []).filter((n) => n && n.url))
@@ -621,10 +623,8 @@ if (api.omnibox) {
     const instant = instantSuggestions(typed, current);
     if (instant) return finish(instant);
 
-    // Every keystroke fires this; only the input that stays put for a moment reaches GitHub, except a
-    // shortcut name on its own, which is complete as typed.
-    await new Promise((resolve) => setTimeout(resolve, parsed.named && !parsed.words ? 0 : SEARCH_DEBOUNCE_MS));
-    if (input !== latestInput) return;
+    // No pause before asking: Chrome drops suggestions that come too long after the keystroke. A newer
+    // keystroke still wins, the answer to an older one is thrown away.
     const suggestions = await searchSuggestions(typed, current).catch((err) => {
       console.error("GitHub Issue Toolkit: address bar search failed", err);
       return [{ content: OPEN_SETTINGS, description: describe([[`GitHub search failed: ${err.message || err}`, "dim"]]) }];
