@@ -346,8 +346,6 @@
     if (!response || response.error) {
       if (response && response.error === "NO_TOKEN") {
         showNotice("GitHub Issue Toolkit: add a GitHub token in the extension settings to show field values here.", true);
-      } else if (response && response.error === "NO_FIELDS") {
-        showNotice("GitHub Issue Toolkit: choose which fields to show, or enable the age badge, in the extension settings.", true);
       } else {
         showNotice(`GitHub Issue Toolkit: ${response ? response.error : "unknown error"}`, true);
       }

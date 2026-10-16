@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The field list is optional. With no field and the age badge off, sub-issue lists and project views no longer show a notice asking for one, the settings page saves without a warning, and no request is made for field values.
 
 ## [2.6.0] - 2026-10-16
 

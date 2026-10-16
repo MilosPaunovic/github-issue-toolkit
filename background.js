@@ -121,8 +121,9 @@ async function fetchFieldValues(issues) {
   if (!token) {
     return { error: "NO_TOKEN" };
   }
+  // Field badges are optional: with nothing to show there is nothing to ask GitHub.
   if (!fields.length && !ageEnabled) {
-    return { error: "NO_FIELDS" };
+    return { values: {}, created: {}, fields };
   }
 
   const byRepo = new Map();

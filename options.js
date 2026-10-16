@@ -157,7 +157,6 @@ document.getElementById("save").addEventListener("click", async () => {
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
   await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1 });
   if (!token) setStatus("Saved without a token. Badges need one.", false);
-  else if (!fields.length && !ageEnabled.checked) setStatus("Saved without any field. Add a field or enable the age badge to show badges.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);
 });
 

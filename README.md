@@ -104,7 +104,7 @@ Illustrations of an invented repository, rendered from the documentation site wi
 - A **contributor load** mark next to usernames on issues and pull requests: an outlined dot for nothing assigned, a filled dot at or under the limit you set, and a count above it reading assigned over open pull requests. Hovering lists the issues that person holds in the organization, each with the pull request that closes it. Off by default.
 - A **Pinned issues** button in GitHub's top bar: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click. Can be switched off in the settings.
 - Any field type works: single-select, multi-select, text, number, date.
-- Choose which fields to show and in what order; nothing is shown until you pick at least one field or enable the age badge.
+- Choose which fields to show and in what order, or none at all: without fields the extension shows no field badges and everything else works as usual.
 - One API request per page, results cached for five minutes, no polling.
 - Light and dark theme, follows GitHub's own colour tokens.
 - No analytics, no third-party services. See [PRIVACY.md](PRIVACY.md).
@@ -143,7 +143,7 @@ Minimum version: Firefox 140, required by the `data_collection_permissions` mani
    - **Classic** (recommended): https://github.com/settings/tokens/new with the `repo` scope. If the organization enforces SSO, click "Configure SSO" next to the new token and authorize it for the organization.
    - **Fine-grained**: https://github.com/settings/personal-access-tokens/new. Set the organization as resource owner, pick the repositories, and under Repository permissions set `Issues` to `Read-only` (or `Read and write` if you want to link issues to pinned epics from the panel, or drag cards on the kanban board).
 2. Paste the token on the settings page, click **Test token**, then **Save**.
-3. Add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. No badges appear until at least one field is added or the age badge is enabled.
+3. Optionally add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. With no field, no field badges are shown and nothing is asked of the API for them.
 4. Optionally enable the **Issue age** badge (off by default), pick its unit and the age after which it turns yellow (90 days by default), choose which **Pull request** badges you want (author relation on by default; fork, size and merge state off), enable **Contributor load** and set the limit above which someone is flagged (off by default, limit 1), and decide whether you want the **Epic kanban** toggle, dragging cards on it, the button that hides the **Issue sidebar**, and the **Pinned issues** button in GitHub's top bar (all on by default).
 5. Open any issue with sub-issues, or a project view such as `https://github.com/orgs/<org>/projects/<n>/views/<v>`.
 

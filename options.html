@@ -182,13 +182,13 @@
     </section>
 
     <section class="card">
-      <h2>Fields to show</h2>
+      <h2>Fields to show (optional)</h2>
       <p class="desc">Names of the issue fields to display, matched case-insensitively against the fields defined by the organization. Badges appear in this order; single-select values use the option's colour.</p>
       <label for="field-input">Field names</label>
       <div id="chips" class="chip-input" role="list" aria-label="Field names">
         <input id="field-input" type="text" spellcheck="false" autocomplete="off" placeholder="Add a field and press Enter">
       </div>
-      <p class="hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a field, <kbd>Backspace</kbd> or the × button to remove one. Nothing is shown until at least one field is added or the age badge is enabled.</p>
+      <p class="hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a field, <kbd>Backspace</kbd> or the × button to remove one. Leave it empty to show no field badges; the rest of the extension works without them.</p>
       <label class="check" style="margin-top:14px"><input id="skip-shown" type="checkbox"> Skip fields the view already shows (project columns, card fields and the board's grouping)</label>
     </section>
 
