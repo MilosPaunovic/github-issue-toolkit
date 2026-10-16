@@ -145,6 +145,13 @@
       width: 100%; padding: 9px 12px; background: var(--bg-input); border: 1px solid var(--border-default); border-radius: 8px;
       color: var(--text-primary); font: 14px var(--font-sans); outline: none;
     }
+    .shortcut { display: grid; grid-template-columns: 100px 56px 150px 1fr 56px 34px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .shortcut-head { margin-bottom: 6px; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+    .shortcut-head span:nth-child(5), .shortcut input[type="radio"] { justify-self: center; }
+    .shortcut input[type="text"]:nth-child(2) { text-align: center; padding: 9px 4px; }
+    .shortcut input[type="radio"] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+    .shortcut button { padding: 8px 0; }
+    .shortcut button:disabled { opacity: .4; cursor: default; }
     select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.25); }
   </style>
 </head>
@@ -256,6 +263,17 @@
         <span id="pins-count" class="hint" style="margin:0"></span>
         <button id="pins-clear" type="button">Remove all pins</button>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>Address bar search</h2>
+      <p class="desc">Type <code>@gh</code> and a space in the address bar, then a shortcut name and the words to look for, for example <code>@gh repo flow</code>. Each shortcut searches one kind of item and adds its qualifiers to your words, so <code>org:kestra-io</code> keeps the search inside one organization. A shortcut name on its own, <code>@gh pr</code>, lists what its qualifiers match right away. Text that does not start with a shortcut name goes to the default shortcut. Results appear as you type; Enter on the text itself opens the GitHub search page.</p>
+      <div class="shortcut shortcut-head" aria-hidden="true"><span>Name</span><span>Icon</span><span>Searches</span><span>Qualifiers</span><span>Default</span><span></span></div>
+      <div id="shortcuts"></div>
+      <div class="actions" style="margin-top:4px">
+        <button id="shortcut-add" type="button">Add shortcut</button>
+      </div>
+      <p class="hint">Qualifiers use <a href="https://docs.github.com/en/search-github/searching-on-github" target="_blank" rel="noopener">GitHub search syntax</a>, for example <code>org:kestra-io is:open</code> or <code>repo:kestra-io/kestra</code>. Repository names inside an <code>org:</code> or <code>user:</code> also match on any part of the name, so <code>kest</code> finds <code>kestra</code>. With one <code>repo:</code> qualifier, a number such as <code>#1234</code> goes straight to that issue or pull request. The icon is optional, an emoji such as 📦 or 🔀, shown before each result of the shortcut: the browser puts the same magnifier in front of every suggestion and lets no extension change it.</p>
     </section>
 
     <div class="actions">

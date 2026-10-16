@@ -29,6 +29,9 @@
       "run_at": "document_idle"
     }
   ],
+  "omnibox": {
+    "keyword": "@gh"
+  },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true

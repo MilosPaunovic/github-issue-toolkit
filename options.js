@@ -24,7 +24,17 @@ const api = typeof browser !== "undefined" && browser.runtime ? browser : (typeo
 const hasChrome = Boolean(api && api.storage && api.runtime);
 const HOSTS = ["https://github.com/*", "https://api.github.com/*"];
 
+const shortcutList = document.getElementById("shortcuts");
+// Same defaults and kinds as background.js, which uses these until a list is saved.
+const DEFAULT_SHORTCUTS = [
+  { name: "repo", icon: "📦", kind: "repo", query: "" },
+  { name: "pr", icon: "🔀", kind: "pr", query: "is:open" }
+];
+const SHORTCUT_KINDS = { repo: "Repositories", issue: "Issues", pr: "Pull requests" };
+
 let fields = [];
+let shortcuts = [];
+let defaultShortcut = 0;
 
 function setStatus(text, ok) {
   status.textContent = text;
@@ -89,6 +99,87 @@ fieldInput.addEventListener("paste", (e) => {
 });
 chips.addEventListener("click", (e) => { if (e.target === chips) fieldInput.focus(); });
 
+function loadShortcuts(saved, defaultName) {
+  const list = Array.isArray(saved) && saved.length ? saved : DEFAULT_SHORTCUTS;
+  shortcuts = list.map((s) => ({ name: s.name || "", icon: s.icon || "", kind: SHORTCUT_KINDS[s.kind] ? s.kind : "repo", query: s.query || "" }));
+  const wanted = String(defaultName || "").toLowerCase();
+  defaultShortcut = Math.max(0, shortcuts.findIndex((s) => s.name.toLowerCase() === wanted));
+  renderShortcuts();
+}
+
+function renderShortcuts() {
+  shortcutList.replaceChildren(...shortcuts.map((shortcut, i) => {
+    const row = document.createElement("div");
+    row.className = "shortcut";
+    const name = document.createElement("input");
+    name.type = "text";
+    name.spellcheck = false;
+    name.placeholder = "repo";
+    name.value = shortcut.name;
+    name.setAttribute("aria-label", `Shortcut ${i + 1} name`);
+    name.addEventListener("input", () => { shortcut.name = name.value.trim(); });
+    const icon = document.createElement("input");
+    icon.type = "text";
+    icon.spellcheck = false;
+    icon.maxLength = 8;
+    icon.value = shortcut.icon;
+    icon.title = "Optional, shown before each result of this shortcut";
+    icon.setAttribute("aria-label", `Shortcut ${i + 1} icon`);
+    icon.addEventListener("input", () => { shortcut.icon = icon.value.trim(); });
+    const kind = document.createElement("select");
+    kind.setAttribute("aria-label", `Shortcut ${i + 1} searches`);
+    for (const [value, label] of Object.entries(SHORTCUT_KINDS)) kind.add(new Option(label, value, false, value === shortcut.kind));
+    kind.addEventListener("change", () => { shortcut.kind = kind.value; });
+    const query = document.createElement("input");
+    query.type = "text";
+    query.spellcheck = false;
+    query.placeholder = "org:kestra-io";
+    query.value = shortcut.query;
+    query.setAttribute("aria-label", `Shortcut ${i + 1} qualifiers`);
+    query.addEventListener("input", () => { shortcut.query = query.value.trim(); });
+    const isDefault = document.createElement("input");
+    isDefault.type = "radio";
+    isDefault.name = "shortcut-default";
+    isDefault.checked = i === defaultShortcut;
+    isDefault.setAttribute("aria-label", `Shortcut ${i + 1} is the default`);
+    isDefault.addEventListener("change", () => { defaultShortcut = i; });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.title = "Remove this shortcut";
+    remove.setAttribute("aria-label", `Remove shortcut ${i + 1}`);
+    remove.disabled = shortcuts.length === 1;
+    remove.addEventListener("click", () => {
+      shortcuts.splice(i, 1);
+      if (defaultShortcut >= i && defaultShortcut > 0) defaultShortcut--;
+      renderShortcuts();
+    });
+    row.append(name, icon, kind, query, isDefault, remove);
+    return row;
+  }));
+}
+
+document.getElementById("shortcut-add").addEventListener("click", () => {
+  shortcuts.push({ name: "", icon: "", kind: "issue", query: "" });
+  renderShortcuts();
+  shortcutList.lastElementChild.querySelector("input").focus();
+});
+
+// The shortcuts to save, or the reason they cannot be: a name is one word, and no two are the same.
+function checkShortcuts() {
+  const kept = shortcuts.filter((s) => s.name || s.query);
+  const seen = new Set();
+  for (const s of kept) {
+    if (!s.name) return { error: "Every address bar shortcut needs a name." };
+    if (/\s/.test(s.name)) return { error: `The shortcut name "${s.name}" must be one word.` };
+    if (seen.has(s.name.toLowerCase())) return { error: `Two address bar shortcuts are named "${s.name}".` };
+    seen.add(s.name.toLowerCase());
+  }
+  if (!kept.length) return { error: "Keep at least one address bar shortcut." };
+  const chosen = shortcuts[defaultShortcut];
+  return { list: kept, defaultName: kept.includes(chosen) ? chosen.name : kept[0].name };
+}
+
 async function refreshAccess() {
   const box = document.getElementById("access");
   if (!hasChrome || !api.permissions) return;
@@ -103,7 +194,7 @@ if (hasChrome) {
     setStatus(ok ? "Access to github.com granted." : "Access was not granted.", ok);
     refreshAccess();
   });
-  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadLimit", "pins"]).then((stored) => {
+  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadLimit", "searchShortcuts", "searchDefault", "pins"]).then((stored) => {
     tokenInput.value = stored.token || "";
     fields = parseFields(stored.fields);
     renderChips();
@@ -121,6 +212,7 @@ if (hasChrome) {
     prInputs.prMergeState.checked = stored.prMergeState === true;
     ageUnit.value = stored.ageUnit || "months";
     ageWarn.value = stored.ageWarnDays === undefined ? 90 : stored.ageWarnDays;
+    loadShortcuts(stored.searchShortcuts, stored.searchDefault);
     renderPinsCount(stored.pins);
   });
   api.storage.onChanged.addListener((changes, area) => {
@@ -134,6 +226,7 @@ if (hasChrome) {
 } else {
   renderChips();
   renderPinsCount([]);
+  loadShortcuts(DEFAULT_SHORTCUTS, "repo");
   pinsEnabledInput.checked = true;
   skipShownInput.checked = true;
   kanbanEnabledInput.checked = true;
@@ -154,8 +247,10 @@ document.getElementById("save").addEventListener("click", async () => {
   if (fieldInput.value.trim()) addField(fieldInput.value);
   const token = tokenInput.value.trim();
   const fieldList = fields.join(", ");
+  const search = checkShortcuts();
+  if (search.error) return setStatus(search.error, false);
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
-  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1 });
+  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, searchShortcuts: search.list, searchDefault: search.defaultName });
   if (!token) setStatus("Saved without a token. Badges need one.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);
 });

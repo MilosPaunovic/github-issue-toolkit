@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HEIGHT = 2360
+HEIGHT = 3300
 
 
 def main() -> None:
