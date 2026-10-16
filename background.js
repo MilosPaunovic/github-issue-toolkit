@@ -410,7 +410,7 @@ function rankRepos(repos, words, { keepSearched = false } = {}) {
     .map((r) => r.repo);
 }
 
-// A search still unanswered after this long is reported as such, so the first row never stays on "Searching".
+// A search still unanswered after this long is reported as such, instead of leaving the old rows in place.
 const SEARCH_TIMEOUT_MS = 10 * 1000;
 
 function timedGraphql(token, query) {
@@ -545,11 +545,9 @@ function needsSearch({ shortcut, words, named }) {
   return Boolean(searchQuery(shortcut, words)) || (shortcut.kind === "repo" && repoOwners(shortcut).length > 0);
 }
 
-// The first row, the one Enter runs. It is also the only place that can say a search is under way:
-// the omnibox has no loading state of its own.
-function defaultDescription({ shortcut, words }, searching) {
+// The first row, the one Enter runs.
+function defaultDescription({ shortcut, words }) {
   const scope = `${SEARCH_KINDS[shortcut.kind].label.toLowerCase()}${shortcut.query ? ` in ${shortcut.query}` : ""}`;
-  if (searching) return describe([[`⏳ Searching ${scope}${words ? " for" : ""}`, ""], [words, "match"], ["…", ""]]);
   return words
     ? describe([[`Search ${scope} for`, ""], [words, "match"]])
     : describe([[`Search ${scope} on GitHub`, ""]]);
@@ -587,24 +585,22 @@ if (api.omnibox) {
     }
   });
 
-  // Chrome takes one list of suggestions per keystroke and silently ignores any later one, so each
-  // keystroke sends its list exactly once. While GitHub is asked, only the first row changes, to say so.
+  // Chrome takes one list of suggestions per keystroke and silently ignores any later one, and changing
+  // the first row while GitHub is asked makes it ignore the list that follows as well. So each keystroke
+  // sets its first row and sends its list once, together, and the omnibox shows no "searching" state.
   api.omnibox.onInputChanged.addListener(async (text, suggest) => {
     const input = ++latestInput;
     const current = await searchSettings();
     if (input !== latestInput) return;
     const typed = String(text || "").trim();
     const parsed = parseSearch(typed, current.shortcuts, current.fallback);
-    const setFirstRow = async (searching) => {
+    const finish = async (suggestions) => {
       // Chrome reads this text asynchronously; the list sent before it is taken would show the old one.
       try {
-        await api.omnibox.setDefaultSuggestion({ description: defaultDescription(parsed, searching) });
+        await api.omnibox.setDefaultSuggestion({ description: defaultDescription(parsed) });
       } catch (err) {
         console.error("GitHub Issue Toolkit: address bar first row refused", err);
       }
-    };
-    const finish = async (suggestions) => {
-      await setFirstRow(false);
       if (input !== latestInput) return;
       try {
         suggest(suggestions);
@@ -625,7 +621,6 @@ if (api.omnibox) {
     const instant = instantSuggestions(typed, current);
     if (instant) return finish(instant);
 
-    await setFirstRow(true);
     // Every keystroke fires this; only the input that stays put for a moment reaches GitHub, except a
     // shortcut name on its own, which is complete as typed.
     await new Promise((resolve) => setTimeout(resolve, parsed.named && !parsed.words ? 0 : SEARCH_DEBOUNCE_MS));
