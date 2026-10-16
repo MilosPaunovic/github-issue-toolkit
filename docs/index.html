@@ -329,6 +329,16 @@
     .mock-load .cpr { padding: 0 5px; border: 1px solid var(--success); border-radius: 9999px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; line-height: 15px; color: var(--success); }
     .mock-load .ct { font-size: 12.5px; line-height: 1.35; }
       .mock-load .crf { width: 12px; height: 12px; fill: var(--fg-muted); flex: none; }
+    .mock-omni { padding: 8px 0; overflow: hidden; }
+    .mock-omni .bar { display: flex; align-items: center; gap: 10px; margin: 0 8px 6px; padding: 7px 12px; border-radius: 9999px; background: var(--bg-muted); font-size: 14px; }
+    .mock-omni .kw { padding: 2px 10px; border-radius: 9999px; background: var(--info-bg); color: var(--accent); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+    .mock-omni .caret { width: 1px; height: 17px; margin-left: -8px; background: var(--fg); }
+    .mock-omni .sg { display: flex; align-items: baseline; gap: 8px; padding: 7px 16px; font-size: 13.5px; white-space: nowrap; overflow: hidden; }
+    .mock-omni .sg.sel { background: var(--bg-muted); }
+    .mock-omni .sg svg { width: 14px; height: 14px; fill: var(--fg-muted); flex: none; position: relative; top: 2px; }
+    .mock-omni .sg b { font-weight: 600; }
+    .mock-omni .u { color: var(--accent); }
+    .mock-omni .dim { color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; }
   </style>
 </head>
 <body>
@@ -406,7 +416,7 @@
         <div class="card"><h3>Who is already busy</h3><p>A mark after a username on an issue or pull request says what that person holds in the organization: a dot when there is room, a count of assigned issues over open pull requests when there is not. Hovering lists the issues, each with the pull request that closes it. Off by default.</p></div>
         <div class="card"><h3>Epics as a board</h3><p>An issue with sub-issues gets a List and Kanban toggle. The board groups the sub-issues by any field they carry, orders each column by another, filters everything down to one value of a third, and hides the closed ones on request. Drag a card to another column and the field value, or the issue state, is written back to GitHub.</p></div>
         <div class="card"><h3>Sidebar out of the way</h3><p>A chevron in the gutter hides an issue's whole metadata column, and the issue body and the board take the width. It holds on every issue until you press it again.</p></div>
-        <div class="card"><h3>Search from the address bar</h3><p>Type <code>@gh</code>, a space, a shortcut and a few words: <code>@gh repo kest</code> lists the repositories, issues or pull requests that match as you type. Each shortcut adds its own GitHub qualifiers, such as <code>org:kestra-io</code>, and repository names match on any part of the name.</p></div>
+        <div class="card"><h3>Search from the address bar</h3><p>Type <code>@gh</code>, a space, a shortcut and a few words: <code>@gh repo web</code> lists the repositories, issues or pull requests that match as you type. Each shortcut adds its own GitHub qualifiers, such as <code>org:acme</code>, and repository names match on any part of the name.</p></div>
         <div class="card"><h3>Pinned epics</h3><p>A pin button in GitHub's top bar keeps your epics one click away: copy their reference, or make the issue you are looking at a sub-issue of one. Optional as well.</p></div>
         <div class="card"><h3>Clickable</h3><p>Each badge links to the repository's issue search filtered by that field value, the same way GitHub's own field badges do.</p></div>
         <div class="card"><h3>Looks native</h3><p>Badges reuse GitHub's own colour tokens, so they match light and dark themes and every colour blindness setting GitHub offers.</p></div>
@@ -509,6 +519,17 @@
         </div>
       </div>
       <p class="example-caption">The card belongs to the third row. The limit is 1 here, so the first two need no number.</p>
+
+      <h3 style="margin-top:28px">Address bar search</h3>
+      <p class="muted" style="font-size:14px">Type <code>@gh</code> and a space in the address bar, then a shortcut and a few words. The first row searches GitHub with them, the others open a match directly. Each issue and pull request carries its state, author and last update, each repository its description and last push.</p>
+      <div class="panel gh-card mock-omni" id="ex-search" style="max-width:720px">
+        <div class="bar"><span class="kw">GitHub Issue Toolkit</span><span>pr retry</span><span class="caret"></span></div>
+        <div class="sg sel"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg><span>Search pull requests in org:acme is:open for</span><b>retry</b></div>
+        <div class="sg"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg><span>🔀</span><span class="u">acme/webapp#1521</span><b>Add retry policy to the webhook sender</b><span class="dim">open · t-nakamura · updated 2d ago</span></div>
+        <div class="sg"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg><span>🔀</span><span class="u">acme/webapp#1530</span><b>Retry failed exports once the storage is back</b><span class="dim">draft · priya-s · updated 5h ago</span></div>
+        <div class="sg"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z"/></svg><span>🔀</span><span class="u">acme/docs#318</span><b>Document the retry settings of the webhook sender</b><span class="dim">open · m.ortega · updated 1w ago</span></div>
+      </div>
+      <p class="example-caption">A <code>pr</code> shortcut with the qualifiers <code>org:acme is:open</code> and the 🔀 icon. Chrome draws the address bar and the magnifiers; the rows are the extension's.</p>
 
       <h3 style="margin-top:28px">Every badge at a glance</h3>
       <p class="muted" style="font-size:14px">Colours follow GitHub's own tokens, so they adapt to light and dark themes. Green invites a look, yellow means attention, red means work, blue is trust, gray is neutral information.</p>
@@ -665,7 +686,7 @@
       <details><summary>Can I hide the done sub-issues?</summary><p>Yes. The Hide closed checkbox in the toolbar takes every closed sub-issue off the board, whatever the columns are made of, and the count in the toolbar says how many are left. The choice is remembered like the others. With the columns made of the issue state, the empty Closed column stays, so a card can still be dragged there to close it.</p></details>
       <details><summary>Why does a username get a mark only after I hover it?</summary><p>Because each mark is a query about one person. Reading every name on a long thread up front would spend requests on people you never meant to look at, so the contributor load mark waits for you to rest on a name. Your own name never gets one. A red outlined dot means the read failed, usually because no token is set; hovering the name again retries.</p></details>
       <details><summary>Which issues does the contributor count include?</summary><p>Open issues assigned to that person in the organization of the page, and open pull requests they authored there, as GitHub search returns them for your token. A repository your token cannot read is left out, so a fine-grained token limited to a few repositories counts only those. The pull request shown next to an issue comes from GitHub's own link between them, not from closing keywords.</p></details>
-      <details><summary>Why <code>@gh</code> and not <code>@kestra</code>?</summary><p>A browser gives an extension one address bar keyword, fixed when it is installed, and keeps the <code>@</code> list for its own shortcuts. So the keyword is <code>@gh</code> and your shortcuts come right after it: <code>@gh kestra flow</code> with a shortcut named <code>kestra</code>. Text that starts with no shortcut name goes to the default one.</p></details>
+      <details><summary>Why <code>@gh</code> and not a keyword of my own, such as <code>@acme</code>?</summary><p>A browser gives an extension one address bar keyword, fixed when it is installed, and keeps the <code>@</code> list for its own shortcuts. So the keyword is <code>@gh</code> and your shortcuts come right after it: <code>@gh acme flow</code> with a shortcut named <code>acme</code>. Text that starts with no shortcut name goes to the default one.</p></details>
       <details><summary>The kanban board says the epic has more sub-issues than it shows.</summary><p>The board loads up to 500 sub-issues, in pages of 100. Beyond that the count in the toolbar reads "500 of 640" and the rest is left out.</p></details>
       <details><summary>Where does the sidebar go when I hide it?</summary><p>Nowhere: the extension sets <code>display: none</code> on GitHub's metadata column, the same thing GitHub does when its own artifacts panel opens, and its content area grows into the space by itself. The chevron stays in the gutter, so pressing it again brings the sidebar straight back. Nothing is changed on GitHub's side and nothing is sent anywhere.</p></details>
       <details><summary>Does linking need extra permissions?</summary><p>Yes. Making an issue a sub-issue of a pinned epic writes to GitHub, so the token needs write access to the issue's repository: the <code>repo</code> scope on a classic token, or <code>Issues: Read and write</code> on a fine-grained one. Badges alone work with read-only access.</p></details>

@@ -75,6 +75,15 @@ Illustrations of an invented repository, rendered from the documentation site wi
 </picture>
 </p>
 
+**Address bar search**: `@gh`, a space and a shortcut in the address bar list matching repositories, issues or pull requests as you type.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-search-dark.png">
+  <img src="docs/example-search-light.png" alt="Address bar in the extension's keyword mode with pull request suggestions for the words typed" width="720">
+</picture>
+</p>
+
 **Every badge at a glance**: what each colour means across all features.
 
 <p align="center">
@@ -102,7 +111,7 @@ Illustrations of an invented repository, rendered from the documentation site wi
 - An **epic kanban**: above the sub-issues list of an issue, a List and Kanban toggle draws those sub-issues as a board. The columns come from any field the sub-issues carry (or their state, type or assignee), the cards inside a column are ordered by another, a filter keeps one value of a third, and a checkbox hides the closed sub-issues; every choice is remembered. Dragging a card to another column writes the field value back to GitHub, or closes and reopens the issue. Both the board and the dragging can be switched off in the settings.
 - A button that **hides the issue sidebar**: one press folds away the whole metadata column, assignees, labels, type, fields, projects and the rest, and gives the issue body and the board that width. The button sits in the gutter between the two, so it does not move when the sidebar goes, and what you chose holds on every issue. Can be switched off in the settings.
 - A **contributor load** mark next to usernames on issues and pull requests: an outlined dot for nothing assigned, a filled dot at or under the limit you set, and a count above it reading assigned over open pull requests. Hovering lists the issues that person holds in the organization, each with the pull request that closes it. Off by default.
-- **Address bar search**: `@gh`, a space, then a shortcut name and your words, `@gh repo flow`, lists matching repositories, issues or pull requests as you type. Shortcuts are yours to define on the settings page, each with a kind and GitHub qualifiers such as `org:kestra-io is:open`; one is the default for text that starts with no shortcut name.
+- **Address bar search**: `@gh`, a space, then a shortcut name and your words, `@gh repo flow`, lists matching repositories, issues or pull requests as you type. Shortcuts are yours to define on the settings page, each with a kind and GitHub qualifiers such as `org:acme is:open`; one is the default for text that starts with no shortcut name.
 - A **Pinned issues** button in GitHub's top bar: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click. Can be switched off in the settings.
 - Any field type works: single-select, multi-select, text, number, date.
 - Choose which fields to show and in what order, or none at all: without fields the extension shows no field badges and everything else works as usual.
@@ -188,11 +197,11 @@ The organization is the one in the page URL, so the mark reads the same whicheve
 Type `@gh` and a space in the address bar: the browser shows the extension's name in front of what you type, the same way it does for `@history` or `@bookmarks`. What follows is a shortcut name and the words to look for.
 
 - `@gh` and a space alone lists your shortcuts; arrow onto one to fill it in.
-- `@gh repo flow` searches with the `repo` shortcut. Each shortcut searches repositories, issues or pull requests, and adds its qualifiers to your words in GitHub search syntax, for example `org:kestra-io` or `repo:kestra-io/kestra is:open`.
-- `@gh pr` on its own searches as soon as the name is typed, with nothing but the shortcut's qualifiers, so it lists the open pull requests of `org:kestra-io`, the most recently updated first.
+- `@gh repo flow` searches with the `repo` shortcut. Each shortcut searches repositories, issues or pull requests, and adds its qualifiers to your words in GitHub search syntax, for example `org:acme` or `repo:acme/webapp is:open`.
+- `@gh pr` on its own searches as soon as the name is typed, with nothing but the shortcut's qualifiers: with `org:acme is:open` it lists the open pull requests of that organization, the most recently updated first.
 - Each shortcut can carry an optional icon, an emoji such as 📦 or 🔀, put before each of its results. The browser draws the same magnifier in front of every extension suggestion and has no way to change it, so the icon is part of the text.
 - `@gh flow`, with no shortcut name first, uses the shortcut marked as default.
-- Repository names inside an `org:` or `user:` qualifier match on any part of the name, so `kest` finds `kestra`: the extension reads that owner's repositories, up to 500, as soon as you type `@gh` and a space, and keeps them for ten minutes in session storage, so name matches show up on each keystroke without waiting for GitHub. Matches are ordered by relevance: the exact name first, then names that start with your words, then names where a part starts with them (`kafka` in `plugin-kafka`), then the rest, shorter names before longer ones. When the list has no match, or is not read yet, GitHub search is asked instead. GitHub search alone matches whole words only.
+- Repository names inside an `org:` or `user:` qualifier match on any part of the name, so `app` finds `webapp`: the extension reads that owner's repositories, up to 500, as soon as you type `@gh` and a space, and keeps them for ten minutes in session storage, so name matches show up on each keystroke without waiting for GitHub. Matches are ordered by relevance: the exact name first, then names that start with your words, then names where a part starts with them (`kafka` in `plugin-kafka`), then the rest, shorter names before longer ones. When the list has no match, or is not read yet, GitHub search is asked instead. GitHub search alone matches whole words only.
 - With one `repo:` qualifier, `#1234` or `1234` goes straight to that issue or pull request.
 - Each issue and pull request shows its state, author and last update (`open · octocat · updated 3d ago`), each repository its description and last push.
 - Enter on a suggestion opens it; Enter on the text itself opens the GitHub search page for it, in the current tab or, with Alt, a new one.

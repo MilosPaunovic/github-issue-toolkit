@@ -133,7 +133,7 @@ function renderShortcuts() {
     const query = document.createElement("input");
     query.type = "text";
     query.spellcheck = false;
-    query.placeholder = "org:kestra-io";
+    query.placeholder = "org:acme";
     query.value = shortcut.query;
     query.setAttribute("aria-label", `Shortcut ${i + 1} qualifiers`);
     query.addEventListener("input", () => { shortcut.query = query.value.trim(); });

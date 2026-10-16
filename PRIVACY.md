@@ -19,7 +19,7 @@ GitHub Issue Toolkit is a browser extension that displays the values of GitHub c
 ## Permissions
 
 - `storage` - saves the token and the field list locally.
-- Host permission `https://api.github.com/*` - reads issue field values, creation dates, the sub-issues behind the kanban board, pinned issue details the contributor load of a hovered username and the address bar search results through the GitHub GraphQL API, and performs the sub-issue link you request from the pinned issues panel and the card move you perform by dragging.
+- Host permission `https://api.github.com/*` - reads issue field values, creation dates, the sub-issues behind the kanban board, pinned issue details, the contributor load of a hovered username and the address bar search results through the GitHub GraphQL API, and performs the sub-issue link you request from the pinned issues panel and the card move you perform by dragging.
 - Content script on `https://github.com/*` - finds sub-issue rows, project table rows, board cards and pull request rows, renders the badges and the kanban board, adds the contributor load mark next to usernames, adds the button that hides the issue sidebar, and adds the pinned issues button to GitHub's header.
 
 On Firefox, access to `github.com` and `api.github.com` is granted by you after installation (the settings page asks for it once); the extension does nothing until then.

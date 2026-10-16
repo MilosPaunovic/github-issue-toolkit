@@ -324,7 +324,7 @@ function shortcutSummary(shortcut, fallback) {
 }
 
 // Every repository of an owner, newest push first, kept for ten minutes: GitHub search matches whole
-// words only, so `kest` finds `kestra` through this list and not through search. The worker is stopped
+// words only, so `app` finds `webapp` through this list and not through search. The worker is stopped
 // after a short idle time, so the list is also kept in session storage, which lives in memory only.
 const ownerRepoCache = new Map();
 const sessionStore = api.storage.session || null;
@@ -399,11 +399,12 @@ function repoRank(repo, needle) {
 
 // Best rank first, then the shorter name, which is the closer one, then the order the repositories came
 // in: the most recently pushed first for the owner's list, followed by GitHub search's own order.
+// With no words there is nothing to be close to, so the list keeps that order, newest push first.
 // GitHub search also matches descriptions, so its results are kept even when the name does not match.
 function rankRepos(repos, words, { keepSearched = false } = {}) {
   const needle = words.trim().toLowerCase().replace(/\s+/g, "-");
   return repos
-    .map((repo, order) => ({ repo, order, rank: repoRank(repo, needle), length: repo.nameWithOwner.length }))
+    .map((repo, order) => ({ repo, order, rank: repoRank(repo, needle), length: needle ? repo.nameWithOwner.length : 0 }))
     .filter((r) => r.rank < NO_MATCH || (keepSearched && r.repo.searched))
     .sort((a, b) => a.rank - b.rank || a.length - b.length || a.order - b.order)
     .map((r) => r.repo);

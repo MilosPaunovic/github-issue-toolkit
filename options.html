@@ -267,13 +267,13 @@
 
     <section class="card">
       <h2>Address bar search</h2>
-      <p class="desc">Type <code>@gh</code> and a space in the address bar, then a shortcut name and the words to look for, for example <code>@gh repo flow</code>. Each shortcut searches one kind of item and adds its qualifiers to your words, so <code>org:kestra-io</code> keeps the search inside one organization. A shortcut name on its own, <code>@gh pr</code>, lists what its qualifiers match right away. Text that does not start with a shortcut name goes to the default shortcut. Results appear as you type; Enter on the text itself opens the GitHub search page.</p>
+      <p class="desc">Type <code>@gh</code> and a space in the address bar, then a shortcut name and the words to look for, for example <code>@gh repo flow</code>. Each shortcut searches one kind of item and adds its qualifiers to your words, so <code>org:acme</code> keeps the search inside one organization. A shortcut name on its own, <code>@gh pr</code>, lists what its qualifiers match right away. Text that does not start with a shortcut name goes to the default shortcut. Results appear as you type; Enter on the text itself opens the GitHub search page.</p>
       <div class="shortcut shortcut-head" aria-hidden="true"><span>Name</span><span>Icon</span><span>Searches</span><span>Qualifiers</span><span>Default</span><span></span></div>
       <div id="shortcuts"></div>
       <div class="actions" style="margin-top:4px">
         <button id="shortcut-add" type="button">Add shortcut</button>
       </div>
-      <p class="hint">Qualifiers use <a href="https://docs.github.com/en/search-github/searching-on-github" target="_blank" rel="noopener">GitHub search syntax</a>, for example <code>org:kestra-io is:open</code> or <code>repo:kestra-io/kestra</code>. Repository names inside an <code>org:</code> or <code>user:</code> also match on any part of the name, so <code>kest</code> finds <code>kestra</code>. With one <code>repo:</code> qualifier, a number such as <code>#1234</code> goes straight to that issue or pull request. The icon is optional, an emoji such as 📦 or 🔀, shown before each result of the shortcut: the browser puts the same magnifier in front of every suggestion and lets no extension change it.</p>
+      <p class="hint">Qualifiers use <a href="https://docs.github.com/en/search-github/searching-on-github" target="_blank" rel="noopener">GitHub search syntax</a>, for example <code>org:acme is:open</code> or <code>repo:acme/webapp</code>. Repository names inside an <code>org:</code> or <code>user:</code> also match on any part of the name, so <code>app</code> finds <code>webapp</code>. With one <code>repo:</code> qualifier, a number such as <code>#1234</code> goes straight to that issue or pull request. The icon is optional, an emoji such as 📦 or 🔀, shown before each result of the shortcut: the browser puts the same magnifier in front of every suggestion and lets no extension change it.</p>
     </section>
 
     <div class="actions">
