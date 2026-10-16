@@ -11,6 +11,7 @@ const skipShownInput = document.getElementById("skip-shown");
 const kanbanEnabledInput = document.getElementById("kanban-enabled");
 const kanbanDragInput = document.getElementById("kanban-drag");
 const sidebarToggleInput = document.getElementById("sidebar-toggle");
+const hideProjectsInput = document.getElementById("hide-projects");
 const loadEnabledInput = document.getElementById("load-enabled");
 const loadLimit = document.getElementById("load-limit");
 const prInputs = {
@@ -194,7 +195,7 @@ if (hasChrome) {
     setStatus(ok ? "Access to github.com granted." : "Access was not granted.", ok);
     refreshAccess();
   });
-  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadLimit", "searchShortcuts", "searchDefault", "pins"]).then((stored) => {
+  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadLimit", "searchShortcuts", "searchDefault", "pins"]).then((stored) => {
     tokenInput.value = stored.token || "";
     fields = parseFields(stored.fields);
     renderChips();
@@ -204,6 +205,7 @@ if (hasChrome) {
     kanbanEnabledInput.checked = stored.kanbanEnabled !== false;
     kanbanDragInput.checked = stored.kanbanDrag !== false;
     sidebarToggleInput.checked = stored.sidebarToggle !== false;
+    hideProjectsInput.checked = stored.hideProjectsSection === true;
     loadEnabledInput.checked = stored.loadEnabled === true;
     loadLimit.value = stored.loadLimit === undefined ? 1 : stored.loadLimit;
     prInputs.prAssociation.checked = stored.prAssociation !== false;
@@ -250,7 +252,7 @@ document.getElementById("save").addEventListener("click", async () => {
   const search = checkShortcuts();
   if (search.error) return setStatus(search.error, false);
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
-  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, searchShortcuts: search.list, searchDefault: search.defaultName });
+  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, searchShortcuts: search.list, searchDefault: search.defaultName });
   if (!token) setStatus("Saved without a token. Badges need one.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);
 });

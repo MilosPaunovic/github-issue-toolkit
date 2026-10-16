@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, loadEnabled: false, loadLimit: 1 };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadLimit: 1 };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -1743,6 +1743,12 @@
     renderRail(sidebar);
   }
 
+  // GitHub's own Projects section of the sidebar is hidden by a class on the root element and a stylesheet rule,
+  // so it stays hidden however often GitHub re-renders the sidebar, and on the first paint rather than after a scan.
+  function syncProjectsSection() {
+    document.documentElement.classList.toggle("gsf-hide-projects", settings.hideProjectsSection);
+  }
+
   // ---------------------------------------------------------------------------
   // Pinned issues panel
   // ---------------------------------------------------------------------------
@@ -2263,6 +2269,10 @@
       if (changes.sidebarCollapsed) sidebarCollapsed = changes.sidebarCollapsed.newValue === true;
       syncSidebar();
     }
+    if (changes.hideProjectsSection) {
+      settings.hideProjectsSection = changes.hideProjectsSection.newValue === true;
+      syncProjectsSection();
+    }
     if (changes.kanbanEnabled || changes.kanbanDrag) {
       if (changes.kanbanEnabled) settings.kanbanEnabled = changes.kanbanEnabled.newValue !== false;
       if (changes.kanbanDrag) settings.kanbanDrag = changes.kanbanDrag.newValue !== false;
@@ -2286,7 +2296,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "loadEnabled", "loadLimit"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadLimit"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -2302,6 +2312,8 @@
     settings.loadEnabled = stored.loadEnabled === true;
     settings.loadLimit = Number.isFinite(Number(stored.loadLimit)) && stored.loadLimit !== undefined ? Math.max(0, Number(stored.loadLimit)) : 1;
     sidebarCollapsed = stored.sidebarCollapsed === true;
+    settings.hideProjectsSection = stored.hideProjectsSection === true;
+    syncProjectsSection();
     kanban = { ...kanban, ...(stored.kanban || {}) };
     pins = Array.isArray(stored.pins) ? stored.pins : [];
     lastHref = null;

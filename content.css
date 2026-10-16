@@ -512,6 +512,7 @@
 
 /* Issue sidebar: the rail holding the collapse button, and the hidden metadata column */
 .gsf-sidebar-hidden { display: none !important; }
+.gsf-hide-projects [data-testid="sidebar-projects-section"] { display: none !important; }
 .gsf-sidebar-rail {
   flex: 0 0 auto;
   align-self: stretch;
