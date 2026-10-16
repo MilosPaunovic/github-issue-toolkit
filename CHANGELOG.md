@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.8.0] - 2026-10-16
+
 ### Added
 
 - An optional setting, off by default, hides GitHub's **Projects** section of the issue sidebar on every issue, leaving the rest of the sidebar in place. The issue stays in its projects; only the box is hidden.
@@ -188,11 +192,13 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.8.0...HEAD
+[2.8.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.1...v2.4.2
+[2.8.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.8.0
 [2.7.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.7.0
 [2.6.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.6.0
 [2.5.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.5.0
