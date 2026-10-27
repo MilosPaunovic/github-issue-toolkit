@@ -226,9 +226,13 @@
   // Badges
   // ---------------------------------------------------------------------------
 
+  function badgeTitle(v) {
+    return v.kind === "label" ? `Label: ${v.value}` : `${v.field}: ${v.value}`;
+  }
+
   function render(row, hit) {
     const shown = settings.skipShownFields ? shownOnPage(row) : { fields: new Set(), values: new Set() };
-    const values = ((hit && hit.values) || []).filter((v) => !shown.fields.has(String(v.field).toLowerCase()) && !shown.values.has(String(v.value).trim().toLowerCase()));
+    const values = ((hit && hit.values) || []).filter((v) => !shown.fields.has(v.kind === "label" ? "labels" : String(v.field).toLowerCase()) && !shown.values.has(String(v.value).trim().toLowerCase()));
     const scope = row.content.contains(row.titleLink) ? row.content : row.titleLink.parentElement;
     scope.querySelectorAll(`.gsf-badge[data-gsf-for="${row.ref.key}"]`).forEach((el) => el.remove());
     row.titleLink.parentElement.querySelectorAll(`.gsf-badge[data-gsf-for="${row.ref.key}"]`).forEach((el) => el.remove());
@@ -246,8 +250,8 @@
       badge.dataset.gsfColor = v.color || "GRAY";
       badge.dataset.gsfFor = row.ref.key;
       badge.textContent = v.value;
-      badge.title = `${v.field}: ${v.value}`;
-      const q = `field.${v.field}:"${v.value}"`;
+      badge.title = badgeTitle(v);
+      const q = v.kind === "label" ? `label:"${v.value}"` : `field.${v.field}:"${v.value}"`;
       badge.href = `/${row.ref.owner}/${row.ref.repo}/issues?q=${encodeURIComponent(q)}`;
       badge.addEventListener("click", (e) => e.stopPropagation());
       frag.appendChild(badge);
@@ -1031,7 +1035,9 @@
     for (const item of data.items) {
       for (const v of item.values) if (!found.has(v.field.toLowerCase())) found.set(v.field.toLowerCase(), v.field);
     }
+    // An issue can carry several labels matching one `label:` entry, so those entries cannot form columns.
     const names = [...found.entries()]
+      .filter(([key]) => !key.startsWith("label:"))
       .sort((a, b) => {
         const ia = configured.indexOf(a[0]);
         const ib = configured.indexOf(b[0]);
@@ -1303,8 +1309,9 @@
     badges.className = "gsf-kanban-badges";
     for (const name of data.fields || []) {
       if (settings.skipShownFields && name.toLowerCase() === grouped) continue;
-      const value = valueOf(item, name);
-      if (value) badges.appendChild(kanbanBadge(value.value, value.color, `${value.field}: ${value.value}`));
+      for (const value of item.values.filter((v) => v.field.toLowerCase() === name.toLowerCase())) {
+        badges.appendChild(kanbanBadge(value.value, value.color, badgeTitle(value)));
+      }
     }
     if (item.type && groupBy !== "type") badges.appendChild(kanbanBadge(item.type, item.typeColor || "GRAY", `Type: ${item.type}`));
     const age = settings.ageEnabled ? ageOf(item.createdAt) : null;

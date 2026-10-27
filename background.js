@@ -116,6 +116,46 @@ function fieldValue(node) {
   };
 }
 
+const LABEL_FRAGMENT = "labels(first: 30) { nodes { name color } }";
+
+// A `label:` entry in the field list shows matching labels: `label:area/*` every label starting with `area/`,
+// `label:bug` only that one. The entry itself stands in as the field name, so it keeps its place in the order.
+function labelPatterns(fields) {
+  return fields
+    .filter((f) => /^label:/i.test(f))
+    .map((f) => ({ field: f, pattern: f.slice(6).trim().toLowerCase() }));
+}
+
+function labelValues(node, patterns) {
+  const values = [];
+  for (const { field, pattern } of patterns) {
+    for (const label of (node.labels && node.labels.nodes) || []) {
+      if (!label) continue;
+      const name = label.name.toLowerCase();
+      const hit = pattern.endsWith("*") ? name.startsWith(pattern.slice(0, -1)) : name === pattern;
+      if (hit) values.push({ field, value: label.name, color: labelColor(label.color), kind: "label" });
+    }
+  }
+  return values;
+}
+
+// Labels carry any hex colour while badges only know GitHub's named ones, so take the nearest hue.
+function labelColor(hex) {
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(String(hex).slice(i, i + 2), 16) / 255);
+  if ([r, g, b].some(Number.isNaN)) return "GRAY";
+  const max = Math.max(r, g, b);
+  const d = max - Math.min(r, g, b);
+  if (d < 0.15) return "GRAY";
+  const hue = 60 * (max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4);
+  if (hue < 15 || hue >= 345) return "RED";
+  if (hue < 40) return "ORANGE";
+  if (hue < 70) return "YELLOW";
+  if (hue < 170) return "GREEN";
+  if (hue < 250) return "BLUE";
+  if (hue < 290) return "PURPLE";
+  return "PINK";
+}
+
 async function fetchFieldValues(issues) {
   const { token, fields, ageEnabled } = await getSettings();
   if (!token) {
@@ -133,11 +173,12 @@ async function fetchFieldValues(issues) {
     byRepo.get(key).numbers.add(Number(it.number));
   }
 
+  const patterns = labelPatterns(fields);
   const repoParts = [];
   let r = 0;
   for (const { owner, repo, numbers } of byRepo.values()) {
     const issueParts = [...numbers].map(
-      (n) => `i${n}: issue(number: ${n}) { number createdAt ${fields.length ? FIELD_VALUE_FRAGMENT : ""} }`
+      (n) => `i${n}: issue(number: ${n}) { number createdAt ${fields.length ? FIELD_VALUE_FRAGMENT : ""} ${patterns.length ? LABEL_FRAGMENT : ""} }`
     );
     repoParts.push(
       `r${r++}: repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repo)}) { nameWithOwner ${issueParts.join("\n")} }`
@@ -162,6 +203,7 @@ async function fetchFieldValues(issues) {
         if (!v || !wanted.has(v.field.toLowerCase())) continue;
         values.push({ field: v.field, value: v.value, color: v.color });
       }
+      values.push(...labelValues(issueNode, patterns));
       values.sort((a, b) => fields.findIndex((f) => f.toLowerCase() === a.field.toLowerCase())
         - fields.findIndex((f) => f.toLowerCase() === b.field.toLowerCase()));
       result[key] = values;
@@ -665,7 +707,7 @@ const SELECT_OPTIONS_RETRY_MS = 10 * 60 * 1000;
 // The validation error GraphQL returns for a selection the schema does not have, and nothing else.
 const UNKNOWN_OPTIONS_SELECTION = /Field 'options' doesn't exist on type 'IssueFieldSingleSelect'/;
 
-function subIssueQuery(ref, cursor, withOptions) {
+function subIssueQuery(ref, cursor, withOptions, withLabels) {
   return `{ r: repository(owner: ${JSON.stringify(ref.owner)}, name: ${JSON.stringify(ref.repo)}) {
     issue(number: ${Number(ref.number)}) {
       number
@@ -679,17 +721,18 @@ function subIssueQuery(ref, cursor, withOptions) {
           issueType { name color }
           assignees(first: 3) { nodes { login avatarUrl } }
           ${fieldValueFragment(withOptions)}
+          ${withLabels ? LABEL_FRAGMENT : ""}
         }
       }
     }
   } }`;
 }
 
-async function subIssuePage(token, ref, cursor) {
+async function subIssuePage(token, ref, cursor, withLabels) {
   if (selectOptionsKnown === false && Date.now() >= selectOptionsRetryAt) selectOptionsKnown = null;
   if (selectOptionsKnown !== false) {
     try {
-      const data = await graphql(token, subIssueQuery(ref, cursor, true), { partial: true });
+      const data = await graphql(token, subIssueQuery(ref, cursor, true, withLabels), { partial: true });
       selectOptionsKnown = true;
       return data;
     } catch (err) {
@@ -699,10 +742,10 @@ async function subIssuePage(token, ref, cursor) {
       selectOptionsRetryAt = Date.now() + SELECT_OPTIONS_RETRY_MS;
     }
   }
-  return graphql(token, subIssueQuery(ref, cursor, false), { partial: true });
+  return graphql(token, subIssueQuery(ref, cursor, false, withLabels), { partial: true });
 }
 
-function subIssueItem(node) {
+function subIssueItem(node, patterns) {
   const nameWithOwner = node.repository ? node.repository.nameWithOwner : "";
   const [owner, repo] = nameWithOwner.split("/");
   const values = [];
@@ -710,6 +753,7 @@ function subIssueItem(node) {
     const value = fieldValue(valueNode);
     if (value) values.push(value);
   }
+  values.push(...labelValues(node, patterns));
   return {
     key: `${nameWithOwner}#${node.number}`,
     id: node.id,
@@ -733,17 +777,18 @@ function subIssueItem(node) {
 async function fetchEpic(ref) {
   const { token, fields } = await getSettings();
   if (!token) return { error: "NO_TOKEN" };
+  const patterns = labelPatterns(fields);
   const items = [];
   let cursor = null;
   let total = 0;
   for (let page = 0; page < SUB_ISSUE_MAX_PAGES; page++) {
-    const data = await subIssuePage(token, ref, cursor);
+    const data = await subIssuePage(token, ref, cursor, patterns.length > 0);
     const issue = data.r && data.r.issue;
     if (!issue) return { error: `Issue ${ref.owner}/${ref.repo}#${ref.number} not found or not accessible with this token.` };
     const connection = issue.subIssues || {};
     total = connection.totalCount || total;
     for (const node of connection.nodes || []) {
-      if (node) items.push(subIssueItem(node));
+      if (node) items.push(subIssueItem(node, patterns));
     }
     if (!connection.pageInfo || !connection.pageInfo.hasNextPage) break;
     cursor = connection.pageInfo.endCursor;
