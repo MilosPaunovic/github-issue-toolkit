@@ -190,7 +190,7 @@
 
     <section class="card">
       <h2>Fields to show (optional)</h2>
-      <p class="desc">Names of the issue fields to display, matched case-insensitively against the fields defined by the organization. Badges appear in this order; single-select values use the option's colour.</p>
+      <p class="desc">Names of the issue fields to display, matched case-insensitively against the fields defined by the organization. Badges appear in this order; single-select values use the option's colour. An entry starting with <code>label:</code> shows labels instead: <code>label:area/*</code> every label starting with <code>area/</code>, <code>label:bug</code> only that one, in the badge colour nearest to the label's.</p>
       <label for="field-input">Field names</label>
       <div id="chips" class="chip-input" role="list" aria-label="Field names">
         <input id="field-input" type="text" spellcheck="false" autocomplete="off" placeholder="Add a field and press Enter">

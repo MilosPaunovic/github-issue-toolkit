@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Label badges**: an entry starting with `label:` in the field list shows matching labels as badges, `label:area/*` for every label starting with `area/` or `label:bug` for one, on sub-issue lists, project views and kanban cards. Each badge takes the badge colour nearest to the label's own, links to the issues carrying that label, and is skipped on a project table that already has a Labels column.
 
 ## [2.8.0] - 2026-10-16
 
