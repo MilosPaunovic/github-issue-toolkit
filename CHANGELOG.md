@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.9.0] - 2026-10-27
+
 ### Added
 
 - **Label badges**: an entry starting with `label:` in the field list shows matching labels as badges, `label:area/*` for every label starting with `area/` or `label:bug` for one, on sub-issue lists, project views and kanban cards. Each badge takes the badge colour nearest to the label's own, links to the issues carrying that label, and is skipped on a project table that already has a Labels column.
@@ -194,12 +198,14 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.8.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.9.0...HEAD
+[2.9.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.1...v2.4.2
+[2.9.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.9.0
 [2.8.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.8.0
 [2.7.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.7.0
 [2.6.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.6.0
