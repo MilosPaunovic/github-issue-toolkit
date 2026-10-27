@@ -126,14 +126,18 @@ function labelPatterns(fields) {
     .map((f) => ({ field: f, pattern: f.slice(6).trim().toLowerCase() }));
 }
 
+// A label matched by two entries, `label:area/*` and `label:area/ui`, is shown once, at the first one.
 function labelValues(node, patterns) {
   const values = [];
+  const seen = new Set();
   for (const { field, pattern } of patterns) {
     for (const label of (node.labels && node.labels.nodes) || []) {
       if (!label) continue;
       const name = label.name.toLowerCase();
       const hit = pattern.endsWith("*") ? name.startsWith(pattern.slice(0, -1)) : name === pattern;
-      if (hit) values.push({ field, value: label.name, color: labelColor(label.color), kind: "label" });
+      if (!hit || seen.has(name)) continue;
+      seen.add(name);
+      values.push({ field, value: label.name, color: labelColor(label.color), kind: "label" });
     }
   }
   return values;
@@ -151,7 +155,7 @@ function labelColor(hex) {
   if (hue < 40) return "ORANGE";
   if (hue < 70) return "YELLOW";
   if (hue < 170) return "GREEN";
-  if (hue < 250) return "BLUE";
+  if (hue < 245) return "BLUE";
   if (hue < 290) return "PURPLE";
   return "PINK";
 }
@@ -173,12 +177,14 @@ async function fetchFieldValues(issues) {
     byRepo.get(key).numbers.add(Number(it.number));
   }
 
+  // A field list holding only `label:` entries reads no field values, so it works without issue fields too.
   const patterns = labelPatterns(fields);
+  const withFields = fields.length > patterns.length;
   const repoParts = [];
   let r = 0;
   for (const { owner, repo, numbers } of byRepo.values()) {
     const issueParts = [...numbers].map(
-      (n) => `i${n}: issue(number: ${n}) { number createdAt ${fields.length ? FIELD_VALUE_FRAGMENT : ""} ${patterns.length ? LABEL_FRAGMENT : ""} }`
+      (n) => `i${n}: issue(number: ${n}) { number createdAt ${withFields ? FIELD_VALUE_FRAGMENT : ""} ${patterns.length ? LABEL_FRAGMENT : ""} }`
     );
     repoParts.push(
       `r${r++}: repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repo)}) { nameWithOwner ${issueParts.join("\n")} }`
