@@ -8,7 +8,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 version="$(python3 -c "import json;print(json.load(open('$root/manifest.json'))['version'])")"
 out_dir="${OUT_DIR:-$(dirname "$root")}"
 mkdir -p "$out_dir"
-files=(background.js content.js content.css options.html options.js icons LICENSE README.md)
+files=(background.js content.js content.css options.html options.js popup.html popup.js icons LICENSE README.md)
 
 chrome_zip="$out_dir/github-issue-toolkit-${version}-chrome.zip"
 rm -f "$chrome_zip"

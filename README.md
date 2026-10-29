@@ -139,7 +139,7 @@ The extension is plain files with no build step, so "installing from source" mea
 1. Clone or download this repository.
 2. Open the extensions page: `chrome://extensions` (Edge: `edge://extensions`, Brave: `brave://extensions`, Opera: `opera://extensions`, Vivaldi: `vivaldi://extensions`) and enable **Developer mode**.
 3. Click **Load unpacked** and select the repository folder.
-4. Click the toolbar icon (or Details > Extension options) to open the settings.
+4. Click the toolbar icon for the quick switches, then **All settings** for the token and everything else (or Details > Extension options).
 
 ### Firefox
 
@@ -147,7 +147,7 @@ Firefox does not run extension service workers and treats site access as an opti
 
 1. Run `scripts/package.sh` to build `github-issue-toolkit-<version>-firefox.zip`, or download it from the releases page.
 2. Open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on**, and pick the zip. Temporary add-ons are removed when Firefox restarts; a permanent install needs a package signed by Mozilla.
-3. Open the settings from the toolbar icon. If a **Site access** box is shown, click **Allow access to github.com**. Firefox may also show the request on the extensions (puzzle) button.
+3. Click the toolbar icon. If a **Site access** box is shown, click **Allow access to github.com**; the settings page has the same box. Firefox may also show the request on the extensions (puzzle) button.
 
 Minimum version: Firefox 140, required by the `data_collection_permissions` manifest key.
 
@@ -167,6 +167,17 @@ Minimum version: Firefox 140, required by the `data_collection_permissions` mani
 3. Optionally add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. An entry starting with `label:` shows labels instead, `label:area/*` for every label starting with `area/` or `label:bug` for one, in the badge colour nearest to the label's own. With no field, no field badges are shown and nothing is asked of the API for them.
 4. Optionally enable the **Issue age** badge (off by default), pick its unit and the age after which it turns yellow (90 days by default), choose which **Pull request** badges you want (author relation on by default; fork, size and merge state off), enable **Contributor load** and set the limit above which someone is flagged (off by default, limit 1), choose whether to replace GitHub's **Sub-issue progress** with one that counts a scope (off by default), and decide whether you want the **Epic kanban** toggle, dragging cards on it, the button that hides the **Issue sidebar**, and the **Pinned issues** button in GitHub's top bar (all on by default), and whether to hide the sidebar's **Projects** section (off by default). Set up your **Address bar search** shortcuts (a `repo` and a `pr` one to start with).
 5. Open any issue with sub-issues, or a project view such as `https://github.com/orgs/<org>/projects/<n>/views/<v>`.
+
+### Quick settings
+
+The toolbar icon opens a small dropdown with a switch for every feature: the age badge, the pull request badges, the sub-issue progress, the kanban toggle and dragging, the sidebar button, hiding the Projects section, the contributor load and the pinned issues button. A switch is saved the moment you flip it, and a GitHub page you have open follows it at once. What needs typing, the token, the field names, the age threshold, the contributor limit and the address bar shortcuts, stays on the full settings page, one click away under **All settings**.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/popup-dark.png">
+  <img src="docs/popup-light.png" alt="The toolbar dropdown with switches grouped as badges, pull requests, projects and epics, and issue pages" width="300">
+</picture>
+</p>
 
 ### Epic kanban
 
