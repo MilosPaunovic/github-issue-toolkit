@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadLimit: 1 };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadLimit: 1, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -310,6 +310,7 @@
     syncKanban();
     syncSidebar();
     scanPulls().catch((err) => console.warn("[github-issue-toolkit]", err));
+    scanProgress().catch((err) => console.warn("[github-issue-toolkit]", err));
     const rows = collectRows();
     if (!rows.length) return;
 
@@ -549,6 +550,185 @@
     }
     document.querySelectorAll(".gsf-badge, .gsf-badges, .gsf-notice").forEach((el) => el.remove());
     document.querySelectorAll("[data-gsf-state]").forEach((el) => delete el.dataset.gsfState);
+    clearProgress();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Scoped sub-issue progress: GitHub's own bar counts every sub-issue of an issue, whatever the view is
+  // showing. This one counts only the sub-issues inside the scope the view is narrowed to, a release for example.
+  // ---------------------------------------------------------------------------
+
+  const PROGRESS_CHUNK = 10;
+  const progressCache = new Map(); // "scope|owner/repo#n" -> { at, counts }, counts null when it could not be read
+  const progressPending = new Set();
+
+  // The value the view is sliced by when the slicer is on `field`: GitHub keeps it in the address.
+  function sliceValue(field) {
+    const value = new URLSearchParams(location.search).get("sliceBy[value]");
+    if (!value) return "";
+    const button = document.querySelector('[class*="SlicerPanel"] button');
+    const label = button ? (button.querySelector(".prc-Button-Label") || button) : null;
+    const name = label ? label.textContent.trim() : "";
+    // A slicer on another field says nothing about this one; one that cannot be read is taken at its word.
+    return !name || name.toLowerCase() === field.toLowerCase() ? value : "";
+  }
+
+  // The value of `field` in the filter typed above the view: `release:2.1` or `release:"Q4 2026"`. A negated
+  // term (`-release:2.1`) and a list of values are not a scope.
+  function filterValue(field) {
+    const input = document.querySelector('input[name="filter-bar-component-inputname"], input[placeholder^="Filter by keyword"]');
+    const text = (input && input.value) || new URLSearchParams(location.search).get("filterQuery") || "";
+    const term = /(^|\s)(-?)([^\s:"]+):(?:"([^"]*)"|(\S+))/g;
+    for (let m = term.exec(text); m; m = term.exec(text)) {
+      if (m[2] || m[3].toLowerCase() !== field.toLowerCase()) continue;
+      const value = m[4] !== undefined ? m[4] : m[5];
+      if (value && !value.includes(",")) return value;
+    }
+    return "";
+  }
+
+  // { scope } when the progress can be drawn, scope being a list of { field, value } or null for "count every
+  // sub-issue"; null when scope fields are set but the view is narrowed to a value of none of them, in which case
+  // GitHub's own bar stays. Every listed field the view is narrowed on takes part, a release and an owner for example.
+  function progressScope() {
+    const fields = settings.progressScopeField.split(",").map((f) => f.trim()).filter(Boolean);
+    if (!fields.length) return { scope: null };
+    const scope = [];
+    for (const field of fields) {
+      const value = sliceValue(field) || filterValue(field);
+      if (value) scope.push({ field, value });
+    }
+    return scope.length ? { scope } : null;
+  }
+
+  function scopeName(scope) {
+    return scope.map(({ field, value }) => `${field.toLowerCase()}:${/\s/.test(value) ? `"${value}"` : value}`).join(" ");
+  }
+
+  // GitHub's progress is a "done / total" text, a segmented bar and a percentage in one flex box, in a group header
+  // of a grouped table and in the "Sub-issues progress" column. That box is what gets replaced.
+  function collectProgress() {
+    const targets = [];
+    for (const bar of document.querySelectorAll('[role="row"] [data-component="ProgressBar"]')) {
+      const native = bar.parentElement;
+      if (!native || native.closest(".gsf-progress") || !/\d+\s*\/\s*\d+/.test(native.textContent)) continue;
+      const row = native.closest('[role="row"]');
+      const anchor = [...row.querySelectorAll("a[href]")].find((a) => issueRef(a) && !a.closest(".gsf-badge, .gsf-progress"));
+      const ref = anchor && issueRef(anchor);
+      if (ref && !targets.some((t) => t.native === native)) targets.push({ native, ref });
+    }
+    return targets;
+  }
+
+  function mountProgress(native, key) {
+    let mine = native.previousElementSibling;
+    if (mine && mine.classList.contains("gsf-progress")) {
+      if (mine.dataset.gsfKey === key) return mine;
+      mine.remove();
+    }
+    mine = document.createElement("span");
+    mine.className = "gsf-progress";
+    mine.dataset.gsfKey = key;
+    native.before(mine);
+    native.dataset.gsfNative = "true";
+    return mine;
+  }
+
+  function fillProgress(mine, counts, scope) {
+    const { done, total, all } = counts;
+    const text = document.createElement("span");
+    text.textContent = `${done} / ${total} done${scope ? ` for ${scopeName(scope)}` : ""}`;
+    const track = document.createElement("span");
+    track.className = "gsf-progress-bar";
+    const fill = document.createElement("i");
+    const percent = total ? Math.round((done / total) * 100) : 0;
+    fill.style.width = `${percent}%`;
+    track.append(fill);
+    const pct = document.createElement("span");
+    pct.className = "gsf-progress-pct";
+    pct.textContent = `${percent}%`;
+    mine.title = `${done} of ${total} sub-issues done${scope ? ` in ${scopeName(scope)}` : ""}${all !== total ? `, ${all} sub-issues in total` : ""}`;
+    mine.replaceChildren(text, track, pct);
+    mine.dataset.gsfFilled = "true";
+  }
+
+  // Give GitHub's own bar back where this one cannot be drawn.
+  function releaseProgress(native) {
+    const mine = native.previousElementSibling;
+    if (mine && mine.classList.contains("gsf-progress")) mine.remove();
+    delete native.dataset.gsfNative;
+  }
+
+  function clearProgress() {
+    progressCache.clear();
+    document.querySelectorAll(".gsf-progress").forEach((el) => el.remove());
+    document.querySelectorAll("[data-gsf-native]").forEach((el) => delete el.dataset.gsfNative);
+  }
+
+  async function scanProgress() {
+    if (!settings.progressEnabled) {
+      if (document.querySelector(".gsf-progress, [data-gsf-native]")) clearProgress();
+      return;
+    }
+    const resolved = progressScope();
+    if (!resolved) {
+      if (document.querySelector(".gsf-progress, [data-gsf-native]")) clearProgress();
+      return;
+    }
+    const { scope } = resolved;
+    const done = settings.progressDoneField && settings.progressDoneValue ? { field: settings.progressDoneField, value: settings.progressDoneValue } : null;
+    const scopeKey = JSON.stringify([scope, done]);
+    const now = Date.now();
+    const toFetch = new Map();
+    for (const { native, ref } of collectProgress()) {
+      const key = `${scopeKey}|${ref.key}`;
+      const hit = progressCache.get(key);
+      if (hit && now - hit.at < CACHE_TTL_MS) {
+        if (!hit.counts) releaseProgress(native);
+        else {
+          const mine = mountProgress(native, key);
+          if (mine.dataset.gsfFilled !== "true") fillProgress(mine, hit.counts, scope);
+        }
+        continue;
+      }
+      if (progressPending.has(key)) continue;
+      mountProgress(native, key);
+      toFetch.set(key, ref);
+    }
+    if (!toFetch.size) return;
+
+    for (const key of toFetch.keys()) progressPending.add(key);
+    const issues = [...toFetch.values()].map(({ owner, repo, number }) => ({ owner, repo, number }));
+    const chunks = [];
+    for (let i = 0; i < issues.length; i += PROGRESS_CHUNK) chunks.push(issues.slice(i, i + PROGRESS_CHUNK));
+    let response;
+    try {
+      const parts = await Promise.all(chunks.map((chunk) => api.runtime.sendMessage({ type: "fetchProgress", issues: chunk, scope, done })));
+      const failed = parts.find((part) => !part || part.error);
+      response = failed || { progress: Object.assign({}, ...parts.map((part) => part.progress || {})) };
+    } catch (err) {
+      response = { error: err && err.message ? err.message : String(err) };
+    } finally {
+      for (const key of toFetch.keys()) progressPending.delete(key);
+    }
+
+    const failed = !response || response.error;
+    if (failed) {
+      showNotice(response && response.error === "NO_TOKEN"
+        ? "GitHub Issue Toolkit: add a GitHub token in the extension settings to show the sub-issue progress here."
+        : `GitHub Issue Toolkit: ${response ? response.error : "unknown error"}`, true);
+    }
+    const at = Date.now();
+    for (const [key, ref] of toFetch) {
+      progressCache.set(key, { at, counts: failed ? null : (response.progress[`${ref.owner}/${ref.repo}#${ref.number}`] || null) });
+    }
+    for (const { native, ref } of collectProgress()) {
+      const key = `${scopeKey}|${ref.key}`;
+      if (!toFetch.has(key)) continue;
+      const hit = progressCache.get(key);
+      if (hit && hit.counts) fillProgress(mountProgress(native, key), hit.counts, scope);
+      else releaseProgress(native);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -2229,7 +2409,7 @@
   }
 
   // Everything this extension adds to the page, so its own mutations never schedule another scan.
-  const OURS = ["gsf-badge", "gsf-badges", "gsf-notice", "gsf-pins", "gsf-pins-header-btn", "gsf-kanban", "gsf-kanban-bar", "gsf-sidebar-rail", "gsf-load", "gsf-load-card"];
+  const OURS = ["gsf-badge", "gsf-badges", "gsf-notice", "gsf-pins", "gsf-pins-header-btn", "gsf-kanban", "gsf-kanban-bar", "gsf-sidebar-rail", "gsf-load", "gsf-load-card", "gsf-progress"];
   const OURS_SELECTOR = OURS.map((name) => `.${name}`).join(", ");
 
   const observer = new MutationObserver((mutations) => {
@@ -2264,6 +2444,14 @@
       if (changes.ageUnit) settings.ageUnit = changes.ageUnit.newValue || "months";
       clearBadges();
       clearLoad();
+      schedule();
+    }
+    if (changes.progressEnabled || changes.progressScopeField || changes.progressDoneField || changes.progressDoneValue) {
+      if (changes.progressEnabled) settings.progressEnabled = changes.progressEnabled.newValue === true;
+      if (changes.progressScopeField) settings.progressScopeField = String(changes.progressScopeField.newValue || "").trim();
+      if (changes.progressDoneField) settings.progressDoneField = String(changes.progressDoneField.newValue || "").trim();
+      if (changes.progressDoneValue) settings.progressDoneValue = String(changes.progressDoneValue.newValue || "").trim();
+      clearProgress();
       schedule();
     }
     if (changes.loadEnabled || changes.loadLimit) {
@@ -2303,7 +2491,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadLimit"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadLimit", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -2320,6 +2508,10 @@
     settings.loadLimit = Number.isFinite(Number(stored.loadLimit)) && stored.loadLimit !== undefined ? Math.max(0, Number(stored.loadLimit)) : 1;
     sidebarCollapsed = stored.sidebarCollapsed === true;
     settings.hideProjectsSection = stored.hideProjectsSection === true;
+    settings.progressEnabled = stored.progressEnabled === true;
+    settings.progressScopeField = String(stored.progressScopeField || "").trim();
+    settings.progressDoneField = String(stored.progressDoneField || "").trim();
+    settings.progressDoneValue = String(stored.progressDoneValue || "").trim();
     syncProjectsSection();
     kanban = { ...kanban, ...(stored.kanban || {}) };
     pins = Array.isArray(stored.pins) ? stored.pins : [];

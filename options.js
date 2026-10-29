@@ -14,6 +14,10 @@ const sidebarToggleInput = document.getElementById("sidebar-toggle");
 const hideProjectsInput = document.getElementById("hide-projects");
 const loadEnabledInput = document.getElementById("load-enabled");
 const loadLimit = document.getElementById("load-limit");
+const progressEnabledInput = document.getElementById("progress-enabled");
+const progressScope = document.getElementById("progress-scope");
+const progressDoneField = document.getElementById("progress-done-field");
+const progressDoneValue = document.getElementById("progress-done-value");
 const prInputs = {
   prAssociation: document.getElementById("pr-association"),
   prFork: document.getElementById("pr-fork"),
@@ -195,7 +199,7 @@ if (hasChrome) {
     setStatus(ok ? "Access to github.com granted." : "Access was not granted.", ok);
     refreshAccess();
   });
-  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadLimit", "searchShortcuts", "searchDefault", "pins"]).then((stored) => {
+  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadLimit", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "searchShortcuts", "searchDefault", "pins"]).then((stored) => {
     tokenInput.value = stored.token || "";
     fields = parseFields(stored.fields);
     renderChips();
@@ -208,6 +212,10 @@ if (hasChrome) {
     hideProjectsInput.checked = stored.hideProjectsSection === true;
     loadEnabledInput.checked = stored.loadEnabled === true;
     loadLimit.value = stored.loadLimit === undefined ? 1 : stored.loadLimit;
+    progressEnabledInput.checked = stored.progressEnabled === true;
+    progressScope.value = stored.progressScopeField || "";
+    progressDoneField.value = stored.progressDoneField || "";
+    progressDoneValue.value = stored.progressDoneValue || "";
     prInputs.prAssociation.checked = stored.prAssociation !== false;
     prInputs.prFork.checked = stored.prFork === true;
     prInputs.prSize.checked = stored.prSize === true;
@@ -251,8 +259,9 @@ document.getElementById("save").addEventListener("click", async () => {
   const fieldList = fields.join(", ");
   const search = checkShortcuts();
   if (search.error) return setStatus(search.error, false);
+  if (Boolean(progressDoneField.value.trim()) !== Boolean(progressDoneValue.value.trim())) return setStatus("Fill in both the field and the value that count as done, or leave both empty.", false);
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
-  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, searchShortcuts: search.list, searchDefault: search.defaultName });
+  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, progressEnabled: progressEnabledInput.checked, progressScopeField: progressScope.value.trim(), progressDoneField: progressDoneField.value.trim(), progressDoneValue: progressDoneValue.value.trim(), searchShortcuts: search.list, searchDefault: search.defaultName });
   if (!token) setStatus("Saved without a token. Badges need one.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);
 });

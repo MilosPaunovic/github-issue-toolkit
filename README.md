@@ -57,6 +57,15 @@ Illustrations of an invented repository, rendered from the documentation site wi
 </picture>
 </p>
 
+**Sub-issue progress** (optional, off by default): on a Projects table grouped by parent issue, and in the Sub-issues progress column, GitHub's bar counts every sub-issue, including the ones the view hides with a filter or a slice. This one counts only the sub-issues inside the scope the view is narrowed to, and says what it counts.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-progress-dark.png">
+  <img src="docs/example-progress-light.png" alt="Group headers of a Projects table with a progress bar reading 12 / 18 done for release:2.1" width="760">
+</picture>
+</p>
+
 **Issue age** (optional, off by default): a gray badge with the time since the issue was created, in months, weeks or days, or today, this week or this month for an issue younger than the unit; yellow once the issue is older than the threshold, 90 days by default.
 
 <p align="center">
@@ -108,6 +117,7 @@ Illustrations of an invented repository, rendered from the documentation site wi
 - The same badges appear on GitHub Projects views: after the issue number in the table layout, under the title on board cards. Fields the view already shows are skipped so nothing appears twice: a column, a card field, or the field a board is grouped by (can be turned off in the settings).
 - An optional **age** badge shows how old each issue is, in months (`3 mo`), weeks or days, reads `today`, `this week` or `this month` for an issue younger than the unit, and turns yellow once an issue has been open longer than a threshold you choose (90 days by default). Off by default.
 - **Pull request badges** on the pull request list and on Projects views that contain pull requests: the author's relation to the repository (first-time contributor, external, contributor, collaborator, member, bot) on by default, plus optional badges for forks, size (added lines in green, removed in red) and merge state.
+- A **sub-issue progress** bar that replaces GitHub's on grouped Projects tables and in the Sub-issues progress column and counts only the sub-issues inside the scope the view is narrowed to, a release for example, reading `12 / 18 done for release:2.1`. Optional, off by default.
 - An **epic kanban**: above the sub-issues list of an issue, a List and Kanban toggle draws those sub-issues as a board. The columns come from any field the sub-issues carry (or their state, type or assignee), the cards inside a column are ordered by another, a filter keeps one value of a third, and a checkbox hides the closed sub-issues; every choice is remembered. Dragging a card to another column writes the field value back to GitHub, or closes and reopens the issue. Both the board and the dragging can be switched off in the settings.
 - A button that **hides the issue sidebar**: one press folds away the whole metadata column, assignees, labels, type, fields, projects and the rest, and gives the issue body and the board that width. The button sits in the gutter between the two, so it does not move when the sidebar goes, and what you chose holds on every issue. Can be switched off in the settings. A separate, optional setting hides only GitHub's **Projects** section of the sidebar and leaves the rest in place.
 - A **contributor load** mark next to usernames on issues and pull requests: an outlined dot for nothing assigned, a filled dot at or under the limit you set, and a count above it reading assigned over open pull requests. Hovering lists the issues that person holds in the organization, each with the pull request that closes it. Off by default.
@@ -155,7 +165,7 @@ Minimum version: Firefox 140, required by the `data_collection_permissions` mani
    - **Fine-grained**: https://github.com/settings/personal-access-tokens/new. Set the organization as resource owner, pick the repositories, and under Repository permissions set `Issues` to `Read-only` (or `Read and write` if you want to link issues to pinned epics from the panel, or drag cards on the kanban board).
 2. Paste the token on the settings page, click **Test token**, then **Save**.
 3. Optionally add the **Field names** to show: each field is a chip, press Enter or comma to add one, Backspace or the × button to remove one. Names are matched case-insensitively. An entry starting with `label:` shows labels instead, `label:area/*` for every label starting with `area/` or `label:bug` for one, in the badge colour nearest to the label's own. With no field, no field badges are shown and nothing is asked of the API for them.
-4. Optionally enable the **Issue age** badge (off by default), pick its unit and the age after which it turns yellow (90 days by default), choose which **Pull request** badges you want (author relation on by default; fork, size and merge state off), enable **Contributor load** and set the limit above which someone is flagged (off by default, limit 1), and decide whether you want the **Epic kanban** toggle, dragging cards on it, the button that hides the **Issue sidebar**, and the **Pinned issues** button in GitHub's top bar (all on by default), and whether to hide the sidebar's **Projects** section (off by default). Set up your **Address bar search** shortcuts (a `repo` and a `pr` one to start with).
+4. Optionally enable the **Issue age** badge (off by default), pick its unit and the age after which it turns yellow (90 days by default), choose which **Pull request** badges you want (author relation on by default; fork, size and merge state off), enable **Contributor load** and set the limit above which someone is flagged (off by default, limit 1), choose whether to replace GitHub's **Sub-issue progress** with one that counts a scope (off by default), and decide whether you want the **Epic kanban** toggle, dragging cards on it, the button that hides the **Issue sidebar**, and the **Pinned issues** button in GitHub's top bar (all on by default), and whether to hide the sidebar's **Projects** section (off by default). Set up your **Address bar search** shortcuts (a `repo` and a `pr` one to start with).
 5. Open any issue with sub-issues, or a project view such as `https://github.com/orgs/<org>/projects/<n>/views/<v>`.
 
 ### Epic kanban
@@ -170,6 +180,17 @@ An issue that has sub-issues gets a **List** and **Kanban** toggle above the lis
 - Each card shows the issue state, its number, its assignees, the title and the badges for your configured fields, the issue type and the age when enabled. The field that forms the columns is not repeated on the cards.
 - Both choices and the toggle itself are remembered across issues and tabs. Up to 500 sub-issues are loaded, in pages of 100; beyond that the toolbar count says how many of the total are shown.
 - Apart from a card you drag yourself, the board only reads. A change made elsewhere shows up once the five-minute cache expires or the page is reloaded.
+
+### Sub-issue progress
+
+GitHub's progress bar next to a parent issue, in a group header of a table grouped by parent and in the Sub-issues progress column, counts every sub-issue of that issue. A view sliced by release 2.1 and filtered with `-stage:done` shows the sub-issues of that release that are not done, yet the bar still reads done over all of them, releases included.
+
+With **Sub-issue progress** on, the extension draws its own bar in place of GitHub's, counting only the sub-issues inside the scope and saying so: `12 / 18 done for release:2.1`.
+
+- **Scope field** is the field, or a comma separated list of fields, that narrows the count, `Release` or `Release, Owner`. A field takes part when the view is narrowed to a value of it: the value the view is sliced by when the slicer is on that field, or a term of the filter typed above the view, `release:2.1` or `owner:"Platform"`. A negated term, `-owner:Platform`, and a list of values are not a scope. A sub-issue is counted when it has every one of those values. When the view is narrowed to none of the fields, GitHub's own bar stays. Left empty, every sub-issue is counted.
+- **Counts as done** is a field and a value, `Stage` and `Done`. A sub-issue is done when its field has that value. Left empty, a closed sub-issue is a done one.
+- The tooltip on the bar adds how many sub-issues the issue has in total, whatever the scope.
+- Counts are read in batches of ten issues, cached for five minutes, and need a token that can read issue fields, like the badges. Nothing is written.
 
 ### Issue sidebar
 
