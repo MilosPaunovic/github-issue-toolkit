@@ -224,6 +224,21 @@
     </section>
 
     <section class="card">
+      <h2>Sub-issue progress</h2>
+      <p class="desc">On a Projects table grouped by parent issue, and in the Sub-issues progress column, GitHub counts every sub-issue of an issue, including the ones the view hides with a filter or a slice. This replaces its bar with one that counts only the sub-issues inside the scope the view is narrowed to, and says what it counts, for example <code>14 / 18 done for release:2.1</code>.</p>
+      <label class="check"><input id="progress-enabled" type="checkbox"> Replace GitHub's sub-issue progress (off by default)</label>
+      <label for="progress-scope">Scope field (optional)</label>
+      <input id="progress-scope" type="text" spellcheck="false" autocomplete="off" placeholder="Release">
+      <p class="hint">The field whose value narrows the count, or several separated by commas, <code>Release, Owner</code> for example, matched case-insensitively. Each value is read from what the view is sliced by, or from a <code>release:2.1</code> term in its filter, and a sub-issue must have all of them. When the view is narrowed to none of them, GitHub's own bar stays. Leave it empty to count every sub-issue.</p>
+      <label for="progress-done-field">Counts as done (optional)</label>
+      <div class="input-row">
+        <input id="progress-done-field" type="text" spellcheck="false" autocomplete="off" placeholder="Stage" aria-label="Field that marks a sub-issue as done">
+        <input id="progress-done-value" type="text" spellcheck="false" autocomplete="off" placeholder="Done" aria-label="Value of that field that marks a sub-issue as done">
+      </div>
+      <p class="hint">A sub-issue counts as done when this field has this value, <code>Stage</code> and <code>Done</code> for example. Leave both empty and a closed sub-issue is a done one. Needs a token that can read issue fields, like the badges.</p>
+    </section>
+
+    <section class="card">
       <h2>Pull requests</h2>
       <p class="desc">Badges on the pull request list, next to the labels of each row. Everything comes from the same read-only API access as the field badges.</p>
       <label class="check"><input id="pr-association" type="checkbox"> Author's relation to the repository</label>

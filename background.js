@@ -895,6 +895,94 @@ async function linkSubIssue(parent, child, replaceParent) {
   return { ok: true, parent: `${p.nameWithOwner}#${p.number}`, child: `${c.nameWithOwner}#${c.number}` };
 }
 
+// ---------------------------------------------------------------------------
+// Scoped sub-issue progress: how many sub-issues of an issue are done, counting only those inside a scope
+// ---------------------------------------------------------------------------
+
+// A request of this many issues, each with up to a page of sub-issues carrying their field values, stays well
+// under GitHub's node limit; a bigger batch would be refused as a whole.
+const PROGRESS_CHUNK = 10;
+const PROGRESS_MAX_PAGES = 5;
+
+function sameText(a, b) {
+  return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+}
+
+// Whether one of the field values is `wanted` for `field`. A multi-select value reads as a comma separated list,
+// so any of its entries can match.
+function hasValue(values, field, wanted) {
+  return values.some((v) => sameText(v.field, field) && String(v.value).split(",").some((part) => sameText(part, wanted)));
+}
+
+function progressSelection(cursor, withValues) {
+  return `subIssues(first: ${SUB_ISSUE_PAGE}${cursor ? `, after: ${JSON.stringify(cursor)}` : ""}) {
+    pageInfo { hasNextPage endCursor }
+    nodes { state ${withValues ? FIELD_VALUE_FRAGMENT : ""} }
+  }`;
+}
+
+// `scope` is a list of { field, value }: only the sub-issues that have every one of those values are counted,
+// none means all of them; `done` names the field value that marks one as done, none means the issue is closed.
+function tally(counts, nodes, scope, done) {
+  for (const node of nodes || []) {
+    if (!node) continue;
+    counts.all++;
+    const values = ((node.issueFieldValues && node.issueFieldValues.nodes) || []).map(fieldValue).filter(Boolean);
+    if (scope && !scope.every((s) => hasValue(values, s.field, s.value))) continue;
+    counts.total++;
+    if (done ? hasValue(values, done.field, done.value) : node.state === "CLOSED") counts.done++;
+  }
+}
+
+// issues: [{owner, repo, number}] -> { "owner/repo#n": { done, total, all } }, where `all` counts every sub-issue
+// whatever the scope, so the page can say how much the scope leaves out.
+async function fetchProgress(issues, scope, done) {
+  scope = Array.isArray(scope) && scope.length ? scope : null;
+  const { token } = await getSettings();
+  if (!token) return { error: "NO_TOKEN" };
+  const withValues = Boolean((scope && scope.length) || done);
+  const byRepo = new Map();
+  for (const it of issues) {
+    const key = `${it.owner}/${it.repo}`;
+    if (!byRepo.has(key)) byRepo.set(key, { owner: it.owner, repo: it.repo, numbers: new Set() });
+    byRepo.get(key).numbers.add(Number(it.number));
+  }
+  const parts = [];
+  let r = 0;
+  for (const { owner, repo, numbers } of byRepo.values()) {
+    const items = [...numbers].map((n) => `i${n}: issue(number: ${n}) { number ${progressSelection(null, withValues)} }`);
+    parts.push(`r${r++}: repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repo)}) { nameWithOwner ${items.join("\n")} }`);
+  }
+  const data = await graphql(token, `{ ${parts.join("\n")} }`, { partial: true });
+  const progress = {};
+  const unfinished = [];
+  for (const repoNode of Object.values(data)) {
+    if (!repoNode || !repoNode.nameWithOwner) continue;
+    const [owner, repo] = repoNode.nameWithOwner.split("/");
+    for (const [alias, issueNode] of Object.entries(repoNode)) {
+      if (!alias.startsWith("i") || !issueNode || typeof issueNode !== "object" || !issueNode.subIssues) continue;
+      const key = `${repoNode.nameWithOwner}#${issueNode.number}`;
+      const counts = { done: 0, total: 0, all: 0 };
+      tally(counts, issueNode.subIssues.nodes, scope, done);
+      progress[key] = counts;
+      const info = issueNode.subIssues.pageInfo;
+      if (info && info.hasNextPage) unfinished.push({ key, owner, repo, number: issueNode.number, cursor: info.endCursor });
+    }
+  }
+  // An issue with more sub-issues than one page holds is read on, page by page.
+  for (const item of unfinished) {
+    let cursor = item.cursor;
+    for (let page = 1; cursor && page < PROGRESS_MAX_PAGES; page++) {
+      const more = await graphql(token, `{ r: repository(owner: ${JSON.stringify(item.owner)}, name: ${JSON.stringify(item.repo)}) { issue(number: ${item.number}) { ${progressSelection(cursor, withValues)} } } }`, { partial: true });
+      const connection = more.r && more.r.issue && more.r.issue.subIssues;
+      if (!connection) break;
+      tally(progress[item.key], connection.nodes, scope, done);
+      cursor = connection.pageInfo && connection.pageInfo.hasNextPage ? connection.pageInfo.endCursor : null;
+    }
+  }
+  return { progress };
+}
+
 function reply(promise, sendResponse) {
   promise
     .then(sendResponse)
@@ -915,6 +1003,9 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg.type === "fetchContributorLoad") {
     return reply(fetchContributorLoad(msg.contributor), sendResponse);
+  }
+  if (msg.type === "fetchProgress") {
+    return reply(fetchProgress(msg.issues || [], msg.scope || null, msg.done || null), sendResponse);
   }
   if (msg.type === "fetchEpic") {
     return reply(fetchEpic(msg.issue), sendResponse);

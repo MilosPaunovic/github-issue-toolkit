@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Sub-issue progress**: an optional setting, off by default, replaces GitHub's progress bar on a Projects table grouped by parent issue and in the Sub-issues progress column with one that counts only the sub-issues inside the scope the view is narrowed to, and says what it counts, for example `12 / 18 done for release:2.1`. The scope is one or more fields, taken from the value the view is sliced by or from a term of its filter; left empty, every sub-issue is counted. A sub-issue is done when a field you name has a value you name, or when it is closed if you name none. When the view is narrowed to none of the scope fields, GitHub's own bar stays.
 
 ## [2.9.0] - 2026-10-27
 

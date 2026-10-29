@@ -789,3 +789,43 @@
   background: var(--bgColor-neutral-muted);
   color: var(--fgColor-default) !important;
 }
+
+/* Scoped sub-issue progress: the bar that stands in for GitHub's own on grouped tables and the progress column.
+   The label says what is counted and is never cut: GitHub sizes the box around its own, shorter, text, so the box is
+   let grow and the group header, which clips what does not fit, lets the label run on past its edge. */
+[data-gsf-native] {
+  display: none !important;
+}
+.gsf-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  color: var(--fgColor-muted, var(--color-fg-muted));
+}
+div:has(> .gsf-progress) {
+  width: auto !important;
+  flex: 0 0 auto !important;
+}
+[role="row"]:has(.gsf-progress) [class*="groupHeader"] {
+  overflow: visible !important;
+}
+.gsf-progress-bar {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bgColor-neutral-muted, var(--color-neutral-muted));
+}
+.gsf-progress-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--fgColor-done, var(--color-done-fg));
+}
+.gsf-progress-pct {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
