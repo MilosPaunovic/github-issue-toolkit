@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.10.0] - 2026-10-29
+
 ### Added
 
 - **Sub-issue progress**: an optional setting, off by default, replaces GitHub's progress bar on a Projects table grouped by parent issue and in the Sub-issues progress column with one that counts only the sub-issues inside the scope the view is narrowed to, and says what it counts, for example `12 / 18 done for release:2.1`. The scope is one or more fields, taken from the value the view is sliced by or from a term of its filter; left empty, every sub-issue is counted. A sub-issue is done when a field you name has a value you name, or when it is closed if you name none. When the view is narrowed to none of the scope fields, GitHub's own bar stays.
@@ -204,13 +208,15 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.9.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.0...HEAD
+[2.10.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.1...v2.4.2
+[2.10.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.10.0
 [2.9.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.9.0
 [2.8.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.8.0
 [2.7.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.7.0
