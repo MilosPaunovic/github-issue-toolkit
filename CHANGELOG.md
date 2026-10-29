@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - **Sub-issue progress**: an optional setting, off by default, replaces GitHub's progress bar on a Projects table grouped by parent issue and in the Sub-issues progress column with one that counts only the sub-issues inside the scope the view is narrowed to, and says what it counts, for example `12 / 18 done for release:2.1`. The scope is one or more fields, taken from the value the view is sliced by or from a term of its filter; left empty, every sub-issue is counted. A sub-issue is done when a field you name has a value you name, or when it is closed if you name none. When the view is narrowed to none of the scope fields, GitHub's own bar stays.
 
+### Changed
+
+- The toolbar icon now opens a dropdown with a switch for every feature instead of the settings page. Switches are saved when flipped and open GitHub pages follow them at once. The token, the field names, the age threshold, the contributor limit and the address bar shortcuts stay on the full settings page, reached with the **All settings** button, which keeps working from the extensions page as before. The dropdown also shows the site access box on Firefox.
+
 ## [2.9.0] - 2026-10-27
 
 ### Added

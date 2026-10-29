@@ -617,7 +617,7 @@
             <li><strong>Get the code</strong> Download <code>github-issue-toolkit-&lt;version&gt;-chrome.zip</code> from the <a href="https://github.com/MilosPaunovic/github-issue-toolkit/releases">releases page</a> and unzip it, or clone <a href="https://github.com/MilosPaunovic/github-issue-toolkit">MilosPaunovic/github-issue-toolkit</a>.</li>
             <li><strong>Enable developer mode</strong> Open <code>chrome://extensions</code> (<code>edge://extensions</code>, <code>brave://extensions</code>, and so on) and switch on <em>Developer mode</em>.</li>
             <li><strong>Load unpacked</strong> Click <em>Load unpacked</em> and select the unzipped folder. The icon appears in the toolbar.</li>
-            <li><strong>Open the settings</strong> Click the toolbar icon, or <em>Details</em> then <em>Extension options</em>.</li>
+            <li><strong>Open the settings</strong> Click the toolbar icon for the quick switches, then <em>All settings</em> for the token and everything else, or open <em>Details</em> then <em>Extension options</em>.</li>
           </ol>
         </div>
         <div class="card">
@@ -625,7 +625,7 @@
           <ol class="steps" style="margin-top:12px">
             <li><strong>Get the Firefox package</strong> Download <code>github-issue-toolkit-&lt;version&gt;-firefox.zip</code> from the <a href="https://github.com/MilosPaunovic/github-issue-toolkit/releases">releases page</a>, or build it with <code>scripts/package.sh</code>.</li>
             <li><strong>Load it</strong> Open <code>about:debugging#/runtime/this-firefox</code>, click <em>Load Temporary Add-on</em>, pick the zip. Temporary add-ons are removed when Firefox restarts; a permanent install needs a package signed by Mozilla.</li>
-            <li><strong>Allow site access</strong> Open the settings from the toolbar icon and click <em>Allow access to github.com</em>. Firefox asks for this separately from the installation.</li>
+            <li><strong>Allow site access</strong> Click the toolbar icon, which shows the box itself, or open the settings page and click <em>Allow access to github.com</em>. Firefox asks for this separately from the installation.</li>
           </ol>
         </div>
       </div>
@@ -671,6 +671,13 @@
         <img class="only-light" src="settings-light.png" alt="The settings page: token input and the field names chip box">
         <img class="only-dark" src="settings-dark.png" alt="The settings page in dark mode: token input and the field names chip box">
         <figcaption>The settings page follows your browser theme, light or dark.</figcaption>
+      </figure>
+      <h3 style="margin-top:28px">Quick settings</h3>
+      <p class="muted" style="font-size:14px">The toolbar icon opens a small dropdown with a switch for every feature, so turning the age badge or the pull request badges on and off takes one click and no trip to a settings tab. Each switch is saved the moment you flip it and a page you have open follows it at once. What needs typing, the token, the field names, the age threshold, the contributor limit and the address bar shortcuts, stays on the full settings page, one click away under <em>All settings</em>.</p>
+      <figure>
+        <img class="only-light" src="popup-light.png" alt="The toolbar dropdown: switches for badges, pull requests, projects and epics and issue pages, with the token state and an All settings button" style="max-width:382px">
+        <img class="only-dark" src="popup-dark.png" alt="The toolbar dropdown in dark mode: switches for badges, pull requests, projects and epics and issue pages, with the token state and an All settings button" style="max-width:382px">
+        <figcaption>The toolbar dropdown, also following your browser theme.</figcaption>
       </figure>
     </div>
   </section>

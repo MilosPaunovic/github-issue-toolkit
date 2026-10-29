@@ -9,6 +9,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 python3 scripts/render-examples.py
 python3 scripts/render-settings.py
+python3 scripts/render-popup.py
 before="$(md5sum docs/social-preview.png | cut -d' ' -f1)"
 python3 scripts/render-social-preview.py
 after="$(md5sum docs/social-preview.png | cut -d' ' -f1)"
