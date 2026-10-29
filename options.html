@@ -225,7 +225,7 @@
 
     <section class="card">
       <h2>Sub-issue progress</h2>
-      <p class="desc">On a Projects table grouped by parent issue, and in the Sub-issues progress column, GitHub counts every sub-issue of an issue, including the ones the view hides with a filter or a slice. This replaces its bar with one that counts only the sub-issues inside the scope the view is narrowed to, and says what it counts, for example <code>14 / 18 done for release:2.1</code>.</p>
+      <p class="desc">On a Projects table grouped by parent issue, GitHub's bar in each group header counts every sub-issue of an issue, including the ones the view hides with a filter or a slice. This replaces it with one that counts only the sub-issues inside the scope the view is narrowed to and shows the scope as tags, for example <code>14 / 18 done</code> followed by <code>release:2.1</code>. The Sub-issues progress column keeps GitHub's own bar.</p>
       <label class="check"><input id="progress-enabled" type="checkbox"> Replace GitHub's sub-issue progress (off by default)</label>
       <label for="progress-scope">Scope field (optional)</label>
       <input id="progress-scope" type="text" spellcheck="false" autocomplete="off" placeholder="Release">

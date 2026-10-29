@@ -605,13 +605,13 @@
     return scope.map(({ field, value }) => `${field.toLowerCase()}:${/\s/.test(value) ? `"${value}"` : value}`).join(" ");
   }
 
-  // GitHub's progress is a "done / total" text, a segmented bar and a percentage in one flex box, in a group header
-  // of a grouped table and in the "Sub-issues progress" column. That box is what gets replaced.
+  // GitHub's progress is a "done / total" text, a segmented bar and a percentage in one flex box. The one in a group
+  // header of a table grouped by parent issue is what gets replaced; the box in the "Sub-issues progress" column stays.
   function collectProgress() {
     const targets = [];
     for (const bar of document.querySelectorAll('[role="row"] [data-component="ProgressBar"]')) {
       const native = bar.parentElement;
-      if (!native || native.closest(".gsf-progress") || !/\d+\s*\/\s*\d+/.test(native.textContent)) continue;
+      if (!native || native.closest(".gsf-progress") || !native.closest('[class*="groupHeader"]') || !/\d+\s*\/\s*\d+/.test(native.textContent)) continue;
       const row = native.closest('[role="row"]');
       const anchor = [...row.querySelectorAll("a[href]")].find((a) => issueRef(a) && !a.closest(".gsf-badge, .gsf-progress"));
       const ref = anchor && issueRef(anchor);
@@ -637,7 +637,8 @@
   function fillProgress(mine, counts, scope) {
     const { done, total, all } = counts;
     const text = document.createElement("span");
-    text.textContent = `${done} / ${total} done${scope ? ` for ${scopeName(scope)}` : ""}`;
+    text.className = "gsf-progress-num";
+    text.textContent = `${done} / ${total} done`;
     const track = document.createElement("span");
     track.className = "gsf-progress-bar";
     const fill = document.createElement("i");
@@ -647,8 +648,15 @@
     const pct = document.createElement("span");
     pct.className = "gsf-progress-pct";
     pct.textContent = `${percent}%`;
+    // The scope reads as one tag per value, so it says what is counted without turning the label into a long string.
+    const chips = (scope || []).map((entry) => {
+      const chip = document.createElement("span");
+      chip.className = "gsf-progress-chip";
+      chip.textContent = scopeName([entry]);
+      return chip;
+    });
     mine.title = `${done} of ${total} sub-issues done${scope ? ` in ${scopeName(scope)}` : ""}${all !== total ? `, ${all} sub-issues in total` : ""}`;
-    mine.replaceChildren(text, track, pct);
+    mine.replaceChildren(text, track, pct, ...chips);
     mine.dataset.gsfFilled = "true";
   }
 

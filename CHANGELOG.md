@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The sub-issue progress shows its scope as one tag per value, `12 / 18 done` followed by a `release:2.1` tag, instead of a long sentence that GitHub's group header clipped, and it replaces GitHub's bar in the group headers of a grouped table only. The Sub-issues progress column keeps GitHub's own bar.
 
 ## [2.10.0] - 2026-10-29
 
