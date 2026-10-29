@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.10.1] - 2026-10-29
+
 ### Changed
 
 - The sub-issue progress shows its scope as one tag per value, `12 / 18 done` followed by a `release:2.1` tag, instead of a long sentence that GitHub's group header clipped, and it replaces GitHub's bar in the group headers of a grouped table only. The Sub-issues progress column keeps GitHub's own bar.
@@ -210,7 +214,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.1...HEAD
+[2.10.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.0...v2.10.1
 [2.10.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.7.0...v2.8.0
@@ -218,6 +223,7 @@ First release.
 [2.6.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.4.1...v2.4.2
+[2.10.1]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.10.1
 [2.10.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.10.0
 [2.9.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.9.0
 [2.8.0]: https://github.com/MilosPaunovic/github-issue-toolkit/releases/tag/v2.8.0
