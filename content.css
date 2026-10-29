@@ -790,8 +790,8 @@
   color: var(--fgColor-default) !important;
 }
 
-/* Scoped sub-issue progress: the bar that stands in for GitHub's own on grouped tables and the progress column.
-   The label says what is counted and is never cut: GitHub sizes the box around its own, shorter, text, so the box is
+/* Scoped sub-issue progress: the bar that stands in for GitHub's own in the group headers of a grouped table.
+   The scope is shown as tags and nothing is cut: GitHub sizes the box around its own, shorter, text, so the box is
    let grow and the group header, which clips what does not fit, lets the label run on past its edge. */
 [data-gsf-native] {
   display: none !important;
@@ -825,7 +825,20 @@ div:has(> .gsf-progress) {
   height: 100%;
   background: var(--fgColor-done, var(--color-done-fg));
 }
+.gsf-progress-num {
+  font-weight: 500;
+  color: var(--fgColor-default, var(--color-fg-default));
+}
 .gsf-progress-pct {
   flex: 0 0 auto;
   font-variant-numeric: tabular-nums;
+}
+.gsf-progress-chip {
+  flex: 0 0 auto;
+  padding: 0 7px;
+  border-radius: 9999px;
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--fgColor-accent, var(--color-accent-fg));
+  background: var(--bgColor-accent-muted, var(--color-accent-subtle));
 }
