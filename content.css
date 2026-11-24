@@ -568,6 +568,10 @@
   cursor: pointer;
   transition: background 0.1s, border-color 0.1s, color 0.1s;
 }
+/* Waiting to hear whether the person belongs to the organization, so that a member is never seen with a button. */
+.gsf-load[data-pending] {
+  display: none;
+}
 .gsf-load:hover {
   border-color: var(--fgColor-accent);
   background: var(--bgColor-accent-muted);
