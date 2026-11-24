@@ -1172,7 +1172,7 @@ div:has(> .gsf-progress) {
   color: var(--fgColor-muted);
 }
 
-/* An organization's own colour, where it has one, as an accent on the GitHub design: a bar on top of the card and
+/* An organization's own colour, where it has one, as an accent on the GitHub design: a bar down the left edge of the card and
    the panel, the colour on headings, counts and the member status. Without one, none of this applies. */
 .gsf-load-card[data-brand],
 .gsf-profile-org[data-brand],
@@ -1180,7 +1180,7 @@ div:has(> .gsf-progress) {
   --gsf-ink: color-mix(in srgb, var(--gsf-brand) 78%, var(--fgColor-default));
 }
 .gsf-load-card[data-brand] {
-  border-top: 3px solid var(--gsf-brand);
+  border-left: 4px solid var(--gsf-brand);
 }
 .gsf-load-card[data-brand] .gsf-load-sectionhead > span:first-child,
 .gsf-load-card[data-brand] .gsf-load-name {
@@ -1203,7 +1203,7 @@ div:has(> .gsf-progress) {
   color: var(--gsf-ink);
 }
 .gsf-profile-org[data-brand] {
-  border-top: 3px solid var(--gsf-brand);
+  border-left: 4px solid var(--gsf-brand);
 }
 .gsf-profile-org[data-brand] .gsf-profile-head {
   border-bottom-color: color-mix(in srgb, var(--gsf-brand) 30%, var(--borderColor-default));
