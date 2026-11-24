@@ -99,6 +99,7 @@ function renderHomeToken(token) {
   const pill = document.getElementById("home-token");
   pill.textContent = token ? "Token saved" : "No token yet";
   pill.className = `pill ${token ? "ok" : "warn"}`;
+  document.getElementById("home-add-token").hidden = Boolean(token);
 }
 
 function renderPinsCount(pins) {
