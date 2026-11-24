@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, profileEnabled: false, profileOrgs: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -312,6 +312,7 @@
     scanPulls().catch((err) => console.warn("[github-issue-toolkit]", err));
     scanProgress().catch((err) => console.warn("[github-issue-toolkit]", err));
     scanLoad().catch((err) => console.warn("[github-issue-toolkit]", err));
+    scanProfile();
     const rows = collectRows();
     if (!rows.length) return;
 
@@ -1354,6 +1355,220 @@
     if (target && target.nodeType === 1 && loadCard.contains(target)) return;
     loadCardClose();
   }, true);
+
+  // ---------------------------------------------------------------------------
+  // Profile panel: what a person has done in an organization, at the top of their profile
+  // ---------------------------------------------------------------------------
+
+  // A colour for the organizations that have one; any other gets GitHub's own accent.
+  const PROFILE_BRANDS = { "kestra-io": "#8405ff" };
+  const PROFILE_MAX_ORGS = 3;
+  // Kept for as long as the tab is open, like the contributor reads: "org/login" -> { at, data, error }.
+  const profileCache = new Map();
+  const profilePending = new Map();
+  // The tiles: label, key of the answer, the terms behind the number, and the note under it.
+  const PROFILE_TILES = [
+    ["Merged PRs", "merged", (l) => `is:pr is:merged author:${l}`],
+    ["Open PRs", "open", (l) => `is:pr is:open author:${l}`],
+    ["Closed, not merged", "closed", (l) => `is:pr is:closed is:unmerged author:${l}`],
+    ["Issues opened", "issues", (l) => `is:issue author:${l}`],
+    ["PRs reviewed", "reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`],
+    ["Assigned, open", "assignedOpen", (l) => `is:issue is:open assignee:${l}`],
+    ["Assigned, done", "assignedDone", (l) => `is:issue is:closed reason:completed assignee:${l}`]
+  ];
+
+  function profileOrgs() {
+    return settings.profileOrgs.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean).slice(0, PROFILE_MAX_ORGS);
+  }
+
+  // A person's own profile page, not an organization's: GitHub marks the first with a schema.org Person.
+  function profileLogin() {
+    const parts = location.pathname.split("/").filter(Boolean);
+    if (parts.length !== 1 || LOAD_RESERVED.has(parts[0].toLowerCase())) return null;
+    return document.querySelector("[itemtype=\"http://schema.org/Person\"]") ? parts[0] : null;
+  }
+
+  function profileStatus(data) {
+    if (data.member) return { key: "member", label: "Member", hint: "A member of the organization" };
+    if (!data.merged && !data.issues) return { key: "none", label: "No activity yet", hint: "No merged pull request and no issue opened" };
+    if (!data.merged) return { key: "none", label: "No merged PR yet", hint: "Nothing merged yet" };
+    if (data.merged >= settings.loadRegular) return { key: "regular", label: "Regular contributor", hint: `${data.merged} merged pull requests` };
+    return { key: "returning", label: "Contributor", hint: `${data.merged} merged pull request${data.merged === 1 ? "" : "s"}` };
+  }
+
+  function profileUrl(org, terms) {
+    return `https://github.com/issues?q=${encodeURIComponent(`org:${org} ${terms}`)}`;
+  }
+
+  async function profileFetch(org, login, force) {
+    const key = `${org}/${login.toLowerCase()}`;
+    const hit = profileCache.get(key);
+    if (!force && hit && hit.data) return hit;
+    if (!force && profilePending.has(key)) return profilePending.get(key);
+    const request = (async () => {
+      let data = null;
+      let error = "";
+      try {
+        const res = await api.runtime.sendMessage({ type: "fetchOrgActivity", ref: { org, login } });
+        data = res && !res.error && typeof res.merged !== "undefined" ? res : null;
+        if (!data) error = loadReason(res && !res.error ? { error: "GitHub answered with something this extension could not read." } : res);
+      } catch {
+        error = loadReason(null);
+      }
+      const entry = { at: Date.now(), data, error };
+      profileCache.set(key, entry);
+      if (profilePending.get(key) === request) profilePending.delete(key);
+      return entry;
+    })();
+    profilePending.set(key, request);
+    return request;
+  }
+
+  function profileRefreshIcon() {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "gsf-profile-refresh";
+    button.title = "Read this person again";
+    button.setAttribute("aria-label", "Refresh");
+    button.append(loadRefreshIcon());
+    return button;
+  }
+
+  function profileRender(block, org, login, entry) {
+    block.textContent = "";
+    block.dataset.state = entry ? (entry.data ? "ready" : "err") : "busy";
+
+    const head = document.createElement("div");
+    head.className = "gsf-profile-head";
+    const logo = document.createElement("img");
+    logo.className = "gsf-profile-logo";
+    logo.src = `https://github.com/${encodeURIComponent(org)}.png?size=48`;
+    logo.alt = "";
+    logo.width = 24;
+    logo.height = 24;
+    const title = document.createElement("a");
+    title.className = "gsf-profile-title";
+    title.href = `https://github.com/${org}`;
+    title.target = "_blank";
+    title.rel = "noopener";
+    title.textContent = org;
+    const sub = document.createElement("span");
+    sub.className = "gsf-profile-sub";
+    sub.textContent = "contributions";
+    head.append(logo, title, sub);
+
+    if (entry && entry.data) {
+      const status = profileStatus(entry.data);
+      const tag = document.createElement("span");
+      tag.className = "gsf-profile-tag";
+      tag.dataset.status = status.key;
+      tag.textContent = status.label;
+      tag.title = status.hint;
+      head.append(tag);
+    }
+
+    const age = document.createElement("span");
+    age.className = "gsf-profile-age";
+    age.textContent = entry ? (entry.data ? `Read ${loadAgo(entry.at)}` : "Not read") : "Reading...";
+    if (entry) {
+      const refresh = profileRefreshIcon();
+      refresh.addEventListener("click", () => profileLoad(block, org, login, true).catch((err) => console.warn("[github-issue-toolkit]", err)));
+      age.append(refresh);
+    }
+    head.append(age);
+    block.append(head);
+
+    if (!entry) {
+      const wait = document.createElement("div");
+      wait.className = "gsf-profile-note";
+      wait.textContent = `Looking up ${login} in ${org}`;
+      block.append(wait);
+      return;
+    }
+    if (!entry.data) {
+      const note = document.createElement("div");
+      note.className = "gsf-profile-note";
+      note.textContent = entry.error || "This person could not be read.";
+      block.append(note);
+      return;
+    }
+
+    const grid = document.createElement("div");
+    grid.className = "gsf-profile-stats";
+    for (const [label, key, terms] of PROFILE_TILES) {
+      const value = entry.data[key];
+      const tile = document.createElement("a");
+      tile.className = "gsf-profile-tile";
+      tile.href = profileUrl(org, terms(login));
+      tile.target = "_blank";
+      tile.rel = "noopener";
+      if (!value) tile.dataset.zero = "1";
+      const number = document.createElement("span");
+      number.className = "gsf-profile-num";
+      number.textContent = value === null || value === undefined ? "-" : value.toLocaleString();
+      const name = document.createElement("span");
+      name.className = "gsf-profile-label";
+      name.textContent = label;
+      tile.append(number, name);
+      // Of the issues opened, how many are still open.
+      if (key === "issues" && entry.data.issuesOpen !== null && entry.data.issuesOpen !== undefined) {
+        const note = document.createElement("span");
+        note.className = "gsf-profile-label";
+        note.textContent = `${entry.data.issuesOpen.toLocaleString()} open`;
+        tile.append(note);
+      }
+      grid.append(tile);
+    }
+    block.append(grid);
+  }
+
+  async function profileLoad(block, org, login, force) {
+    if (!force) {
+      const hit = profileCache.get(`${org}/${login.toLowerCase()}`);
+      profileRender(block, org, login, hit && hit.data ? hit : null);
+      if (hit && hit.data) return;
+    } else {
+      profileRender(block, org, login, null);
+    }
+    const entry = await profileFetch(org, login, force);
+    if (block.isConnected) profileRender(block, org, login, entry);
+  }
+
+  // One panel for each organization named in the settings, above the profile's own columns, rebuilt when the
+  // page moves to another person and taken away when the setting is off or the page is not a profile.
+  function scanProfile() {
+    const existing = document.querySelector(".gsf-profile");
+    const login = settings.profileEnabled ? profileLogin() : null;
+    const orgs = login ? profileOrgs() : [];
+    if (!login || !orgs.length) {
+      if (existing) existing.remove();
+      return;
+    }
+    const wanted = `${login.toLowerCase()}|${orgs.join(",").toLowerCase()}`;
+    if (existing && existing.dataset.wanted === wanted && existing.isConnected) return;
+    if (existing) existing.remove();
+    const anchor = document.querySelector("main > .container-xl") || document.querySelector("main > div");
+    if (!anchor) return;
+    const host = document.createElement("section");
+    host.className = "gsf-profile";
+    host.dataset.wanted = wanted;
+    for (const org of orgs) {
+      const block = document.createElement("div");
+      block.className = "gsf-profile-org";
+      block.style.setProperty("--gsf-brand", PROFILE_BRANDS[org.toLowerCase()] || "var(--fgColor-accent, #0969da)");
+      host.append(block);
+      profileLoad(block, org, login, false).catch((err) => console.warn("[github-issue-toolkit]", err));
+    }
+    anchor.before(host);
+  }
+
+  function clearProfile(drop) {
+    if (drop) {
+      profileCache.clear();
+      profilePending.clear();
+    }
+    document.querySelectorAll(".gsf-profile").forEach((el) => el.remove());
+  }
 
   // ---------------------------------------------------------------------------
   // Epic kanban: the sub-issues of an issue shown as a board
@@ -2644,7 +2859,7 @@
   }
 
   // Everything this extension adds to the page, so its own mutations never schedule another scan.
-  const OURS = ["gsf-badge", "gsf-badges", "gsf-notice", "gsf-pins", "gsf-pins-header-btn", "gsf-kanban", "gsf-kanban-bar", "gsf-sidebar-rail", "gsf-load", "gsf-load-card", "gsf-progress"];
+  const OURS = ["gsf-badge", "gsf-badges", "gsf-notice", "gsf-pins", "gsf-pins-header-btn", "gsf-kanban", "gsf-kanban-bar", "gsf-sidebar-rail", "gsf-load", "gsf-load-card", "gsf-progress", "gsf-profile"];
   const OURS_SELECTOR = OURS.map((name) => `.${name}`).join(", ");
 
   const observer = new MutationObserver((mutations) => {
@@ -2678,7 +2893,10 @@
       if (changes.ageEnabled) settings.ageEnabled = changes.ageEnabled.newValue === true;
       if (changes.ageUnit) settings.ageUnit = changes.ageUnit.newValue || "months";
       clearBadges();
-      if (changes.token) clearLoad(true);
+      if (changes.token) {
+        clearLoad(true);
+        clearProfile(true);
+      }
       schedule();
     }
     if (changes.progressEnabled || changes.progressScopeField || changes.progressDoneField || changes.progressDoneValue) {
@@ -2698,6 +2916,12 @@
       // Switching it off takes the buttons away but keeps what was read, so switching it on again costs nothing.
       if (changes.loadEnabled && !settings.loadEnabled) clearLoad(false);
       else loadRepaintAll();
+      schedule();
+    }
+    if (changes.profileEnabled || changes.profileOrgs) {
+      if (changes.profileEnabled) settings.profileEnabled = changes.profileEnabled.newValue === true;
+      if (changes.profileOrgs) settings.profileOrgs = String(changes.profileOrgs.newValue || "");
+      clearProfile(false);
       schedule();
     }
     if (changes.sidebarToggle || changes.sidebarCollapsed) {
@@ -2732,7 +2956,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembers", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembers", "profileEnabled", "profileOrgs", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -2747,6 +2971,8 @@
     settings.sidebarToggle = stored.sidebarToggle !== false;
     settings.loadEnabled = stored.loadEnabled === true;
     settings.loadAuto = stored.loadAuto === true;
+    settings.profileEnabled = stored.profileEnabled === true;
+    settings.profileOrgs = String(stored.profileOrgs || "");
     settings.loadMembers = stored.loadMembers !== false;
     settings.loadRegular = Number.isFinite(Number(stored.loadRegular)) && stored.loadRegular !== undefined ? Math.max(1, Number(stored.loadRegular)) : 5;
     settings.loadLimit = Number.isFinite(Number(stored.loadLimit)) && stored.loadLimit !== undefined ? Math.max(0, Number(stored.loadLimit)) : 1;
