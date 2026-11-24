@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.11.1] - 2026-11-24
+
 ### Fixed
 
 - The contributor card did not open in 2.11.0: pressing the button read the person but a mistake in the new header layout stopped the card from being built. The card opens again, and the profile panel's status tag sits in its header line as intended.
@@ -241,7 +245,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.1...HEAD
+[2.11.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.1...v2.11.0
 [2.10.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.0...v2.10.1
 [2.10.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.9.0...v2.10.0
