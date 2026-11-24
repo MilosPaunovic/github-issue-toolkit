@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- The contributor card did not open in 2.11.0: pressing the button read the person but a mistake in the new header layout stopped the card from being built. The card opens again, and the profile panel's status tag sits in its header line as intended.
 
 ## [2.11.0] - 2026-11-24
 
