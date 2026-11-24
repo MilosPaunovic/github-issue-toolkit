@@ -4,7 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **Show Member is now really the default.** The choice is stored under a new name, so a value saved by 2.11.2 no longer overrides it; everyone starts on **Show Member in place of the button** and can pick again on the Contributors tab.
+- A member is a plain **Member** mark, not a button: nothing happens when it is clicked, no card opens and nothing is read for them.
+- A name no longer shows a **Contributor** button for a second before turning into **Member**: with members shown or left out, a button appears only once the shared membership answer is in.
 
 ## [2.11.3] - 2026-11-24
 
