@@ -20,6 +20,10 @@ const profileEnabledInput = document.getElementById("profile-enabled");
 const profileOrgsInput = document.getElementById("profile-orgs");
 const assignEnabledInput = document.getElementById("assign-enabled");
 const assignWordsInput = document.getElementById("assign-words");
+const assignChips = document.getElementById("assign-chips");
+// The same list as content.js, which uses it when none is saved.
+const ASSIGN_DEFAULT_WORDS = ["assign", "work on", "working on", "take this", "pick this", "pick up", "can i", "may i", "i'd like to", "i would like to", "i want to", "let me", "contribute", "claim", "interested"];
+let assignWords = ASSIGN_DEFAULT_WORDS.slice();
 const loadRegular = document.getElementById("load-regular");
 const progressEnabledInput = document.getElementById("progress-enabled");
 const progressScope = document.getElementById("progress-scope");
@@ -106,6 +110,49 @@ function renderHomeToken(token) {
   pill.className = `pill ${token ? "ok" : "warn"}`;
   document.getElementById("home-add-token").hidden = Boolean(token);
 }
+
+function renderAssignWords() {
+  assignChips.textContent = "";
+  assignWords.forEach((word, i) => {
+    const chip = document.createElement("span");
+    chip.className = "chip c5";
+    chip.setAttribute("role", "listitem");
+    const label = document.createElement("span");
+    label.textContent = word;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.setAttribute("aria-label", `Remove ${word}`);
+    remove.title = `Remove ${word}`;
+    remove.textContent = "×";
+    remove.addEventListener("click", () => {
+      assignWords.splice(i, 1);
+      renderAssignWords();
+      assignWordsInput.focus();
+    });
+    chip.append(label, remove);
+    assignChips.append(chip);
+  });
+}
+
+function addAssignWords(raw) {
+  for (const word of String(raw || "").split(",").map((w) => w.trim()).filter(Boolean)) {
+    if (!assignWords.some((w) => w.toLowerCase() === word.toLowerCase())) assignWords.push(word);
+  }
+  assignWordsInput.value = "";
+  renderAssignWords();
+}
+
+assignWordsInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === ",") {
+    e.preventDefault();
+    addAssignWords(assignWordsInput.value);
+  }
+});
+assignWordsInput.addEventListener("blur", () => { if (assignWordsInput.value.trim()) addAssignWords(assignWordsInput.value); });
+document.getElementById("assign-reset").addEventListener("click", () => {
+  assignWords = ASSIGN_DEFAULT_WORDS.slice();
+  renderAssignWords();
+});
 
 function renderPinsCount(pins) {
   const n = Array.isArray(pins) ? pins.length : 0;
@@ -279,7 +326,9 @@ if (hasChrome) {
     profileEnabledInput.checked = stored.profileEnabled === true;
     profileOrgsInput.value = stored.profileOrgs || "";
     assignEnabledInput.checked = stored.assignEnabled === true;
-    assignWordsInput.value = stored.assignWords || "";
+    const savedWords = String(stored.assignWords || "").split(",").map((w) => w.trim()).filter(Boolean);
+    assignWords = savedWords.length ? savedWords : ASSIGN_DEFAULT_WORDS.slice();
+    renderAssignWords();
     loadLimit.value = stored.loadLimit === undefined ? 1 : stored.loadLimit;
     loadRegular.value = stored.loadRegular === undefined ? 5 : stored.loadRegular;
     progressEnabledInput.checked = stored.progressEnabled === true;
@@ -322,6 +371,7 @@ if (hasChrome) {
   loadLimit.value = 1;
   loadRegular.value = 5;
   loadMembersInput.checked = true;
+  renderAssignWords();
 }
 
 toggle.addEventListener("click", () => {
@@ -337,8 +387,10 @@ document.getElementById("save").addEventListener("click", async () => {
   const search = checkShortcuts();
   if (search.error) return setStatus(search.error, false);
   if (Boolean(progressDoneField.value.trim()) !== Boolean(progressDoneValue.value.trim())) return setStatus("Fill in both the field and the value that count as done, or leave both empty.", false);
+  if (assignWordsInput.value.trim()) addAssignWords(assignWordsInput.value);
+  if (!assignWords.length) return setStatus("Keep at least one word that marks an assignment request, or reset the list.", false);
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
-  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadAuto: loadAutoInput.checked, loadMembers: loadMembersInput.checked, assignEnabled: assignEnabledInput.checked, assignWords: assignWordsInput.value.split(",").map((x) => x.trim()).filter(Boolean).join(", "), profileEnabled: profileEnabledInput.checked, profileOrgs: profileOrgsInput.value.split(",").map((x) => x.trim().replace(/^@/, "")).filter(Boolean).slice(0, 3).join(", "), loadRegular: Math.max(1, parseInt(loadRegular.value, 10) || 5), loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, progressEnabled: progressEnabledInput.checked, progressScopeField: progressScope.value.trim(), progressDoneField: progressDoneField.value.trim(), progressDoneValue: progressDoneValue.value.trim(), searchShortcuts: search.list, searchDefault: search.defaultName });
+  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadAuto: loadAutoInput.checked, loadMembers: loadMembersInput.checked, assignEnabled: assignEnabledInput.checked, assignWords: assignWords.join(", "), profileEnabled: profileEnabledInput.checked, profileOrgs: profileOrgsInput.value.split(",").map((x) => x.trim().replace(/^@/, "")).filter(Boolean).slice(0, 3).join(", "), loadRegular: Math.max(1, parseInt(loadRegular.value, 10) || 5), loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, progressEnabled: progressEnabledInput.checked, progressScopeField: progressScope.value.trim(), progressDoneField: progressDoneField.value.trim(), progressDoneValue: progressDoneValue.value.trim(), searchShortcuts: search.list, searchDefault: search.defaultName });
   renderHomeToken(token);
   if (!token) setStatus("Saved without a token. Badges need one.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);
