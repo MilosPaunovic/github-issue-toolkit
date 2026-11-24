@@ -7,11 +7,13 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 
 - **Contributor status**: the contributor load mark is now a button. Pressed, it reads the person and becomes their status: new contributor (no merged pull request in the organization), first PR here (merged elsewhere in the organization, none in this repository), returning, or regular from a number of merged pull requests in the repository you set, 5 by default. The card it opens has merged, open and closed-without-merge pull requests and assigned and finished issues, each for the repository and for the whole organization and each linking to the matching search, above the open issues the person holds with the pull request that closes each.
+- A **Member** status, shown before the others, for people who belong to the organization: GitHub says so for your token, or marks the person's own pull requests in the organization as made by a member. It comes in the same request, with no extra call.
 - A setting that reads the author and the assignees of an issue or pull request automatically when it opens, so their status is there on sight. Off by default; everyone else is still read on a press.
 
 ### Changed
 
 - Nothing is read for a contributor until their button is pressed, where hovering a name used to read it. Hovering only gives a name its button. A person is read once per repository and kept until the tab is closed instead of ten minutes, the card says how old the answer is, and its refresh button reads one person again. Changing a setting no longer forgets what was read.
+- The button is easier to see: it is a bordered **Contributor** button with an icon before it is pressed, and while the person is being looked up it turns blue and shows a turning ring and the words **Looking up**. The card groups its numbers as pull requests and issues, and its refresh button sits beside the age of the answer.
 - The outlined and filled dots are gone: an unread person is an icon, a read one is a status, and the amber count for someone over the assigned limit stays beside it.
 - The settings page is split into tabs, Home, Access, Badges, Epics, Issue pages and Search, instead of one long page. Home is a short welcome with the state of the token and of the site access and a map of the other tabs; it has an Add your token button to the Access tab while there is no token, it opens by itself the first time and not again once another tab is picked, after which the page opens on the tab used last. A Save button stays at the bottom of every tab and saves all of them at once.
 - The toolbar icon opens the settings page again, as it did before 2.10.0.

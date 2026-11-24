@@ -23,6 +23,7 @@
       --btn-bg-hover: #eaeef2;
       --code-bg: rgba(175, 184, 193, 0.2);
       --green: #1a7f37;
+      --purple: #8250df;
       --red: #d1242f;
       --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
       --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -45,6 +46,7 @@
         --btn-bg-hover: #30363d;
         --code-bg: rgba(110, 118, 129, 0.4);
         --green: #3fb950;
+        --purple: #a371f7;
         --red: #f85149;
       }
     }
@@ -66,12 +68,13 @@
     .marks i { font-style: normal; }
     .hint i { font-style: normal; }
     .mk-icon { display: inline-flex; color: var(--text-secondary); padding: 0 6px; }
-    .mk-pill { display: inline-block; padding: 0 8px; border: 1px solid var(--border-default); border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-secondary); }
+    .mk-pill { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-secondary); }
     .mk-pill.mk-g { color: var(--green); border-color: var(--green); background: rgba(26, 127, 55, 0.12); }
+    .mk-pill.mk-m { color: var(--purple); border-color: var(--purple); background: rgba(130, 80, 223, 0.12); }
     .mk-pill.mk-b { color: var(--accent); border-color: var(--accent); background: rgba(9, 105, 218, 0.12); }
     .mk-n { padding: 1px 6px; border-radius: 9999px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; color: #9a6700; background: rgba(154, 103, 0, 0.14); }
     .mk-idle { color: #ffffff; background: #9a6700; }
-    .mk-err { color: var(--red); }
+    .mk-pill.mk-err { color: var(--red); border-color: var(--red); }
     .card p.desc { color: var(--text-secondary); margin: 0 0 16px; font-size: 13px; }
     label { display: block; font-weight: 600; font-size: 13px; margin: 16px 0 6px; }
     label:first-of-type { margin-top: 0; }
@@ -315,7 +318,7 @@
       <section class="card">
         <h2>Contributor load</h2>
         <p class="desc">Adds a small button after a person's name on an issue or pull request. Press it to see who they are to this repository, new, returning or a regular, and what they already hold: pull requests merged, open or closed without merging, and issues assigned to them. Handy before you reply to a stranger or hand someone one more thing. Nothing is looked up until you press the button, each person is looked up once, and the answer stays until you close the tab.</p>
-        <p class="hint" style="margin:0 0 14px">It looks like this next to a name: <i class="mk-icon"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg></i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
+        <p class="hint" style="margin:0 0 14px">It looks like this next to a name: <i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
         <label class="check"><input id="load-enabled" type="checkbox"> Show the button after usernames (off by default)</label>
         <label class="check" style="margin-top:8px"><input id="load-auto" type="checkbox"> Look up the author and the assignees on their own, without pressing (off by default)</label>
         <p class="hint">Costs one request for each of them when an issue opens, and shows their status on sight. Everyone else is still looked up when you press their button.</p>
@@ -325,16 +328,18 @@
         <input id="load-limit" type="number" min="0" step="1" inputmode="numeric" placeholder="1">
         <p class="hint">Defaults 5 and 1. The button reads like this:</p>
         <div class="marks">
-          <span><i class="mk-icon"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg></i></span><span class="t"><b>Not looked up yet.</b> Press it to look the person up.</span>
+          <span><i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i></span><span class="t"><b>Not looked up yet.</b> Press it to look the person up.</span>
+          <span><i class="mk-pill mk-b"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="26 12"/></svg> Looking up</i></span><span class="t">The ring turns while the answer is on its way.</span>
+          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> Shown before anything else, since a teammate's history is not the question.</span>
           <span><i class="mk-pill mk-g">New contributor</i></span><span class="t">No merged pull request in the organization yet.</span>
           <span><i class="mk-pill mk-g">First PR here</i></span><span class="t">Merged elsewhere in the organization, not in this repository yet.</span>
           <span><i class="mk-pill">Returning</i></span><span class="t">Merged here, fewer than the regular limit.</span>
           <span><i class="mk-pill mk-b">Regular</i></span><span class="t">Merged here at least as many as the regular limit.</span>
           <span><i class="mk-n">4/3</i></span><span class="t">Assigned over the limit. <b>Four assigned, three pull requests open.</b></span>
           <span><i class="mk-n mk-idle">3/0</i></span><span class="t">Over the limit and <b>nothing pushed yet</b>.</span>
-          <span><i class="mk-icon mk-err"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg></i></span><span class="t">Could not be read, usually a missing token. Press it to try again.</span>
+          <span><i class="mk-pill mk-err"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Try again</i></span><span class="t">Could not be looked up, usually a missing token. Press it to try again.</span>
         </div>
-        <p class="hint">The card the button opens has the numbers for the repository and for the whole organization, each a link to the matching GitHub search, the issues still open with the pull request that closes each, and how old the answer is. Its refresh button reads the person again. Your own name gets no button. Counts cover the repositories your token can read, so a fine-grained token limited to a few repositories sees only those.</p>
+        <p class="hint">The card the button opens has the numbers for the repository and for the whole organization, grouped as pull requests and issues, each a link to the matching GitHub search, then the open issues with the pull request that closes each, and how old the answer is with a refresh button beside it. Your own name gets no button. Counts cover the repositories your token can read, so a fine-grained token limited to a few repositories sees only those.</p>
       </section>
       <section class="card">
         <h2>Issue sidebar</h2>

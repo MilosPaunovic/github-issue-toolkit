@@ -755,12 +755,16 @@
   // Any other name, an @mention for example, gets its button when it is hovered.
   const LOAD_HOVER_SELECTOR = "a[data-hovercard-type=\"user\"], a.author";
   // The rows of the card: label, key of the answer, and the search terms behind the number.
-  const LOAD_ROWS = [
-    ["Merged PRs", "merged", (login) => `is:pr is:merged author:${login}`],
-    ["Open PRs", "open", (login) => `is:pr is:open author:${login}`],
-    ["Closed, not merged", "closed", (login) => `is:pr is:closed is:unmerged author:${login}`],
-    ["Assigned issues", "assigned", (login) => `is:issue is:open assignee:${login}`],
-    ["Assigned and done", "done", (login) => `is:issue is:closed reason:completed assignee:${login}`]
+  const LOAD_GROUPS = [
+    ["Pull requests", [
+      ["Merged", "merged", (login) => `is:pr is:merged author:${login}`],
+      ["Open", "open", (login) => `is:pr is:open author:${login}`],
+      ["Closed, not merged", "closed", (login) => `is:pr is:closed is:unmerged author:${login}`]
+    ]],
+    ["Issues", [
+      ["Assigned, open", "assigned", (login) => `is:issue is:open assignee:${login}`],
+      ["Assigned, done", "done", (login) => `is:issue is:closed reason:completed assignee:${login}`]
+    ]]
   ];
   // Kept for as long as the tab is open: GitHub moves between pages without reloading, so a person read
   // on one issue is already known on the next, and the card says how old the answer is. The refresh
@@ -822,10 +826,32 @@
   function loadStatus(data, org, repo) {
     const here = data.merged.repo;
     const all = data.merged.org;
+    if (data.member) return { key: "member", label: "Member", hint: `Member of ${org}` };
     if (!all) return { key: "new", label: "New contributor", hint: `No merged pull request in ${org} yet` };
     if (!here) return { key: "first", label: "First PR here", hint: `No merged pull request in ${org}/${repo} yet, ${all} merged elsewhere in ${org}` };
     if (here >= settings.loadRegular) return { key: "regular", label: "Regular", hint: `${here} merged pull requests in ${org}/${repo}` };
     return { key: "returning", label: "Returning", hint: `${here} merged pull request${here === 1 ? "" : "s"} in ${org}/${repo}` };
+  }
+
+  // A ring that turns, for the moment between pressing the button and the answer.
+  function loadSpinner() {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("width", "12");
+    svg.setAttribute("height", "12");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("class", "gsf-load-spin");
+    const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    ring.setAttribute("cx", "8");
+    ring.setAttribute("cy", "8");
+    ring.setAttribute("r", "6");
+    ring.setAttribute("fill", "none");
+    ring.setAttribute("stroke", "currentColor");
+    ring.setAttribute("stroke-width", "2");
+    ring.setAttribute("stroke-linecap", "round");
+    ring.setAttribute("stroke-dasharray", "26 12");
+    svg.append(ring);
+    return svg;
   }
 
   function loadIcon() {
@@ -848,14 +874,21 @@
     const key = button.dataset.gsfKey;
     const entry = loadCache.get(key);
     button.textContent = "";
+    button.removeAttribute("aria-busy");
     delete button.dataset.status;
     delete button.dataset.idle;
     if (!entry || !entry.data) {
-      button.dataset.state = loadPending.has(key) ? "busy" : (entry ? "err" : "idle");
-      button.append(loadIcon());
-      const text = button.dataset.state === "err"
+      const state = loadPending.has(key) ? "busy" : (entry ? "err" : "idle");
+      button.dataset.state = state;
+      if (state === "busy") {
+        button.setAttribute("aria-busy", "true");
+        button.append(loadSpinner(), "Looking up");
+      } else {
+        button.append(loadIcon(), state === "err" ? "Try again" : "Contributor");
+      }
+      const text = state === "err"
         ? `${login}: could not be read, click to try again`
-        : `Show who ${login} is to ${org}/${repo}`;
+        : (state === "busy" ? `Looking up ${login}` : `Show who ${login} is to ${org}/${repo}`);
       button.title = text;
       button.setAttribute("aria-label", text);
       return;
@@ -1018,24 +1051,32 @@
       th.title = name;
       head.append(th);
     }
-    const body = table.createTBody();
-    for (const [label, key, terms] of LOAD_ROWS) {
-      const row = body.insertRow();
-      row.insertCell().textContent = label;
-      [[`repo:${ref.org}/${ref.repo}`, data[key].repo], [`org:${ref.org}`, data[key].org]].forEach(([scope, value]) => {
-        const cell = row.insertCell();
-        if (value === null || value === undefined) {
-          cell.textContent = "-";
-          return;
-        }
-        const link = document.createElement("a");
-        link.href = loadSearchUrl(scope, terms(login));
-        link.target = "_blank";
-        link.rel = "noopener";
-        link.textContent = String(value);
-        if (!value) link.className = "gsf-load-none";
-        cell.append(link);
-      });
+    // Pull requests and issues are two different questions, so each gets its own heading.
+    for (const [title, rows] of LOAD_GROUPS) {
+      const body = table.createTBody();
+      const heading = body.insertRow();
+      heading.className = "gsf-load-group";
+      const cell = heading.insertCell();
+      cell.colSpan = 3;
+      cell.textContent = title;
+      for (const [label, key, terms] of rows) {
+        const row = body.insertRow();
+        row.insertCell().textContent = label;
+        [[`repo:${ref.org}/${ref.repo}`, data[key].repo], [`org:${ref.org}`, data[key].org]].forEach(([scope, value]) => {
+          const count = row.insertCell();
+          if (value === null || value === undefined) {
+            count.textContent = "-";
+            return;
+          }
+          const link = document.createElement("a");
+          link.href = loadSearchUrl(scope, terms(login));
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.textContent = String(value);
+          if (!value) link.className = "gsf-load-none";
+          count.append(link);
+        });
+      }
     }
     return table;
   }
@@ -1065,8 +1106,11 @@
       head.append(tag);
     }
 
+    card.append(head);
+
     // The counts are as old as the page, which is long enough for someone to open the very pull request
-    // the card says is missing, so one person can be read again without reloading.
+    // the card says is missing, so one person can be read again without reloading. The button sits beside
+    // the age it resets.
     const refresh = document.createElement("button");
     refresh.type = "button";
     refresh.className = "gsf-load-refresh";
@@ -1078,14 +1122,15 @@
       event.stopPropagation();
       loadReload(ref, login).catch((err) => console.warn("[github-issue-toolkit]", err));
     });
-    head.append(refresh);
-    card.append(head);
+    const foot = document.createElement("div");
+    foot.className = "gsf-load-foot";
+    foot.append(document.createTextNode(data ? `Read ${loadAgo(entry.at)}` : "Not read"), refresh);
 
     if (!data) {
       const error = document.createElement("div");
       error.className = "gsf-load-empty";
       error.textContent = "This person could not be read. Check the token in the extension settings.";
-      card.append(error);
+      card.append(error, foot);
       return card;
     }
 
@@ -1094,7 +1139,7 @@
     if (data.items.length) {
       const title = document.createElement("div");
       title.className = "gsf-load-sub";
-      title.textContent = "Assigned and open";
+      title.textContent = "Open issues";
       card.append(title);
       const list = document.createElement("div");
       list.className = "gsf-load-list";
@@ -1113,9 +1158,6 @@
       }
     }
 
-    const foot = document.createElement("div");
-    foot.className = "gsf-load-foot";
-    foot.textContent = `Read ${loadAgo(entry.at)}`;
     card.append(foot);
     return card;
   }
