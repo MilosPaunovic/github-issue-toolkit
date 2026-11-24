@@ -134,7 +134,8 @@
       .chip button:hover { background: rgba(255, 255, 255, 0.12); }
     }
     [hidden] { display: none !important; }
-    .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border-default); margin: 20px 0 20px; overflow-x: auto; }
+    .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border-default); margin: 20px 0 20px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
     .tabs button { all: unset; box-sizing: border-box; padding: 10px 14px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--text-secondary); font: 500 14px var(--font-sans); cursor: pointer; white-space: nowrap; }
     .tabs button:hover { color: var(--text-primary); }
     .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
