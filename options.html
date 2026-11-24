@@ -23,6 +23,7 @@
       --btn-bg-hover: #eaeef2;
       --code-bg: rgba(175, 184, 193, 0.2);
       --green: #1a7f37;
+      --purple: #8250df;
       --red: #d1242f;
       --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
       --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -45,14 +46,17 @@
         --btn-bg-hover: #30363d;
         --code-bg: rgba(110, 118, 129, 0.4);
         --green: #3fb950;
+        --purple: #a371f7;
         --red: #f85149;
       }
     }
+    html { scrollbar-gutter: stable; }
     * { box-sizing: border-box; }
     .only-dark { display: none; }
     @media (prefers-color-scheme: dark) { .only-dark { display: block; } .only-light { display: none; } }
     body { margin: 0; min-height: 100vh; background: var(--bg-base); color: var(--text-primary); font: 14px/1.55 var(--font-sans); }
-    .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 24px; }
+    .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 88px; }
+    .preview .page { padding-bottom: 24px; }
     header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
     header img { width: 44px; height: 44px; border-radius: 10px; }
     header h1 { font-size: 20px; font-weight: 600; margin: 0; line-height: 1.2; }
@@ -64,13 +68,16 @@
     .marks .t { color: var(--text-secondary); font-size: 13px; }
     .marks .t b { color: var(--text-primary); font-weight: 600; }
     .marks i { font-style: normal; }
+    .hint i { font-style: normal; }
+    .marks + .hint { margin-top: 14px; }
     .mk-icon { display: inline-flex; color: var(--text-secondary); padding: 0 6px; }
-    .mk-pill { display: inline-block; padding: 0 8px; border: 1px solid var(--border-default); border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-secondary); }
+    .mk-pill { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-secondary); }
     .mk-pill.mk-g { color: var(--green); border-color: var(--green); background: rgba(26, 127, 55, 0.12); }
+    .mk-pill.mk-m { color: var(--purple); border-color: var(--purple); background: rgba(130, 80, 223, 0.12); }
     .mk-pill.mk-b { color: var(--accent); border-color: var(--accent); background: rgba(9, 105, 218, 0.12); }
     .mk-n { padding: 1px 6px; border-radius: 9999px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; color: #9a6700; background: rgba(154, 103, 0, 0.14); }
     .mk-idle { color: #ffffff; background: #9a6700; }
-    .mk-err { color: var(--red); }
+    .mk-pill.mk-err { color: var(--red); border-color: var(--red); }
     .card p.desc { color: var(--text-secondary); margin: 0 0 16px; font-size: 13px; }
     label { display: block; font-weight: 600; font-size: 13px; margin: 16px 0 6px; }
     label:first-of-type { margin-top: 0; }
@@ -150,8 +157,8 @@
     .tour button:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
     .tour b { font-weight: 600; font-size: 14px; }
     .tour span { color: var(--text-secondary); font-size: 13px; }
-    .savebar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 12px 0; margin-top: 8px; background: var(--bg-base); border-top: 1px solid var(--border-default); }
-    .preview .savebar { position: static; }
+    .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; align-items: center; gap: 10px; padding: 12px max(24px, calc(50% - 336px)); background: var(--bg-base); border-top: 1px solid var(--border-default); }
+    .preview .savebar { position: static; padding: 12px 0; margin-top: 8px; }
     kbd { font: 11px var(--font-mono); padding: 1px 5px; border: 1px solid var(--border-default); border-bottom-width: 2px; border-radius: 4px; background: var(--code-bg); }
     footer { color: var(--text-secondary); font-size: 12px; margin-top: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
     .mono:empty { display: none; }
@@ -192,8 +199,8 @@
       <button type="button" role="tab" id="tab-access" data-tab="access" aria-controls="panel-access">Access</button>
       <button type="button" role="tab" id="tab-badges" data-tab="badges" aria-controls="panel-badges">Badges</button>
       <button type="button" role="tab" id="tab-epics" data-tab="epics" aria-controls="panel-epics">Epics</button>
-      <button type="button" role="tab" id="tab-pages" data-tab="pages" aria-controls="panel-pages">Issue pages</button>
-      <button type="button" role="tab" id="tab-search" data-tab="search" aria-controls="panel-search">Search</button>
+      <button type="button" role="tab" id="tab-contributors" data-tab="contributors" aria-controls="panel-contributors">Contributors</button>
+      <button type="button" role="tab" id="tab-shortcuts" data-tab="shortcuts" aria-controls="panel-shortcuts">Shortcuts</button>
     </div>
 
     <div class="panel" id="panel-home" role="tabpanel" aria-labelledby="tab-home" hidden>
@@ -213,9 +220,9 @@
         <div class="tour">
           <button type="button" data-tab="access"><b>Access</b><span>Your personal access token and the site access Firefox asks for.</span></button>
           <button type="button" data-tab="badges"><b>Badges</b><span>Issue fields, issue age and pull request badges.</span></button>
-          <button type="button" data-tab="epics"><b>Epics</b><span>The kanban board, sub-issue progress and pinned issues.</span></button>
-          <button type="button" data-tab="pages"><b>Issue pages</b><span>Contributor load and the button that hides the issue sidebar.</span></button>
-          <button type="button" data-tab="search"><b>Search</b><span>Shortcuts for searching GitHub from the address bar with <code>@gh</code>.</span></button>
+          <button type="button" data-tab="epics"><b>Epics</b><span>The kanban board, sub-issue progress and the button that hides the issue sidebar.</span></button>
+          <button type="button" data-tab="contributors"><b>Contributors</b><span>Who a person is to the repository, on issues and pull requests.</span></button>
+          <button type="button" data-tab="shortcuts"><b>Shortcuts</b><span>The pinned issues button in GitHub's top bar and search from the address bar with <code>@gh</code>.</span></button>
         </div>
         <p class="hint">Each tab has a Save button at the bottom. Nothing leaves your browser except requests to <code>api.github.com</code>.</p>
       </section>
@@ -300,41 +307,6 @@
         <p class="hint">A sub-issue counts as done when this field has this value, <code>Stage</code> and <code>Done</code> for example. Leave both empty and a closed sub-issue is a done one. Needs a token that can read issue fields, like the badges.</p>
       </section>
       <section class="card">
-        <h2>Pinned issues</h2>
-        <p class="desc">A pin button in GitHub's top bar, next to the notifications bell, opens a panel with your pinned issues, for example epics. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
-        <label class="check"><input id="pins-enabled" type="checkbox"> Show the pinned issues button in GitHub's top bar</label>
-        <div class="actions" style="margin-top:12px">
-          <span id="pins-count" class="hint" style="margin:0"></span>
-          <button id="pins-clear" type="button">Remove all pins</button>
-        </div>
-      </section>
-    </div>
-
-    <div class="panel" id="panel-pages" role="tabpanel" aria-labelledby="tab-pages" hidden>
-      <section class="card">
-        <h2>Contributor load</h2>
-        <p class="desc">On an issue or pull request, a button next to a username says who that person is to the repository and what they already hold in its organization: pull requests merged here and elsewhere, open, and closed without merging, and the issues assigned to them. For deciding whether to look closer, trust or assign someone one more thing. Nothing is read until the button is pressed, once per person and repository, and the answer is kept until the tab is closed.</p>
-        <label class="check"><input id="load-enabled" type="checkbox"> Show a contributor button next to usernames (off by default)</label>
-        <label class="check" style="margin-top:8px"><input id="load-auto" type="checkbox"> Read the author and the assignees without pressing the button (off by default)</label>
-        <p class="hint">Costs one request for each of them when an issue opens, and shows their status on sight. Everyone else is still read on a press.</p>
-        <label for="load-regular">Call someone a regular from (merged pull requests in the repository)</label>
-        <input id="load-regular" type="number" min="1" step="1" inputmode="numeric" placeholder="5">
-        <label for="load-limit">Flag anyone assigned more than (issues)</label>
-        <input id="load-limit" type="number" min="0" step="1" inputmode="numeric" placeholder="1">
-        <p class="hint">Defaults 5 and 1. The button reads like this:</p>
-        <div class="marks">
-          <span><i class="mk-icon"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg></i></span><span class="t"><b>Not read yet.</b> Press it to read the person.</span>
-          <span><i class="mk-pill mk-g">New contributor</i></span><span class="t">No merged pull request in the organization yet.</span>
-          <span><i class="mk-pill mk-g">First PR here</i></span><span class="t">Merged elsewhere in the organization, not in this repository yet.</span>
-          <span><i class="mk-pill">Returning</i></span><span class="t">Merged here, fewer than the regular limit.</span>
-          <span><i class="mk-pill mk-b">Regular</i></span><span class="t">Merged here at least as many as the regular limit.</span>
-          <span><i class="mk-n">4/3</i></span><span class="t">Assigned over the limit. <b>Four assigned, three pull requests open.</b></span>
-          <span><i class="mk-n mk-idle">3/0</i></span><span class="t">Over the limit and <b>nothing pushed yet</b>.</span>
-          <span><i class="mk-icon mk-err"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg></i></span><span class="t">Could not be read, usually a missing token. Press it to try again.</span>
-        </div>
-        <p class="hint">The card the button opens has the numbers for the repository and for the whole organization, each a link to the matching GitHub search, the issues still open with the pull request that closes each, and how old the answer is. Its refresh button reads the person again. Your own name gets no button. Counts cover the repositories your token can read, so a fine-grained token limited to a few repositories sees only those.</p>
-      </section>
-      <section class="card">
         <h2>Issue sidebar</h2>
         <p class="desc">A small button between the issue and its sidebar hides the whole metadata column, assignees, labels, type, fields, projects and the rest, giving the issue body and the kanban board the full width. The button stays in the same place either way, and what you choose holds on every issue until you press it again.</p>
         <label class="check"><input id="sidebar-toggle" type="checkbox"> Show the button that hides the issue sidebar</label>
@@ -343,7 +315,52 @@
       </section>
     </div>
 
-    <div class="panel" id="panel-search" role="tabpanel" aria-labelledby="tab-search" hidden>
+    <div class="panel" id="panel-contributors" role="tabpanel" aria-labelledby="tab-contributors" hidden>
+      <section class="card">
+        <h2>Contributor button</h2>
+        <p class="desc">Adds a small button after a person's name on an issue or pull request. Press it to see who they are to this repository, new, returning or a regular, and what they already hold: pull requests merged, open or closed without merging, and issues assigned to them. Handy before you reply to a stranger or hand someone one more thing. Nothing is looked up until you press the button, each person is looked up once, and the answer stays until you close the tab.</p>
+        <p class="hint" style="margin:0 0 14px">It looks like this next to a name: <i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
+        <label class="check"><input id="load-enabled" type="checkbox"> Show the button after usernames (off by default)</label>
+        <label class="check" style="margin-top:8px"><input id="load-auto" type="checkbox"> Look up the author and the assignees on their own, without pressing (off by default)</label>
+        <p class="hint">Costs one request for each of them when an issue opens, and shows their status on sight. Everyone else is still looked up when you press their button.</p>
+      </section>
+      <section class="card">
+        <h2>Statuses and limits</h2>
+        <p class="desc">Two numbers decide what the button says about someone. Defaults are 5 and 1.</p>
+        <label for="load-regular">Call someone a regular after (merged pull requests in this repository)</label>
+        <input id="load-regular" type="number" min="1" step="1" inputmode="numeric" placeholder="5">
+        <label for="load-limit">Flag anyone with more than (assigned issues)</label>
+        <input id="load-limit" type="number" min="0" step="1" inputmode="numeric" placeholder="1">
+      </section>
+      <section class="card">
+        <h2>Reading the button</h2>
+        <p class="desc">What each state of the button means.</p>
+        <div class="marks">
+          <span><i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i></span><span class="t"><b>Not looked up yet.</b> Press it to look the person up.</span>
+          <span><i class="mk-pill mk-b"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="26 12"/></svg> Looking up</i></span><span class="t">The ring turns while the answer is on its way.</span>
+          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> Shown before anything else, since a teammate's history is not the question.</span>
+          <span><i class="mk-pill mk-g">New contributor</i></span><span class="t">No merged pull request in the organization yet.</span>
+          <span><i class="mk-pill mk-g">First PR here</i></span><span class="t">Merged elsewhere in the organization, not in this repository yet.</span>
+          <span><i class="mk-pill">Returning</i></span><span class="t">Merged here, fewer than the regular limit.</span>
+          <span><i class="mk-pill mk-b">Regular</i></span><span class="t">Merged here at least as many as the regular limit.</span>
+          <span><i class="mk-n">4/3</i></span><span class="t">Assigned over the limit. <b>Four assigned, three pull requests open.</b></span>
+          <span><i class="mk-n mk-idle">3/0</i></span><span class="t">Over the limit and <b>nothing pushed yet</b>.</span>
+          <span><i class="mk-pill mk-err"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Try again</i></span><span class="t">Could not be looked up, usually a missing token. Press it to try again.</span>
+        </div>
+        <p class="hint">The card the button opens has the numbers for the repository and for the whole organization, grouped as pull requests and issues, each a link to the matching GitHub search, then the open issues with the pull request that closes each, and how old the answer is with a refresh button beside it. Your own name gets no button. Counts cover the repositories your token can read, so a fine-grained token limited to a few repositories sees only those.</p>
+      </section>
+    </div>
+
+    <div class="panel" id="panel-shortcuts" role="tabpanel" aria-labelledby="tab-shortcuts" hidden>
+      <section class="card">
+        <h2>Pinned issues</h2>
+        <p class="desc">A pin button in GitHub's top bar, next to the notifications bell, opens a panel with your pinned issues, for example epics. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
+        <label class="check"><input id="pins-enabled" type="checkbox"> Show the pinned issues button in GitHub's top bar</label>
+        <div class="actions" style="margin-top:12px">
+          <span id="pins-count" class="hint" style="margin:0"></span>
+          <button id="pins-clear" type="button">Remove all pins</button>
+        </div>
+      </section>
       <section class="card">
         <h2>Address bar search</h2>
         <p class="desc">Type <code>@gh</code> and a space in the address bar, then a shortcut name and the words to look for, for example <code>@gh repo flow</code>. Each shortcut searches one kind of item and adds its qualifiers to your words, so <code>org:acme</code> keeps the search inside one organization. A shortcut name on its own, <code>@gh pr</code>, lists what its qualifiers match right away. Text that does not start with a shortcut name goes to the default shortcut. Results appear as you type; Enter on the text itself opens the GitHub search page.</p>

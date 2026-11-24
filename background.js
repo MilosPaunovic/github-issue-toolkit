@@ -271,11 +271,12 @@ async function fetchContributorLoad(ref) {
       issueCount
       nodes {
         ... on PullRequest {
-          number url
+          number url authorAssociation
           closingIssuesReferences(first: 10) { nodes { number repository { nameWithOwner } } }
         }
       }
     }
+    member: user(login: ${JSON.stringify(login)}) { organization(login: ${JSON.stringify(org)}) { login } }
     ${count("mergedHere", here, `is:pr is:merged ${author}`)}
     ${count("mergedAll", all, `is:pr is:merged ${author}`)}
     ${count("openHere", here, `is:pr is:open ${author}`)}
@@ -286,9 +287,13 @@ async function fetchContributorLoad(ref) {
     ${count("doneAll", all, `is:issue is:closed reason:completed ${assignee}`)}
   }`, { partial: true });
 
+  // A member of the organization is one GitHub shows as such to this token, or one whose own pull requests
+  // in the organization GitHub marks as made by a member or an owner.
+  let member = Boolean(data.member && data.member.organization);
   const closes = new Map();
   for (const pull of (data.pulls && data.pulls.nodes) || []) {
     if (!pull) continue;
+    if (pull.authorAssociation === "MEMBER" || pull.authorAssociation === "OWNER") member = true;
     for (const issue of (pull.closingIssuesReferences && pull.closingIssuesReferences.nodes) || []) {
       if (!issue || !issue.repository) continue;
       const key = `${issue.repository.nameWithOwner}#${issue.number}`;
@@ -311,6 +316,7 @@ async function fetchContributorLoad(ref) {
   }
 
   return {
+    member,
     merged: { repo: searchCount(data.mergedHere), org: searchCount(data.mergedAll) },
     open: { repo: searchCount(data.openHere), org: searchCount(data.pulls) },
     closed: { repo: searchCount(data.closedHere), org: searchCount(data.closedAll) },
