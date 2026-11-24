@@ -22,6 +22,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- The Save button of the settings page is larger and its bar stands out with a shadow, and once something has been changed the bar says Unsaved changes, in the accent colour with a ring around the button, until Save is pressed.
 - Pressing the contributor button, or opening a profile, on a tab that was open when the extension was reloaded no longer throws a ReferenceError: the lookup now fails the way it should, with the message to reload the page.
 - Nothing is read for a contributor, apart from whether they belong to the organization, until their button is pressed, where hovering a name used to read it. Hovering only gives a name its button. A person is read once per repository and kept until the tab is closed instead of ten minutes, the card says how old the answer is, and its refresh button reads one person again. Changing a setting no longer forgets what was read.
 - The card opens once a person has been looked up even if the page rebuilt the comment header and dropped the button that was pressed, and a button the page dropped is put back at the next scan.

@@ -50,6 +50,21 @@ const SHORTCUT_KINDS = { repo: "Repositories", issue: "Issues", pr: "Pull reques
 
 const TABS = ["home", "access", "badges", "epics", "contributors", "shortcuts"];
 const savebar = document.getElementById("savebar");
+const dirtyNote = document.getElementById("dirty");
+
+// Anything typed or ticked, a tag added or removed, is not saved until Save is pressed, and the bar says so.
+function markDirty() {
+  savebar.dataset.dirty = "1";
+  dirtyNote.hidden = false;
+}
+
+function clearDirty() {
+  delete savebar.dataset.dirty;
+  dirtyNote.hidden = true;
+}
+
+document.addEventListener("input", (e) => { if (e.target.closest && e.target.closest(".panel")) markDirty(); });
+document.addEventListener("change", (e) => { if (e.target.closest && e.target.closest(".panel")) markDirty(); });
 let currentTab = "";
 
 let fields = [];
@@ -126,6 +141,7 @@ function renderAssignWords() {
     remove.textContent = "×";
     remove.addEventListener("click", () => {
       assignWords.splice(i, 1);
+      markDirty();
       renderAssignWords();
       assignWordsInput.focus();
     });
@@ -139,6 +155,7 @@ function addAssignWords(raw) {
     if (!assignWords.some((w) => w.toLowerCase() === word.toLowerCase())) assignWords.push(word);
   }
   assignWordsInput.value = "";
+  markDirty();
   renderAssignWords();
 }
 
@@ -151,6 +168,7 @@ assignWordsInput.addEventListener("keydown", (e) => {
 assignWordsInput.addEventListener("blur", () => { if (assignWordsInput.value.trim()) addAssignWords(assignWordsInput.value); });
 document.getElementById("assign-reset").addEventListener("click", () => {
   assignWords = ASSIGN_DEFAULT_WORDS.slice();
+  markDirty();
   renderAssignWords();
 });
 
@@ -179,6 +197,7 @@ function renderChips() {
     remove.textContent = "×";
     remove.addEventListener("click", () => {
       fields.splice(i, 1);
+      markDirty();
       renderChips();
       fieldInput.focus();
     });
@@ -193,6 +212,7 @@ function addField(raw) {
     if (!fields.some((f) => f.toLowerCase() === name.toLowerCase())) fields.push(name);
   }
   fieldInput.value = "";
+  markDirty();
   renderChips();
 }
 
@@ -265,6 +285,7 @@ function renderShortcuts() {
     remove.addEventListener("click", () => {
       shortcuts.splice(i, 1);
       if (defaultShortcut >= i && defaultShortcut > 0) defaultShortcut--;
+      markDirty();
       renderShortcuts();
     });
     row.append(name, icon, kind, query, isDefault, remove);
@@ -274,6 +295,7 @@ function renderShortcuts() {
 
 document.getElementById("shortcut-add").addEventListener("click", () => {
   shortcuts.push({ name: "", icon: "", kind: "issue", query: "" });
+  markDirty();
   renderShortcuts();
   shortcutList.lastElementChild.querySelector("input").focus();
 });
@@ -392,6 +414,7 @@ document.getElementById("save").addEventListener("click", async () => {
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
   await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadAuto: loadAutoInput.checked, loadMembers: loadMembersInput.checked, assignEnabled: assignEnabledInput.checked, assignWords: assignWords.join(", "), profileEnabled: profileEnabledInput.checked, profileOrgs: profileOrgsInput.value.split(",").map((x) => x.trim().replace(/^@/, "")).filter(Boolean).slice(0, 3).join(", "), loadRegular: Math.max(1, parseInt(loadRegular.value, 10) || 5), loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, progressEnabled: progressEnabledInput.checked, progressScopeField: progressScope.value.trim(), progressDoneField: progressDoneField.value.trim(), progressDoneValue: progressDoneValue.value.trim(), searchShortcuts: search.list, searchDefault: search.defaultName });
   renderHomeToken(token);
+  clearDirty();
   if (!token) setStatus("Saved without a token. Badges need one.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);
 });
