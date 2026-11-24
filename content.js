@@ -1208,7 +1208,7 @@
     );
 
     if (data.items.length) {
-      const section = loadSection(`Open issues assigned to ${login} (${data.assigned.org || data.items.length})`);
+      const section = loadSection(`Assigned issues, open (${data.assigned.org || data.items.length})`);
       // Two are shown and the rest scroll, so a person with many open issues does not push the card off the screen.
       const list = document.createElement("div");
       list.className = "gsf-load-list";
@@ -1371,30 +1371,22 @@
   // The numbers come in three groups, so each reads as part of one question: what they did with pull
   // requests, what they did with issues, and how they take part. A tile is label, key of the answer, what
   // it counts for the tooltip, the terms behind the number, and an optional note for under it.
-  // The panel speaks of the person by name, not as "they": the first name on the profile, or the login when
-  // the profile has none.
-  function profileName(login) {
-    const full = document.querySelector(".vcard-fullname, [itemprop=\"name\"]");
-    const first = full ? full.textContent.trim().split(/\s+/)[0] : "";
-    return first || login;
-  }
-
-  function profileGroups(name) {
-    return [
-      [`Pull requests ${name} opened`, [
-        ["Open", "open", `Pull requests ${name} opened that are still open`, (l) => `is:pr is:open author:${l}`],
-        ["Merged", "merged", `Pull requests ${name} opened that were merged`, (l) => `is:pr is:merged author:${l}`]
-      ]],
-      ["Issues", [
-        ["Opened", "issues", `Issues ${name} opened`, (l) => `is:issue author:${l}`],
-        [`Assigned to ${name}`, "assignedOpen", `Issues assigned to ${name} that are still open`, (l) => `is:issue is:open assignee:${l}`, () => "still open"]
-      ]],
-      ["Community", [
-        ["PRs reviewed", "reviewed", `Pull requests by other people that ${name} reviewed`, (l) => `is:pr reviewed-by:${l} -author:${l}`, () => "written by others"],
-        ["Commented on", "commented", `Issues and pull requests by other people that ${name} commented on`, (l) => `commenter:${l} -author:${l}`, () => "on others' work"]
-      ]]
-    ];
-  }
+  // The wording is neutral: it never repeats the person's name or leans on a pronoun, since the profile
+  // already says whose it is.
+  const PROFILE_GROUPS = [
+    ["Pull requests", [
+      ["Open", "open", "Pull requests opened by this person that are still open", (l) => `is:pr is:open author:${l}`],
+      ["Merged", "merged", "Pull requests opened by this person that were merged", (l) => `is:pr is:merged author:${l}`]
+    ]],
+    ["Issues", [
+      ["Opened", "issues", "Issues opened by this person", (l) => `is:issue author:${l}`],
+      ["Assigned", "assignedOpen", "Issues assigned to this person that are still open", (l) => `is:issue is:open assignee:${l}`, () => "still open"]
+    ]],
+    ["Community", [
+      ["PRs reviewed", "reviewed", "Pull requests by other people that this person reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`],
+      ["Comments added", "commented", "Issues and pull requests by other people that this person commented on, counted once each however many comments they left", (l) => `commenter:${l} -author:${l}`]
+    ]]
+  ];
 
   function profileOrgs() {
     return settings.profileOrgs.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean).slice(0, PROFILE_MAX_ORGS);
@@ -1404,6 +1396,9 @@
   function profileLogin() {
     const parts = location.pathname.split("/").filter(Boolean);
     if (parts.length !== 1 || LOAD_RESERVED.has(parts[0].toLowerCase())) return null;
+    // Only the first page of the profile, the overview: its other tabs, repositories, stars, followers, are lists of their own.
+    const tab = new URLSearchParams(location.search).get("tab");
+    if (tab && tab !== "overview") return null;
     return document.querySelector("[itemtype=\"http://schema.org/Person\"]") ? parts[0] : null;
   }
 
@@ -1514,8 +1509,7 @@
 
     const stats = document.createElement("div");
     stats.className = "gsf-profile-stats";
-    const name = profileName(login);
-    for (const [title, tiles] of profileGroups(name)) {
+    for (const [title, tiles] of PROFILE_GROUPS) {
       const group = document.createElement("div");
       group.className = "gsf-profile-group";
       group.style.setProperty("--n", String(tiles.length));
@@ -1555,40 +1549,16 @@
       stats.append(group);
     }
     block.append(stats);
-    profileExtras(block, org, entry.data, name);
+    profileExtras(block, org, entry.data);
   }
 
-  // Under the numbers: where they work, and what they have open right now.
-  function profileExtras(block, org, data, name) {
-    if (data.topRepos && data.topRepos.length) {
-      const row = document.createElement("div");
-      row.className = "gsf-profile-where";
-      // Counted over their latest merged pull requests, not over all of them, and the line says so.
-      const sample = data.mergedSample || 0;
-      // Up to a hundred are looked at; a person with fewer has all of theirs counted, and the line says which.
-      const all = typeof data.merged === "number" && data.merged <= sample;
-      row.title = all ? `Where ${name}'s ${sample} merged pull requests went` : `Where ${name}'s latest ${sample} merged pull requests went`;
-      const label = document.createElement("span");
-      label.textContent = all ? `${name}'s ${sample} merged PRs went to` : `${name}'s latest ${sample} merged PRs went to`;
-      row.append(label);
-      data.topRepos.forEach((repo) => {
-        const link = document.createElement("a");
-        link.href = `https://github.com/${org}/${repo.name}`;
-        link.target = "_blank";
-        link.rel = "noopener";
-        const name = document.createElement("b");
-        name.textContent = repo.name;
-        link.append(name, ` ${repo.merged}`);
-        link.title = `${repo.merged} of their latest ${sample} merged pull requests went to ${repo.name}`;
-        row.append(link);
-      });
-      block.append(row);
-    }
+  // Under the numbers: what the person has open right now.
+  function profileExtras(block, org, data) {
     if (data.openWork && data.openWork.length) {
-      block.append(profileAccordion(`${name}'s open pull requests (${(data.open || data.openWork.length).toLocaleString()})`, data.openWork));
+      block.append(profileAccordion(`Open pull requests (${(data.open || data.openWork.length).toLocaleString()})`, data.openWork));
     }
     if (data.openIssues && data.openIssues.length) {
-      block.append(profileAccordion(`Open issues assigned to ${name} (${(data.assignedOpen || data.openIssues.length).toLocaleString()})`, data.openIssues));
+      block.append(profileAccordion(`Assigned issues, open (${(data.assignedOpen || data.openIssues.length).toLocaleString()})`, data.openIssues));
     }
   }
 
@@ -1596,10 +1566,8 @@
   // shows up to five rows and the rest are below a scroll.
   function profileAccordion(title, items) {
     const box = document.createElement("details");
-    box.className = "gsf-profile-group gsf-profile-work";
-    box.style.setProperty("--n", "1");
+    box.className = "gsf-profile-work";
     const heading = document.createElement("summary");
-    heading.className = "gsf-profile-grouphead";
     heading.textContent = title;
     const list = document.createElement("div");
     list.className = "gsf-profile-list";

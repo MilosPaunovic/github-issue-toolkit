@@ -328,9 +328,8 @@ async function fetchContributorLoad(ref) {
 
 // What one person has done in one organization, for the panel on their profile. One request: counts of the
 // pull requests they have open and merged, those they reviewed, the issues they opened and are
-// assigned, what they commented on, whether they belong to the organization, which repositories their latest
-// merged pull requests went to, their open pull requests and the open issues assigned to them.
-const PROFILE_MERGED_SAMPLE = 100;
+// assigned, what they commented on, whether they belong to the organization, their open pull requests and
+// the open issues assigned to them.
 const PROFILE_OPEN_SAMPLE = 20;
 
 async function fetchOrgActivity(ref) {
@@ -349,9 +348,6 @@ async function fetchOrgActivity(ref) {
     ${count("reviewed", `is:pr reviewed-by:${login} -author:${login}`)}
     ${count("commented", `commenter:${login} -author:${login}`)}
     ${count("assignedOpen", `is:issue is:open assignee:${login}`)}
-    recentMerged: search(query: ${JSON.stringify(`org:${org} is:pr is:merged author:${login} sort:updated-desc`)}, type: ISSUE, first: ${PROFILE_MERGED_SAMPLE}) {
-      nodes { ... on PullRequest { repository { name } } }
-    }
     openIssues: search(query: ${JSON.stringify(`org:${org} is:issue is:open assignee:${login} sort:updated-desc`)}, type: ISSUE, first: ${PROFILE_OPEN_SAMPLE}) {
       nodes { ... on Issue { number title url repository { name } } }
     }
@@ -360,14 +356,6 @@ async function fetchOrgActivity(ref) {
     }
   }`, { partial: true });
 
-  // Where their latest merged pull requests went, most first: where they work, not where they once passed through.
-  const byRepo = new Map();
-  for (const node of (data.recentMerged && data.recentMerged.nodes) || []) {
-    if (!node || !node.repository) continue;
-    byRepo.set(node.repository.name, (byRepo.get(node.repository.name) || 0) + 1);
-  }
-  const mergedSample = [...byRepo.values()].reduce((sum, n) => sum + n, 0);
-  const topRepos = [...byRepo].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name, merged]) => ({ name, merged }));
   const openWork = ((data.openWork && data.openWork.nodes) || []).filter(Boolean).map((pull) => ({
     repo: pull.repository ? pull.repository.name : "",
     number: pull.number,
@@ -390,8 +378,6 @@ async function fetchOrgActivity(ref) {
     reviewed: searchCount(data.reviewed),
     commented: searchCount(data.commented),
     assignedOpen: searchCount(data.assignedOpen),
-    topRepos,
-    mergedSample,
     openWork,
     openIssues
   };
