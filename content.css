@@ -664,8 +664,6 @@
   align-items: center;
   gap: 8px;
   padding: 2px 2px 9px 4px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--borderColor-muted);
 }
 /* A long login must give way rather than push the status and the refresh button off the card. */
 .gsf-load-name {
@@ -692,59 +690,51 @@
   white-space: nowrap;
   color: var(--fgColor-muted);
 }
-.gsf-load-table {
-  width: 100%;
-  margin: 0 0 4px;
-  border-collapse: collapse;
+.gsf-load-section {
+  margin: 0 -10px;
+  padding: 8px 10px 6px;
+  border-top: 1px solid var(--borderColor-muted);
+}
+/* One line of a section: a label and up to two counts that line up from one section to the next. */
+.gsf-load-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px 72px;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
   font-variant-numeric: tabular-nums;
 }
-.gsf-load-table th {
-  max-width: 100px;
+.gsf-load-line > span:first-child {
+  color: var(--fgColor-muted);
+}
+.gsf-load-line > span:not(:first-child) {
   overflow: hidden;
-  padding: 4px 6px;
-  font-size: 11.5px;
-  font-weight: 500;
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--fgColor-muted);
 }
-.gsf-load-table td {
-  padding: 3px 6px;
-  border-top: 1px solid var(--borderColor-muted);
-  text-align: right;
-}
-.gsf-load-table td:first-child {
-  padding-left: 12px;
-  text-align: left;
-  color: var(--fgColor-muted);
-}
-.gsf-load-table .gsf-load-group td {
-  padding: 8px 6px 3px;
-  border-top: 0;
-  font-size: 11.5px;
-  font-weight: 600;
-  text-align: left;
-  color: var(--fgColor-default);
-}
-.gsf-load-table tbody + tbody .gsf-load-group td {
-  border-top: 1px solid var(--borderColor-muted);
-}
-.gsf-load-table a {
+.gsf-load-line a {
   font-weight: 600;
   color: var(--fgColor-default) !important;
   text-decoration: none !important;
 }
-.gsf-load-table a:hover {
+.gsf-load-line a:hover {
   text-decoration: underline !important;
 }
-.gsf-load-table a.gsf-load-none {
+.gsf-load-line a.gsf-load-none {
   font-weight: 400;
   color: var(--fgColor-muted) !important;
 }
-.gsf-load-sub {
-  padding: 6px 7px 2px;
+.gsf-load-sectionhead {
+  padding-bottom: 5px;
   font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fgColor-default);
+}
+.gsf-load-sectionhead > span:first-child {
+  color: var(--fgColor-default);
+}
+.gsf-load-sectionhead > span:not(:first-child) {
   font-weight: 500;
   color: var(--fgColor-muted);
 }
@@ -752,7 +742,9 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 7px 0;
+  margin: 0 -10px;
+  padding: 7px 10px 0;
+  border-top: 1px solid var(--borderColor-muted);
   font-size: 11.5px;
   color: var(--fgColor-muted);
 }
@@ -779,7 +771,7 @@
   animation: gsf-load-spin 0.7s linear infinite;
 }
 .gsf-load-card[data-busy] .gsf-load-list,
-.gsf-load-card[data-busy] .gsf-load-table {
+.gsf-load-card[data-busy] .gsf-load-section {
   opacity: 0.45;
 }
 @keyframes gsf-load-spin {
@@ -791,7 +783,7 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  max-height: 272px;
+  max-height: 130px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
