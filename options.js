@@ -16,6 +16,7 @@ const loadEnabledInput = document.getElementById("load-enabled");
 const loadLimit = document.getElementById("load-limit");
 const loadAutoInput = document.getElementById("load-auto");
 const loadMembersInput = document.getElementById("load-members");
+const loadSkipMembersInput = document.getElementById("load-skip-members");
 const profileEnabledInput = document.getElementById("profile-enabled");
 const profileOrgsInput = document.getElementById("profile-orgs");
 const assignEnabledInput = document.getElementById("assign-enabled");
@@ -334,7 +335,7 @@ if (hasChrome) {
     refreshAccess();
   });
   // What is saved, put back on the page: at the start, and again when changes are discarded.
-  const STORED_KEYS = ["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadAuto", "loadMembers", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "searchShortcuts", "searchDefault", "pins", "welcomeSeen"];
+  const STORED_KEYS = ["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadAuto", "loadMembers", "loadSkipMembers", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "searchShortcuts", "searchDefault", "pins", "welcomeSeen"];
   function applyStored(stored, first) {
     tokenInput.value = stored.token || "";
     renderHomeToken(String(stored.token || "").trim());
@@ -350,6 +351,7 @@ if (hasChrome) {
     loadEnabledInput.checked = stored.loadEnabled === true;
     loadAutoInput.checked = stored.loadAuto === true;
     loadMembersInput.checked = stored.loadMembers !== false;
+    loadSkipMembersInput.checked = stored.loadSkipMembers !== false;
     profileEnabledInput.checked = stored.profileEnabled === true;
     profileOrgsInput.value = stored.profileOrgs || "";
     assignEnabledInput.checked = stored.assignEnabled === true;
@@ -402,6 +404,7 @@ if (hasChrome) {
   loadLimit.value = 1;
   loadRegular.value = 5;
   loadMembersInput.checked = true;
+  loadSkipMembersInput.checked = true;
   renderAssignWords();
 }
 
@@ -421,7 +424,7 @@ document.getElementById("save").addEventListener("click", async () => {
   if (assignWordsInput.value.trim()) addAssignWords(assignWordsInput.value);
   if (!assignWords.length) return setStatus("Keep at least one word that marks an assignment request, or reset the list.", false);
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
-  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadAuto: loadAutoInput.checked, loadMembers: loadMembersInput.checked, assignEnabled: assignEnabledInput.checked, assignWords: assignWords.join(", "), profileEnabled: profileEnabledInput.checked, profileOrgs: profileOrgsInput.value.split(",").map((x) => x.trim().replace(/^@/, "")).filter(Boolean).slice(0, 3).join(", "), loadRegular: Math.max(1, parseInt(loadRegular.value, 10) || 5), loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, progressEnabled: progressEnabledInput.checked, progressScopeField: progressScope.value.trim(), progressDoneField: progressDoneField.value.trim(), progressDoneValue: progressDoneValue.value.trim(), searchShortcuts: search.list, searchDefault: search.defaultName });
+  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadAuto: loadAutoInput.checked, loadMembers: loadMembersInput.checked, loadSkipMembers: loadSkipMembersInput.checked, assignEnabled: assignEnabledInput.checked, assignWords: assignWords.join(", "), profileEnabled: profileEnabledInput.checked, profileOrgs: profileOrgsInput.value.split(",").map((x) => x.trim().replace(/^@/, "")).filter(Boolean).slice(0, 3).join(", "), loadRegular: Math.max(1, parseInt(loadRegular.value, 10) || 5), loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, progressEnabled: progressEnabledInput.checked, progressScopeField: progressScope.value.trim(), progressDoneField: progressDoneField.value.trim(), progressDoneValue: progressDoneValue.value.trim(), searchShortcuts: search.list, searchDefault: search.defaultName });
   renderHomeToken(token);
   clearDirty();
   if (!token) setStatus("Saved without a token. Badges need one.", false);

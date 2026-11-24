@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, profileEnabled: false, profileOrgs: "", assignEnabled: false, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadSkipMembers: true, profileEnabled: false, profileOrgs: "", assignEnabled: false, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -993,8 +993,21 @@
   }
 
   function loadRepaintAll() {
+    loadApplyMembership();
     document.querySelectorAll(".gsf-load").forEach(loadPaint);
     loadHideAssociation();
+  }
+
+  // With members left out, a button for one is taken away, and the ones that waited for the answer are shown.
+  function loadApplyMembership() {
+    document.querySelectorAll(".gsf-load").forEach((button) => {
+      const belongs = loadMembership.get(`${button.dataset.org}/${button.dataset.login.toLowerCase()}`);
+      if (settings.loadSkipMembers && belongs === true) {
+        button.remove();
+        return;
+      }
+      if (belongs !== undefined || !settings.loadSkipMembers) delete button.dataset.pending;
+    });
   }
 
   // One request per person and repository, however many times the name is on the page and however
@@ -1044,6 +1057,10 @@
     if (anchor.querySelector("img") && !anchor.textContent.trim()) return null;
     const login = loadLogin(anchor);
     if (!login || login.toLowerCase() === viewer) return null;
+    // Members of the organization can be left out altogether: no button for a known one, and none shown for a
+    // name until it is known whether it belongs, which one shared request for the page answers.
+    const belongs = loadMembership.get(`${ref.org}/${login.toLowerCase()}`);
+    if (settings.loadSkipMembers && belongs === true) return null;
     const button = document.createElement("button");
     button.type = "button";
     button.className = "gsf-load";
@@ -1051,6 +1068,7 @@
     button.dataset.org = ref.org;
     button.dataset.repo = ref.repo;
     button.dataset.login = login;
+    if (settings.loadSkipMembers && belongs === undefined) button.dataset.pending = "1";
     loadPaint(button);
     anchor.after(button);
     return button;
@@ -1070,10 +1088,13 @@
       const login = loadLogin(anchor);
       if (!login || login.toLowerCase() === viewer) continue;
       const key = loadKey(ref, login);
+      // With members left out, the author is read only once it is known that they do not belong.
+      if (settings.loadSkipMembers && loadMembership.get(`${ref.org}/${login.toLowerCase()}`) === undefined) continue;
+      if (settings.loadSkipMembers && loadMembership.get(`${ref.org}/${login.toLowerCase()}`) === true) continue;
       // A person who could not be read is left alone here, so a bad token is not asked again on every scan.
       if (!loadCache.has(key) && !loadPending.has(key)) loadFetch(ref, login, false);
     }
-    if (settings.loadMembers) loadMarkMembers(ref);
+    if (settings.loadMembers || settings.loadSkipMembers) loadMarkMembers(ref);
     loadHideAssociation();
   }
 
@@ -3441,8 +3462,9 @@
       clearProgress();
       schedule();
     }
-    if (changes.loadEnabled || changes.loadAuto || changes.loadMembers || changes.loadLimit || changes.loadRegular) {
+    if (changes.loadEnabled || changes.loadAuto || changes.loadMembers || changes.loadSkipMembers || changes.loadLimit || changes.loadRegular) {
       if (changes.loadMembers) settings.loadMembers = changes.loadMembers.newValue !== false;
+      if (changes.loadSkipMembers) settings.loadSkipMembers = changes.loadSkipMembers.newValue !== false;
       if (changes.loadEnabled) settings.loadEnabled = changes.loadEnabled.newValue === true;
       if (changes.loadAuto) settings.loadAuto = changes.loadAuto.newValue === true;
       if (changes.loadLimit) settings.loadLimit = Math.max(0, Number(changes.loadLimit.newValue) || 0);
@@ -3496,7 +3518,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembers", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembers", "loadSkipMembers", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -3516,6 +3538,7 @@
     settings.assignEnabled = stored.assignEnabled === true;
     settings.assignWords = String(stored.assignWords || "");
     settings.loadMembers = stored.loadMembers !== false;
+    settings.loadSkipMembers = stored.loadSkipMembers !== false;
     settings.loadRegular = Number.isFinite(Number(stored.loadRegular)) && stored.loadRegular !== undefined ? Math.max(1, Number(stored.loadRegular)) : 5;
     settings.loadLimit = Number.isFinite(Number(stored.loadLimit)) && stored.loadLimit !== undefined ? Math.max(0, Number(stored.loadLimit)) : 1;
     sidebarCollapsed = stored.sidebarCollapsed === true;

@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 Nothing yet.
 
+## [2.11.2] - 2026-11-24
+
+### Added
+
+- **Leave members of the organization out** on the Contributors tab, on by default: a member gets no contributor button at all, so the button is only for the people you do not already know. Which names on the page belong to the organization is asked once, in a shared request, and a button is shown for a name only after that answer, so a member is never seen with one. The automatic read of the author waits for the same answer. Untick it to give members a button again, and the option to mark them **Member** right away then applies.
+
 ## [2.11.1] - 2026-11-24
 
 ### Fixed
@@ -245,7 +251,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.1...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.2...HEAD
+[2.11.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.1...v2.11.2
 [2.11.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.1...v2.11.0
 [2.10.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.0...v2.10.1
