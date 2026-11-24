@@ -4,40 +4,32 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.11.0] - 2026-11-24
+
 ### Added
 
-- The default words that mark an assignment request were chosen from a month of real comments, 3,199 short comments by people outside the team on a busy open source repository in October 2026. The old list caught 2,910 of them and the new one 2,908: `let me` is gone, since it mostly matched "let me know" in comments announcing a pull request, and `let me work`, `let me take`, `let me try`, `let me handle`, `take on`, `would love to`, `i'd love to`, `give it a shot`, `give it a try`, `have a go`, `still available`, `is this available`, `start working` and `volunteer` are in, catching requests the old list missed.
-- In the assignment requests box only the words that were found are bold, a closed **Words searched for** list shows the words in use with a link to the extension's settings, and the box follows the style of the profile panel and the contributor card.
-- The words that mark an assignment request are a list of tags, starting from a default list: type a word or phrase and press Enter to add it, press the cross on a tag to remove it, or reset to the defaults. The token guidance now names `Pull requests: Read-only` for the pull request counts, and write access for hiding comments.
-- **Assignment requests**: a box at the top of the issue, above its description, of an assigned issue, off by default, listing the comments of other people that contain one of your words, `assign`, `work on`, `can i` and so on, with the words highlighted in a preview, and apart from it a closed list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation, with an Undo. Only comments of up to 400 characters are offered, and your own, the assignee's and hidden ones are left out. It needs a token with write access to hide comments. Set on the Contributors tab.
-- Where the contributor button says Member, GitHub's own Member or Owner label at the right of the comment header is hidden, so it is not said twice. The Contributor and First-time contributor labels stay, and the label comes back when the button is switched off.
-- Organizations with a colour of their own, Kestra's violet for `kestra-io`, get it as an accent on the contributor card, the Member status and the profile panel: a thin outline in the colour, the headings, the counts and the status, on top of GitHub's own design. Other organizations keep GitHub's colours.
-- The merge percentage under the merged tile of the organization panel is gone, and the panel and the card use neutral wording, with no pronouns and no repeated name.
-- **Organization panel**: a panel at the top of a person's profile for each organization you name, in the organization's colours where it has some (violet for `kestra-io`). Three groups of numbers, each linking to the matching search with a tooltip saying what it counts: pull requests (open and merged), issues (opened, and assigned and still open) and community (pull requests reviewed, issues and pull requests commented on). Under them, two accordions, their open pull requests and the open issues assigned to them, closed at first with up to five rows when opened and the rest below a scroll, and a status for membership or experience. Read once per person and organization in one request and kept until the tab is closed. Off by default, set on the Contributors tab.
-- **Contributor status**: the contributor load mark is now a button. Pressed, it reads the person and becomes their status: new contributor (no merged pull request in the organization), first PR here (merged elsewhere in the organization, none in this repository), returning, or regular from a number of merged pull requests in the repository you set, 5 by default. The card it opens has open, merged and closed-without-merge pull requests and assigned and finished issues, each for the repository and for the whole organization and each linking to the matching search, above the open issues the person holds with the pull request that closes each.
-- When a person cannot be looked up, the card and the button's tooltip now say why, a missing token, a rejected one or whatever GitHub answered, and a count GitHub did not return shows as a dash instead of failing the whole read.
-- The two columns of counts in the card are headed **This repo** and **Organization**, with the full names on hover, since a repository and its organization often have near-identical names.
-- The contributor button no longer appears in the sidebar, on its assignees, reviewers or participants, only on names in the conversation, and the automatic read covers the author only.
-- A **Member** status, shown before the others, for people who belong to the organization: GitHub says so for your token, or marks the person's own pull requests in the organization as made by a member. It comes in the same request, with no extra call.
-- Organization members are marked at once: the extension asks GitHub, in one shared request for every name on the page, which of them belong to the organization and shows **Member** in place of the button for them, without a press. Everything else about a person still waits for the button. A setting turns it off.
-- A setting that reads the author of an issue or pull request automatically when it opens, so their status is there on sight. Off by default; everyone else is still read on a press.
+- **Contributor status.** The contributor load mark is now a **Contributor** button after a username on an issue or pull request. Nothing is read until it is pressed, and then one request reads the person and the button becomes their status: **Member** for people in the organization, otherwise **New contributor** (no merged pull request in the organization), **First PR here** (merged elsewhere in it, none in this repository), **Returning**, or **Regular** from a number of merged pull requests in the repository you set, 5 by default. An amber count still flags anyone assigned more than your limit. The card it opens has the pull requests and the issues of the person for this repository and for the whole organization, each number linking to the matching search, two assigned issues in view with the pull request that closes each and the rest below a scroll, and how old the answer is with a refresh button. A person is read once per repository and kept until the tab is closed.
+- **Members at once.** Which names on the page belong to the organization is asked in one shared request, so **Member** shows without a press and GitHub's own Member label beside it is hidden. A setting turns it off, and another reads the author on its own when an issue opens.
+- **Organization panel** on the first page of a person's profile, off by default, for each organization you name on the Contributors tab: open and merged pull requests, issues opened and assigned, pull requests reviewed and issues and pull requests commented on, each linking to the matching search, with a status for membership or experience and two accordions, closed at first, of their open pull requests and the open issues assigned to them. One request per person and organization, kept until the tab is closed.
+- **Assignment requests**, off by default: a box at the top of an assigned issue lists the comments of other people that contain one of your words, with the words highlighted in a preview, apart from a closed list of what the assignee wrote and a closed list of the words searched for. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation, with an Undo. The words are a list of tags you add to and remove from in the settings, starting from defaults chosen from 3,199 real comments of October 2026 on a busy open source repository. Only comments of up to 400 characters are offered, and your own, the assignees' and hidden ones are left out. Hiding needs write access.
+- Organizations with a colour of their own, Kestra's violet for `kestra-io`, carry it as a thin outline, a tinted header and the colour on headings, counts and statuses of the card, the panel and the box, on top of GitHub's own design. Other organizations keep GitHub's colours.
+- When a person cannot be looked up, the card and the button say why, a missing token, a rejected one or whatever GitHub answered, and a count GitHub did not return shows as a dash instead of failing the whole read.
 
 ### Changed
 
-- The words in the header of the profile panel and of the assignment requests box, the title, the subtitle, the status and the age, share one baseline, instead of being centred each on its own, which left the subtitle two pixels above the title.
-- A **Discard** button beside Save, shown once something has been changed, puts every setting back to what is saved and forgets what was typed since.
-- The Save button of the settings page is larger and its bar stands out with a shadow, and once something has been changed the bar says Unsaved changes, in the accent colour with a ring around the button, until Save is pressed.
-- Pressing the contributor button, or opening a profile, on a tab that was open when the extension was reloaded no longer throws a ReferenceError: the lookup now fails the way it should, with the message to reload the page.
-- Nothing is read for a contributor, apart from whether they belong to the organization, until their button is pressed, where hovering a name used to read it. Hovering only gives a name its button. A person is read once per repository and kept until the tab is closed instead of ten minutes, the card says how old the answer is, and its refresh button reads one person again. Changing a setting no longer forgets what was read.
-- The card opens once a person has been looked up even if the page rebuilt the comment header and dropped the button that was pressed, and a button the page dropped is put back at the next scan.
-- The button is easier to see: it is a bordered **Contributor** button with an icon before it is pressed, and while the person is being looked up it turns blue and shows a turning ring and the words **Looking up**. The card is split into sections, pull requests, issues and open issues, each with its own heading and rule, with two open issues in view and the rest below a scroll, and its refresh button sits beside the age of the answer.
-- The outlined and filled dots are gone: an unread person is an icon, a read one is a status, and the amber count for someone over the assigned limit stays beside it.
-- The settings page is split into tabs, Home, Access, Badges, Epics, Contributors and Shortcuts, instead of one long page. Home is a short welcome with the state of the token and of the site access and a map of the other tabs; it has an Add your token button to the Access tab while there is no token, it opens by itself the first time and not again once another tab is picked, after which the page opens on the tab used last. A Save button stays at the bottom of every tab and saves all of them at once.
+- The settings page is split into tabs, Home, Access, Badges, Epics, Contributors and Shortcuts, instead of one long page. Home is a short welcome with the state of the token and of the site access, an **Add your token** button while there is none, and a map of the other tabs; it opens by itself the first time, then the page opens on the tab used last. The Save bar is fixed at the bottom, larger, and says **Unsaved changes** once something has changed, with a **Discard** button that puts every setting back to what is saved.
 - The toolbar icon opens the settings page again, as it did before 2.10.0.
+- The token guidance names `Pull requests: Read-only` for the pull request counts, `Issues: Read and write` for hiding comments, and the `read:org` scope for seeing members who keep their membership private.
 
 ### Removed
 
 - The toolbar dropdown of quick switches. Every switch it held is on the settings page, in the tab of its feature.
+
+### Fixed
+
+- Pressing the contributor button, or opening a profile, on a tab that was open when the extension was reloaded no longer throws a ReferenceError and leaves the button on Looking up: the lookup fails with the message to reload the page.
 
 ## [2.10.1] - 2026-10-29
 
@@ -247,7 +239,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.1...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.0...HEAD
+[2.11.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.1...v2.11.0
 [2.10.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.10.0...v2.10.1
 [2.10.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.8.0...v2.9.0

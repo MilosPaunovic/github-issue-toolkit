@@ -102,6 +102,24 @@ Illustrations of an invented repository, rendered from the documentation site wi
 </picture>
 </p>
 
+**Organization panel**: on the first page of a person's profile, what they have done in the organizations you name.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-profile-dark.png">
+  <img src="docs/example-profile-light.png" alt="Profile panel for kestra-io with open and merged pull requests, issues, reviews and comments, and two accordions of open work" width="760">
+</picture>
+</p>
+
+**Assignment requests**: on an assigned issue, the comments asking to be assigned, with the words that matched highlighted, ready to be hidden as outdated.
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-assign-dark.png">
+  <img src="docs/example-assign-light.png" alt="The assignment requests box with two ticked comments, highlighted words, a Hide 2 as outdated button and closed lists of the assignee's comments and the words searched for" width="760">
+</picture>
+</p>
+
 **Pinned issues**: a pin button next to the notifications bell opens your pinned epics; Link makes the current issue a sub-issue of one, Copy copies its reference.
 
 <p align="center">
@@ -172,7 +190,7 @@ Minimum version: Firefox 140, required by the `data_collection_permissions` mani
 
 ### Settings tabs
 
-The toolbar icon opens the settings page, which is split into tabs: Home, Access, Badges, Epics, Contributors and Shortcuts. Home is a short welcome with the state of your token and of the site access, and a map of the other tabs. It opens by itself the first time and not again once you pick another tab; after that the page opens on the tab you used last, and Home stays one click away. While there is no token, Home has an Add your token button that goes straight to the Access tab. A Save button sits at the bottom of every tab and saves all of them at once, so what you typed on one tab is kept while you look at another.
+The toolbar icon opens the settings page, which is split into tabs: Home, Access, Badges, Epics, Contributors and Shortcuts. Home is a short welcome with the state of your token and of the site access, and a map of the other tabs. It opens by itself the first time and not again once you pick another tab; after that the page opens on the tab you used last, and Home stays one click away. While there is no token, Home has an Add your token button that goes straight to the Access tab. A Save button sits at the bottom of every tab and saves all of them at once, so what you typed on one tab is kept while you look at another. Once something has changed the bar says so and offers Discard, which puts every setting back to what is saved.
 
 ### Epic kanban
 
@@ -284,7 +302,8 @@ The token is stored with `chrome.storage.local` on your device and is only ever 
 - `content.js` renders a badge per value after the issue type badge (or after the issue number in project tables, under the title on board cards), plus the age badge, styled by `content.css` with GitHub's colour tokens. It also renders the pinned issues panel; the current issue is taken from the page URL or from the `issue=owner|repo|number` parameter GitHub adds when a project side panel is open.
 - The kanban has its own path: `background.js` reads the open issue's `subIssues` connection, paginated by 100 up to 500 sub-issues, returning every field value each one carries plus its state, type, assignees and creation date. `content.js` groups, orders and filters those in the page and draws the board in place of the list, so changing any of the three redraws without another request. A dropped card is the exception: it writes through `createIssueFieldValue`, `deleteIssueFieldValue`, `closeIssue` or `reopenIssue`, updating the board first and reverting it if the write fails. The result is cached per epic like everything else.
 - The sidebar button is a small rail `content.js` inserts between GitHub's content area and its metadata column, both flex items of the same row. Collapsing sets `display: none` on the metadata column, which is what GitHub itself does when its artifacts panel opens, and its content area grows into the space on its own. Hiding the Projects section is a class on the root element and a `content.css` rule on GitHub's `sidebar-projects-section`, so it holds however often GitHub re-renders the sidebar.
-- `options.html` / `options.js` provide the settings page, with its Home welcome, its tabs and the one-time site-access prompt Firefox needs.
+- The contributor button, the profile panel and the assignment requests box each make one request per person or issue, on demand, and keep the answer in memory for as long as the tab is open. `background.js` answers them with search counts (`fetchContributorLoad`, `fetchOrgActivity`), a batched membership lookup (`fetchMembers`), the comments of an issue (`fetchIssueComments`) and, for the one write among them, `minimizeComment` and `unminimizeComment` (`setCommentsHidden`), which `content.js` only sends after an inline confirmation.
+- `options.html` / `options.js` provide the settings page, with its Home welcome, its tabs, a fixed Save bar that says when something is unsaved and offers Discard, and the one-time site-access prompt Firefox needs.
 - All scripts start with `const api = browser ?? chrome`, so the same code runs on both engines.
 
 ## Development
