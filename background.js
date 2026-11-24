@@ -327,7 +327,7 @@ async function fetchContributorLoad(ref) {
 }
 
 // What one person has done in one organization, for the panel on their profile. One request: counts of the
-// pull requests they have open, merged and had closed, those they reviewed, the issues they opened and are
+// pull requests they have open and merged, those they reviewed, the issues they opened and are
 // assigned, what they commented on, whether they belong to the organization, which repositories their latest
 // merged pull requests went to, their open pull requests and the open issues assigned to them.
 const PROFILE_MERGED_SAMPLE = 100;
@@ -344,7 +344,6 @@ async function fetchOrgActivity(ref) {
     member: user(login: ${JSON.stringify(login)}) { organization(login: ${JSON.stringify(org)}) { login } }
     ${count("merged", `is:pr is:merged author:${login}`)}
     ${count("open", `is:pr is:open author:${login}`)}
-    ${count("closed", `is:pr is:closed is:unmerged author:${login}`)}
     ${count("issues", `is:issue author:${login}`)}
     ${count("issuesOpen", `is:issue is:open author:${login}`)}
     ${count("reviewed", `is:pr reviewed-by:${login} -author:${login}`)}
@@ -386,7 +385,6 @@ async function fetchOrgActivity(ref) {
     member: Boolean(data.member && data.member.organization),
     merged: searchCount(data.merged),
     open: searchCount(data.open),
-    closed: searchCount(data.closed),
     issues: searchCount(data.issues),
     issuesOpen: searchCount(data.issuesOpen),
     reviewed: searchCount(data.reviewed),
