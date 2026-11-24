@@ -132,6 +132,7 @@
     .chips-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     button.linklike { all: unset; color: var(--accent); cursor: pointer; font-size: 12px; }
     button.linklike:hover { text-decoration: underline; }
+    @media (prefers-color-scheme: dark) { .savebar { box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.45); } .savebar[data-dirty] #save { box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.35); } }
     .chip.c0 { --chip-bg: rgba(9, 105, 218, 0.12); --chip-border: rgba(9, 105, 218, 0.4); --chip-fg: #0969da; }
     .chip.c1 { --chip-bg: rgba(130, 80, 223, 0.12); --chip-border: rgba(130, 80, 223, 0.4); --chip-fg: #8250df; }
     .chip.c2 { --chip-bg: rgba(26, 127, 55, 0.12); --chip-border: rgba(26, 127, 55, 0.4); --chip-fg: #1a7f37; }
@@ -163,7 +164,13 @@
     .tour b { font-weight: 600; font-size: 14px; }
     .tour span { color: var(--text-secondary); font-size: 13px; }
     .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; align-items: center; gap: 10px; padding: 12px max(24px, calc(50% - 336px)); background: var(--bg-base); border-top: 1px solid var(--border-default); }
-    .preview .savebar { position: static; padding: 12px 0; margin-top: 8px; }
+    .savebar { box-shadow: 0 -6px 16px rgba(31, 35, 40, 0.1); }
+    .savebar[data-dirty] { border-top-color: var(--accent); }
+    #save { padding: 10px 26px; font-size: 14px; }
+    .savebar[data-dirty] #save { box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.28); }
+    .dirty { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--accent); }
+    .dirty::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .preview .savebar { position: static; padding: 12px 0; margin-top: 8px; box-shadow: none; }
     kbd { font: 11px var(--font-mono); padding: 1px 5px; border: 1px solid var(--border-default); border-bottom-width: 2px; border-radius: 4px; background: var(--code-bg); }
     footer { color: var(--text-secondary); font-size: 12px; margin-top: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
     .mono:empty { display: none; }
@@ -406,6 +413,7 @@
 
     <div class="savebar" id="savebar">
       <button id="save" class="primary" type="button">Save</button>
+      <span id="dirty" class="dirty" hidden>Unsaved changes</span>
       <span id="status" role="status"></span>
     </div>
 
