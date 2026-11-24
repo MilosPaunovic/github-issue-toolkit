@@ -1140,6 +1140,7 @@
           link.target = "_blank";
           link.rel = "noopener";
           link.textContent = String(value);
+          link.title = `Open the matching search on GitHub`;
           if (!value) link.className = "gsf-load-none";
           cell.append(link);
         }
@@ -1525,7 +1526,7 @@
         tile.href = profileUrl(org, terms(login));
         tile.target = "_blank";
         tile.rel = "noopener";
-        tile.title = what;
+        tile.title = `${what}. Opens the matching search on GitHub.`;
         if (!value) tile.dataset.zero = "1";
         const number = document.createElement("span");
         number.className = "gsf-profile-num";
