@@ -765,6 +765,33 @@
     }
   }
 
+  // GitHub's own Member and Owner label sits at the right of a comment header. Where the button already says
+  // Member it is said twice, so that label is hidden for as long as the button shows it.
+  const LOAD_HEADER = "[comment-header], [class*=\"IssueBodyHeaderContainer\"], .timeline-comment-header";
+  const LOAD_ASSOCIATION = "[comment-author-association], .timeline-comment-label";
+  const LOAD_HIDE_WORDS = /^(member|owner)$/i;
+
+  function loadShowAssociation() {
+    document.querySelectorAll("[data-gsf-hidden]").forEach((el) => {
+      el.style.removeProperty("display");
+      delete el.dataset.gsfHidden;
+    });
+  }
+
+  function loadHideAssociation() {
+    loadShowAssociation();
+    if (!settings.loadEnabled) return;
+    document.querySelectorAll(".gsf-load[data-status=\"member\"]").forEach((button) => {
+      const header = button.closest(LOAD_HEADER);
+      if (!header) return;
+      header.querySelectorAll(LOAD_ASSOCIATION).forEach((label) => {
+        if (!LOAD_HIDE_WORDS.test(label.textContent.trim())) return;
+        label.style.setProperty("display", "none", "important");
+        label.dataset.gsfHidden = "1";
+      });
+    });
+  }
+
   const LOAD_HOVER_MS = 200;
   const LOAD_CARD_ITEMS = 25;
   // Single segment paths that look like a login but are not one.
@@ -961,10 +988,12 @@
     document.querySelectorAll(".gsf-load").forEach((button) => {
       if (button.dataset.gsfKey === key) loadPaint(button);
     });
+    loadHideAssociation();
   }
 
   function loadRepaintAll() {
     document.querySelectorAll(".gsf-load").forEach(loadPaint);
+    loadHideAssociation();
   }
 
   // One request per person and repository, however many times the name is on the page and however
@@ -1041,6 +1070,7 @@
       if (!loadCache.has(key) && !loadPending.has(key)) loadFetch(ref, login, false);
     }
     if (settings.loadMembers) loadMarkMembers(ref);
+    loadHideAssociation();
   }
 
   // One request for every name on the page that is not yet known to belong or not to the organization.
@@ -1330,6 +1360,7 @@
     }
     loadCardClose();
     document.querySelectorAll(".gsf-load").forEach((el) => el.remove());
+    loadShowAssociation();
   }
 
   document.addEventListener("click", (event) => {
