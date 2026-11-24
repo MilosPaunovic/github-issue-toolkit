@@ -39,7 +39,7 @@ const DEFAULT_SHORTCUTS = [
 ];
 const SHORTCUT_KINDS = { repo: "Repositories", issue: "Issues", pr: "Pull requests" };
 
-const TABS = ["home", "access", "badges", "epics", "pages", "search"];
+const TABS = ["home", "access", "badges", "epics", "contributors", "shortcuts"];
 const savebar = document.getElementById("savebar");
 let currentTab = "";
 

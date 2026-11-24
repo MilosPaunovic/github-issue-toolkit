@@ -50,6 +50,7 @@
         --red: #f85149;
       }
     }
+    html { scrollbar-gutter: stable; }
     * { box-sizing: border-box; }
     .only-dark { display: none; }
     @media (prefers-color-scheme: dark) { .only-dark { display: block; } .only-light { display: none; } }
@@ -67,6 +68,7 @@
     .marks .t b { color: var(--text-primary); font-weight: 600; }
     .marks i { font-style: normal; }
     .hint i { font-style: normal; }
+    .marks + .hint { margin-top: 14px; }
     .mk-icon { display: inline-flex; color: var(--text-secondary); padding: 0 6px; }
     .mk-pill { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-secondary); }
     .mk-pill.mk-g { color: var(--green); border-color: var(--green); background: rgba(26, 127, 55, 0.12); }
@@ -196,8 +198,8 @@
       <button type="button" role="tab" id="tab-access" data-tab="access" aria-controls="panel-access">Access</button>
       <button type="button" role="tab" id="tab-badges" data-tab="badges" aria-controls="panel-badges">Badges</button>
       <button type="button" role="tab" id="tab-epics" data-tab="epics" aria-controls="panel-epics">Epics</button>
-      <button type="button" role="tab" id="tab-pages" data-tab="pages" aria-controls="panel-pages">Issue pages</button>
-      <button type="button" role="tab" id="tab-search" data-tab="search" aria-controls="panel-search">Search</button>
+      <button type="button" role="tab" id="tab-contributors" data-tab="contributors" aria-controls="panel-contributors">Contributors</button>
+      <button type="button" role="tab" id="tab-shortcuts" data-tab="shortcuts" aria-controls="panel-shortcuts">Shortcuts</button>
     </div>
 
     <div class="panel" id="panel-home" role="tabpanel" aria-labelledby="tab-home" hidden>
@@ -217,9 +219,9 @@
         <div class="tour">
           <button type="button" data-tab="access"><b>Access</b><span>Your personal access token and the site access Firefox asks for.</span></button>
           <button type="button" data-tab="badges"><b>Badges</b><span>Issue fields, issue age and pull request badges.</span></button>
-          <button type="button" data-tab="epics"><b>Epics</b><span>The kanban board, sub-issue progress and pinned issues.</span></button>
-          <button type="button" data-tab="pages"><b>Issue pages</b><span>Contributor load and the button that hides the issue sidebar.</span></button>
-          <button type="button" data-tab="search"><b>Search</b><span>Shortcuts for searching GitHub from the address bar with <code>@gh</code>.</span></button>
+          <button type="button" data-tab="epics"><b>Epics</b><span>The kanban board, sub-issue progress and the button that hides the issue sidebar.</span></button>
+          <button type="button" data-tab="contributors"><b>Contributors</b><span>Who a person is to the repository, on issues and pull requests.</span></button>
+          <button type="button" data-tab="shortcuts"><b>Shortcuts</b><span>The pinned issues button in GitHub's top bar and search from the address bar with <code>@gh</code>.</span></button>
         </div>
         <p class="hint">Each tab has a Save button at the bottom. Nothing leaves your browser except requests to <code>api.github.com</code>.</p>
       </section>
@@ -304,29 +306,34 @@
         <p class="hint">A sub-issue counts as done when this field has this value, <code>Stage</code> and <code>Done</code> for example. Leave both empty and a closed sub-issue is a done one. Needs a token that can read issue fields, like the badges.</p>
       </section>
       <section class="card">
-        <h2>Pinned issues</h2>
-        <p class="desc">A pin button in GitHub's top bar, next to the notifications bell, opens a panel with your pinned issues, for example epics. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
-        <label class="check"><input id="pins-enabled" type="checkbox"> Show the pinned issues button in GitHub's top bar</label>
-        <div class="actions" style="margin-top:12px">
-          <span id="pins-count" class="hint" style="margin:0"></span>
-          <button id="pins-clear" type="button">Remove all pins</button>
-        </div>
+        <h2>Issue sidebar</h2>
+        <p class="desc">A small button between the issue and its sidebar hides the whole metadata column, assignees, labels, type, fields, projects and the rest, giving the issue body and the kanban board the full width. The button stays in the same place either way, and what you choose holds on every issue until you press it again.</p>
+        <label class="check"><input id="sidebar-toggle" type="checkbox"> Show the button that hides the issue sidebar</label>
+        <label class="check" style="margin-top:8px"><input id="hide-projects" type="checkbox"> Hide the Projects section of the issue sidebar (off by default)</label>
+        <p class="hint">Takes GitHub's own Projects box, with its status and fields, out of the sidebar on every issue, while the rest of the sidebar stays. The issue remains in its projects; only the box is hidden.</p>
       </section>
     </div>
 
-    <div class="panel" id="panel-pages" role="tabpanel" aria-labelledby="tab-pages" hidden>
+    <div class="panel" id="panel-contributors" role="tabpanel" aria-labelledby="tab-contributors" hidden>
       <section class="card">
-        <h2>Contributor load</h2>
+        <h2>Contributor button</h2>
         <p class="desc">Adds a small button after a person's name on an issue or pull request. Press it to see who they are to this repository, new, returning or a regular, and what they already hold: pull requests merged, open or closed without merging, and issues assigned to them. Handy before you reply to a stranger or hand someone one more thing. Nothing is looked up until you press the button, each person is looked up once, and the answer stays until you close the tab.</p>
         <p class="hint" style="margin:0 0 14px">It looks like this next to a name: <i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
         <label class="check"><input id="load-enabled" type="checkbox"> Show the button after usernames (off by default)</label>
         <label class="check" style="margin-top:8px"><input id="load-auto" type="checkbox"> Look up the author and the assignees on their own, without pressing (off by default)</label>
         <p class="hint">Costs one request for each of them when an issue opens, and shows their status on sight. Everyone else is still looked up when you press their button.</p>
+      </section>
+      <section class="card">
+        <h2>Statuses and limits</h2>
+        <p class="desc">Two numbers decide what the button says about someone. Defaults are 5 and 1.</p>
         <label for="load-regular">Call someone a regular after (merged pull requests in this repository)</label>
         <input id="load-regular" type="number" min="1" step="1" inputmode="numeric" placeholder="5">
         <label for="load-limit">Flag anyone with more than (assigned issues)</label>
         <input id="load-limit" type="number" min="0" step="1" inputmode="numeric" placeholder="1">
-        <p class="hint">Defaults 5 and 1. The button reads like this:</p>
+      </section>
+      <section class="card">
+        <h2>Reading the button</h2>
+        <p class="desc">What each state of the button means.</p>
         <div class="marks">
           <span><i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i></span><span class="t"><b>Not looked up yet.</b> Press it to look the person up.</span>
           <span><i class="mk-pill mk-b"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="26 12"/></svg> Looking up</i></span><span class="t">The ring turns while the answer is on its way.</span>
@@ -341,16 +348,18 @@
         </div>
         <p class="hint">The card the button opens has the numbers for the repository and for the whole organization, grouped as pull requests and issues, each a link to the matching GitHub search, then the open issues with the pull request that closes each, and how old the answer is with a refresh button beside it. Your own name gets no button. Counts cover the repositories your token can read, so a fine-grained token limited to a few repositories sees only those.</p>
       </section>
-      <section class="card">
-        <h2>Issue sidebar</h2>
-        <p class="desc">A small button between the issue and its sidebar hides the whole metadata column, assignees, labels, type, fields, projects and the rest, giving the issue body and the kanban board the full width. The button stays in the same place either way, and what you choose holds on every issue until you press it again.</p>
-        <label class="check"><input id="sidebar-toggle" type="checkbox"> Show the button that hides the issue sidebar</label>
-        <label class="check" style="margin-top:8px"><input id="hide-projects" type="checkbox"> Hide the Projects section of the issue sidebar (off by default)</label>
-        <p class="hint">Takes GitHub's own Projects box, with its status and fields, out of the sidebar on every issue, while the rest of the sidebar stays. The issue remains in its projects; only the box is hidden.</p>
-      </section>
     </div>
 
-    <div class="panel" id="panel-search" role="tabpanel" aria-labelledby="tab-search" hidden>
+    <div class="panel" id="panel-shortcuts" role="tabpanel" aria-labelledby="tab-shortcuts" hidden>
+      <section class="card">
+        <h2>Pinned issues</h2>
+        <p class="desc">A pin button in GitHub's top bar, next to the notifications bell, opens a panel with your pinned issues, for example epics. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
+        <label class="check"><input id="pins-enabled" type="checkbox"> Show the pinned issues button in GitHub's top bar</label>
+        <div class="actions" style="margin-top:12px">
+          <span id="pins-count" class="hint" style="margin:0"></span>
+          <button id="pins-clear" type="button">Remove all pins</button>
+        </div>
+      </section>
       <section class="card">
         <h2>Address bar search</h2>
         <p class="desc">Type <code>@gh</code> and a space in the address bar, then a shortcut name and the words to look for, for example <code>@gh repo flow</code>. Each shortcut searches one kind of item and adds its qualifiers to your words, so <code>org:acme</code> keeps the search inside one organization. A shortcut name on its own, <code>@gh pr</code>, lists what its qualifiers match right away. Text that does not start with a shortcut name goes to the default shortcut. Results appear as you type; Enter on the text itself opens the GitHub search page.</p>
