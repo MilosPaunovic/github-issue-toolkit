@@ -20,6 +20,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Pressing the contributor button, or opening a profile, on a tab that was open when the extension was reloaded no longer throws a ReferenceError: the lookup now fails the way it should, with the message to reload the page.
 - Nothing is read for a contributor, apart from whether they belong to the organization, until their button is pressed, where hovering a name used to read it. Hovering only gives a name its button. A person is read once per repository and kept until the tab is closed instead of ten minutes, the card says how old the answer is, and its refresh button reads one person again. Changing a setting no longer forgets what was read.
 - The card opens once a person has been looked up even if the page rebuilt the comment header and dropped the button that was pressed, and a button the page dropped is put back at the next scan.
 - The button is easier to see: it is a bordered **Contributor** button with an icon before it is pressed, and while the person is being looked up it turns blue and shows a turning ring and the words **Looking up**. The card is split into sections, pull requests, issues and open issues, each with its own heading and rule, with two open issues in view and the rest below a scroll, and its refresh button sits beside the age of the answer.

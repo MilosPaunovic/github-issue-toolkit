@@ -1005,6 +1005,9 @@
     if (!force && loadPending.has(key)) return loadPending.get(key);
 
     const request = (async () => {
+      // Wait one tick so the line below has stored `request` before anything here reads it: when the extension was
+      // reloaded under an open tab, sendMessage throws at once and this body would otherwise run to its end first.
+      await null;
       let data = null;
       let error = "";
       try {
@@ -1472,6 +1475,7 @@
     if (!force && hit && hit.data) return hit;
     if (!force && profilePending.has(key)) return profilePending.get(key);
     const request = (async () => {
+      await null; // see loadFetch: `request` must exist before this body can read it
       let data = null;
       let error = "";
       try {
