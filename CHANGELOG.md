@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- What happens to members of the organization is one choice on the Contributors tab, **Members of the organization**, instead of two checkboxes that contradicted each other: leave them out (the default), show **Member** in place of the button, or give them a button like anyone else.
 
 ## [2.11.2] - 2026-11-24
 

@@ -129,6 +129,9 @@
       width: 18px; height: 18px; border-radius: 50%; cursor: pointer; color: inherit; font-size: 14px; line-height: 1; opacity: .7;
     }
     .chip button:hover { opacity: 1; background: rgba(0, 0, 0, 0.12); }
+    fieldset.choice { border: 0; margin: 14px 0 0; padding: 0; }
+    fieldset.choice + label.check { margin-top: 14px; }
+    fieldset.choice legend { font-weight: 600; font-size: 13px; padding: 0; margin-bottom: 8px; }
     .chips-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     button.linklike { all: unset; color: var(--accent); cursor: pointer; font-size: 12px; }
     button.linklike:hover { text-decoration: underline; }
@@ -338,10 +341,13 @@
         <p class="desc">Adds a small button after a person's name on an issue or pull request. Press it to see who they are to this repository, new, returning or a regular, and what they already hold: pull requests open, merged or closed without merging, and issues assigned to them. Handy before you reply to a stranger or hand someone one more thing. Nothing is looked up until you press the button, each person is looked up once, and the answer stays until you close the tab.</p>
         <p class="hint sample">It looks like this next to a name: <i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
         <label class="check"><input id="load-enabled" type="checkbox"> Show the button after usernames (off by default)</label>
-        <label class="check"><input id="load-skip-members" type="checkbox"> Leave members of the organization out: no button next to their names (on by default)</label>
-        <p class="hint">Which names on the page belong to the organization is asked once, in a shared request, and a button appears only for those who do not. With this on, the Member mark below has nothing to show, since a member has no button.</p>
-        <label class="check"><input id="load-members" type="checkbox"> Mark members of the organization right away (on by default)</label>
-        <p class="hint">Asks GitHub once for every name on the page, in a shared request, and shows <b>Member</b> in place of the button for those who belong to the organization. Nothing else about them is read until you press the button.</p>
+        <fieldset class="choice">
+          <legend>Members of the organization</legend>
+          <label class="check"><input id="members-skip" name="members-mode" type="radio"> Leave them out: no button next to their names (default)</label>
+          <label class="check"><input id="members-mark" name="members-mode" type="radio"> Show <b>Member</b> in place of the button</label>
+          <label class="check"><input id="members-plain" name="members-mode" type="radio"> Give them a button like anyone else</label>
+          <p class="hint">Which names on the page belong to the organization is asked once, in a shared request, and a button or a Member mark is shown for a name only after that answer. Nothing else about a member is read until you press their button.</p>
+        </fieldset>
         <label class="check"><input id="load-auto" type="checkbox"> Look up the author on their own, without pressing (off by default)</label>
         <p class="hint">Costs one request when an issue opens, and shows the author's status on sight. Everyone else is still looked up when you press their button. The sidebar gets no buttons, only names in the conversation do.</p>
       </section>
@@ -378,7 +384,7 @@
         <div class="marks">
           <span><i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i></span><span class="t"><b>Not looked up yet.</b> Press it to look the person up.</span>
           <span><i class="mk-pill mk-b"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="26 12"/></svg> Looking up</i></span><span class="t">The ring turns while the answer is on its way.</span>
-          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> Shown only when members are not left out, in place of GitHub's own Member label.</span>
+          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> Shown in place of the button with the Show Member choice, and after a press with the button like anyone else.</span>
           <span><i class="mk-pill mk-g">New contributor</i></span><span class="t">No merged pull request in the organization yet.</span>
           <span><i class="mk-pill mk-g">First PR here</i></span><span class="t">Merged elsewhere in the organization, not in this repository yet.</span>
           <span><i class="mk-pill">Returning</i></span><span class="t">Merged here, fewer than the regular limit.</span>
