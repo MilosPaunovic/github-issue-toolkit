@@ -51,16 +51,19 @@ const SHORTCUT_KINDS = { repo: "Repositories", issue: "Issues", pr: "Pull reques
 const TABS = ["home", "access", "badges", "epics", "contributors", "shortcuts"];
 const savebar = document.getElementById("savebar");
 const dirtyNote = document.getElementById("dirty");
+const discardButton = document.getElementById("discard");
 
 // Anything typed or ticked, a tag added or removed, is not saved until Save is pressed, and the bar says so.
 function markDirty() {
   savebar.dataset.dirty = "1";
   dirtyNote.hidden = false;
+  discardButton.hidden = false;
 }
 
 function clearDirty() {
   delete savebar.dataset.dirty;
   dirtyNote.hidden = true;
+  discardButton.hidden = true;
 }
 
 document.addEventListener("input", (e) => { if (e.target.closest && e.target.closest(".panel")) markDirty(); });
@@ -330,7 +333,9 @@ if (hasChrome) {
     setStatus(ok ? "Access to github.com granted." : "Access was not granted.", ok);
     refreshAccess();
   });
-  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadAuto", "loadMembers", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "searchShortcuts", "searchDefault", "pins", "welcomeSeen"]).then((stored) => {
+  // What is saved, put back on the page: at the start, and again when changes are discarded.
+  const STORED_KEYS = ["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadAuto", "loadMembers", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "searchShortcuts", "searchDefault", "pins", "welcomeSeen"];
+  function applyStored(stored, first) {
     tokenInput.value = stored.token || "";
     renderHomeToken(String(stored.token || "").trim());
     fields = parseFields(stored.fields);
@@ -365,8 +370,12 @@ if (hasChrome) {
     ageWarn.value = stored.ageWarnDays === undefined ? 90 : stored.ageWarnDays;
     loadShortcuts(stored.searchShortcuts, stored.searchDefault);
     renderPinsCount(stored.pins);
-    showTab(initialTab(stored.welcomeSeen === true), false);
-  });
+    if (first) showTab(initialTab(stored.welcomeSeen === true), false);
+  }
+  function loadFromStorage(first) {
+    return api.storage.local.get(STORED_KEYS).then((stored) => applyStored(stored, first));
+  }
+  loadFromStorage(true);
   api.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes.pins) renderPinsCount(changes.pins.newValue);
@@ -417,6 +426,19 @@ document.getElementById("save").addEventListener("click", async () => {
   clearDirty();
   if (!token) setStatus("Saved without a token. Badges need one.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);
+});
+
+// Puts every field back to what is saved and forgets what was typed since.
+discardButton.addEventListener("click", async () => {
+  if (!hasChrome) {
+    location.reload();
+    return;
+  }
+  fieldInput.value = "";
+  assignWordsInput.value = "";
+  await loadFromStorage(false);
+  clearDirty();
+  setStatus("Changes discarded.", true);
 });
 
 document.getElementById("test").addEventListener("click", async () => {

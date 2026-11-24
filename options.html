@@ -166,7 +166,7 @@
     .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; align-items: center; gap: 10px; padding: 12px max(24px, calc(50% - 336px)); background: var(--bg-base); border-top: 1px solid var(--border-default); }
     .savebar { box-shadow: 0 -6px 16px rgba(31, 35, 40, 0.1); }
     .savebar[data-dirty] { border-top-color: var(--accent); }
-    #save { padding: 10px 26px; font-size: 14px; }
+    #save, #discard { padding: 10px 26px; font-size: 14px; }
     .savebar[data-dirty] #save { box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.28); }
     .dirty { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--accent); }
     .dirty::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
@@ -413,6 +413,7 @@
 
     <div class="savebar" id="savebar">
       <button id="save" class="primary" type="button">Save</button>
+      <button id="discard" type="button" hidden>Discard</button>
       <span id="dirty" class="dirty" hidden>Unsaved changes</span>
       <span id="status" role="status"></span>
     </div>
