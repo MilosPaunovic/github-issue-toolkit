@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Render docs/settings-dark.png and docs/settings-light.png from options.html.
 
-The page is rendered in preview mode (no extension APIs), with the icons inlined and the dark or light
-palette forced, at 900 px wide on a tall canvas that is then cut just below the last card, so a new setting
+The page is rendered in preview mode (no extension APIs) on its Badges tab, with the icons inlined and the dark or light
+palette forced, at 900 px wide on a tall canvas that is then cut just below the save bar, so a new setting
 never pushes the buttons out of the picture. Requires Google Chrome (headless) and Pillow.
 
 Usage: python3 scripts/render-settings.py
@@ -43,7 +43,7 @@ def main() -> None:
             src.write_text(doc, encoding="utf-8")
             out = ROOT / "docs" / f"settings-{theme}.png"
             subprocess.run(["google-chrome", "--headless=new", "--no-sandbox", "--hide-scrollbars", f"--window-size=900,{HEIGHT}",
-                            f"--screenshot={out}", src.as_uri()], check=True, capture_output=True, timeout=90)
+                            f"--screenshot={out}", src.as_uri() + "#badges"], check=True, capture_output=True, timeout=90)
             trim_bottom(out)
             print(f"wrote {out.relative_to(ROOT)} {Image.open(out).size}")
 

@@ -53,8 +53,7 @@
     "open_in_tab": true
   },
   "action": {
-    "default_title": "GitHub Issue Toolkit - quick settings",
-    "default_popup": "popup.html"
+    "default_title": "GitHub Issue Toolkit - open settings"
   },
   "icons": {
     "16": "icons/icon-dark-16.png",

@@ -1035,3 +1035,7 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   return false;
 });
+
+api.action.onClicked.addListener(() => {
+  api.runtime.openOptionsPage();
+});

@@ -52,12 +52,11 @@
     .only-dark { display: none; }
     @media (prefers-color-scheme: dark) { .only-dark { display: block; } .only-light { display: none; } }
     body { margin: 0; min-height: 100vh; background: var(--bg-base); color: var(--text-primary); font: 14px/1.55 var(--font-sans); }
-    .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 64px; }
+    .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 24px; }
     header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
     header img { width: 44px; height: 44px; border-radius: 10px; }
     header h1 { font-size: 20px; font-weight: 600; margin: 0; line-height: 1.2; }
     header .subtitle { color: var(--text-secondary); font-size: 13px; margin-top: 2px; }
-    .lead { color: var(--text-muted); margin: 16px 0 24px; }
     .card { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
     .card.access { border-color: var(--accent); }
     .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
@@ -136,6 +135,24 @@
       .mk-err { box-shadow: inset 0 0 0 1px #ff8182; }
       .chip button:hover { background: rgba(255, 255, 255, 0.12); }
     }
+    [hidden] { display: none !important; }
+    .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border-default); margin: 20px 0 20px; overflow-x: auto; }
+    .tabs button { all: unset; box-sizing: border-box; padding: 10px 14px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--text-secondary); font: 500 14px var(--font-sans); cursor: pointer; white-space: nowrap; }
+    .tabs button:hover { color: var(--text-primary); }
+    .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+    .tabs button:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; border-radius: 6px; }
+    .state { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border-default); color: var(--text-secondary); }
+    .pill.ok { color: var(--green); border-color: var(--green); }
+    .pill.warn { color: var(--red); border-color: var(--red); }
+    .tour { display: grid; gap: 8px; margin: 14px 0; }
+    .tour button { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border: 1px solid var(--border-default); border-radius: 8px; cursor: pointer; }
+    .tour button:hover { border-color: var(--accent); background: var(--bg-elevated); }
+    .tour button:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+    .tour b { font-weight: 600; font-size: 14px; }
+    .tour span { color: var(--text-secondary); font-size: 13px; }
+    .savebar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 12px 0; margin-top: 8px; background: var(--bg-base); border-top: 1px solid var(--border-default); }
+    .preview .savebar { position: static; }
     kbd { font: 11px var(--font-mono); padding: 1px 5px; border: 1px solid var(--border-default); border-bottom-width: 2px; border-radius: 4px; background: var(--code-bg); }
     footer { color: var(--text-secondary); font-size: 12px; margin-top: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
     .mono:empty { display: none; }
@@ -162,145 +179,181 @@
       <img class="only-light" src="icons/icon-light-128.png" alt="">
       <div>
         <h1>GitHub Issue Toolkit</h1>
-        <div class="subtitle">Extension settings</div>
+        <div class="subtitle">Extension settings <span id="version" class="mono"></span></div>
       </div>
     </header>
-    <p class="lead">Shows the values of custom issue fields and the age of issues as badges on sub-issue lists and on project views, and keeps your pinned epics one click away.</p>
-
     <section class="card access" id="access" hidden>
       <h2>Site access</h2>
       <p class="desc">This browser has not granted the extension access to <code>github.com</code> and <code>api.github.com</code> yet. Firefox asks for this separately from the installation.</p>
       <button id="grant" type="button" class="primary">Allow access to github.com</button>
     </section>
 
-    <section class="card">
-      <h2>GitHub access</h2>
-      <p class="desc">Field values are read through the GitHub API. The token is stored in this browser profile only and is sent to nothing but <code>api.github.com</code>. Fields with "Organization only" visibility need a token of an organization member.</p>
+    <div class="tabs" role="tablist" aria-label="Settings">
+      <button type="button" role="tab" id="tab-home" data-tab="home" aria-controls="panel-home">Home</button>
+      <button type="button" role="tab" id="tab-access" data-tab="access" aria-controls="panel-access">Access</button>
+      <button type="button" role="tab" id="tab-badges" data-tab="badges" aria-controls="panel-badges">Badges</button>
+      <button type="button" role="tab" id="tab-epics" data-tab="epics" aria-controls="panel-epics">Epics</button>
+      <button type="button" role="tab" id="tab-pages" data-tab="pages" aria-controls="panel-pages">Issue pages</button>
+      <button type="button" role="tab" id="tab-search" data-tab="search" aria-controls="panel-search">Search</button>
+    </div>
 
-      <label for="token">Personal access token</label>
-      <div class="input-row">
-        <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_... or ghp_...">
-        <button id="toggle" type="button" title="Show or hide the token">Show</button>
-      </div>
-      <p class="hint">
-        Recommended: a <a href="https://github.com/settings/tokens/new?scopes=repo&description=github-issue-toolkit" target="_blank" rel="noopener">classic token</a> with the <code>repo</code> scope. If the organization enforces SSO, open "Configure SSO" next to the new token and authorize it for that organization.
-        A <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> also works: set the organization as resource owner, pick the repositories, and under Repository permissions set <code>Issues</code> to <code>Read-only</code>.
-      </p>
-    </section>
+    <div class="panel" id="panel-home" role="tabpanel" aria-labelledby="tab-home" hidden>
+      <section class="card">
+        <h2>Welcome</h2>
+        <p class="desc">GitHub Issue Toolkit adds what GitHub's lists and Projects views leave out: badges for custom issue fields, issue age and pull requests, a kanban board for epics, sub-issue progress that respects the view's filters, the load each contributor carries, a panel of pinned epics and search from the address bar. Most of it reads GitHub through its API, so the first step is a token.</p>
+        <div class="state">
+          <span id="home-token" class="pill warn">No token yet</span>
+          <span id="home-access" class="pill warn" hidden>Site access needed</span>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Where to find things</h2>
+        <div class="tour">
+          <button type="button" data-tab="access"><b>Access</b><span>Your personal access token and the site access Firefox asks for.</span></button>
+          <button type="button" data-tab="badges"><b>Badges</b><span>Issue fields, issue age and pull request badges.</span></button>
+          <button type="button" data-tab="epics"><b>Epics</b><span>The kanban board, sub-issue progress and pinned issues.</span></button>
+          <button type="button" data-tab="pages"><b>Issue pages</b><span>Contributor load and the button that hides the issue sidebar.</span></button>
+          <button type="button" data-tab="search"><b>Search</b><span>Shortcuts for searching GitHub from the address bar with <code>@gh</code>.</span></button>
+        </div>
+        <p class="hint">Each tab has a Save button at the bottom. Nothing leaves your browser except requests to <code>api.github.com</code>.</p>
+      </section>
+    </div>
 
-    <section class="card">
-      <h2>Fields to show (optional)</h2>
-      <p class="desc">Names of the issue fields to display, matched case-insensitively against the fields defined by the organization. Badges appear in this order; single-select values use the option's colour. An entry starting with <code>label:</code> shows labels instead: <code>label:area/*</code> every label starting with <code>area/</code>, <code>label:bug</code> only that one, in the badge colour nearest to the label's.</p>
-      <label for="field-input">Field names</label>
-      <div id="chips" class="chip-input" role="list" aria-label="Field names">
-        <input id="field-input" type="text" spellcheck="false" autocomplete="off" placeholder="Add a field and press Enter">
-      </div>
-      <p class="hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a field, <kbd>Backspace</kbd> or the × button to remove one. Leave it empty to show no field badges; the rest of the extension works without them.</p>
-      <label class="check" style="margin-top:14px"><input id="skip-shown" type="checkbox"> Skip fields the view already shows (project columns, card fields and the board's grouping)</label>
-    </section>
+    <div class="panel" id="panel-access" role="tabpanel" aria-labelledby="tab-access" hidden>
+      <section class="card">
+        <h2>GitHub access</h2>
+        <p class="desc">Field values are read through the GitHub API. The token is stored in this browser profile only and is sent to nothing but <code>api.github.com</code>. Fields with "Organization only" visibility need a token of an organization member.</p>
 
-    <section class="card">
-      <h2>Issue age</h2>
-      <p class="desc">Adds a badge with the time elapsed since the issue was created, next to the field badges, on sub-issue lists and on project table and board views.</p>
-      <label class="check"><input id="age-enabled" type="checkbox"> Show the age of each issue (off by default)</label>
-      <label for="age-unit">Unit</label>
-      <select id="age-unit">
-        <option value="months">Months (default), e.g. 3 mo</option>
-        <option value="weeks">Weeks, e.g. 14w</option>
-        <option value="days">Days, e.g. 98d</option>
-      </select>
-      <label for="age-warn">Highlight issues open longer than (days)</label>
-      <input id="age-warn" type="number" min="0" step="1" inputmode="numeric" placeholder="90">
-      <p class="hint">The badge turns yellow past this age. 0 turns the highlight off. Default 90.</p>
-      <p class="hint">An issue younger than the unit reads today, this week or this month. Hovering the badge shows the exact age in months and days and the creation date.</p>
-    </section>
+        <label for="token">Personal access token</label>
+        <div class="input-row">
+          <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_... or ghp_...">
+          <button id="toggle" type="button" title="Show or hide the token">Show</button>
+        </div>
+        <p class="hint">
+          Recommended: a <a href="https://github.com/settings/tokens/new?scopes=repo&description=github-issue-toolkit" target="_blank" rel="noopener">classic token</a> with the <code>repo</code> scope. If the organization enforces SSO, open "Configure SSO" next to the new token and authorize it for that organization.
+          A <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> also works: set the organization as resource owner, pick the repositories, and under Repository permissions set <code>Issues</code> to <code>Read-only</code>.
+        </p>
+        <div class="actions">
+          <button id="test" type="button">Test token</button>
+        </div>
+      </section>
+    </div>
 
-    <section class="card">
-      <h2>Epic kanban</h2>
-      <p class="desc">Adds a List and Kanban toggle above the sub-issues list of an issue. The board reads every field the sub-issues carry, not only the ones above: you pick the field that forms the columns and the one that orders the cards inside each column, and both choices are remembered. Columns follow the order the organization gave the field's options. Filter the board down to one value of any dimension to see a single sprint or priority at a time, or hide the closed sub-issues with the checkbox in the toolbar.</p>
-      <label class="check"><input id="kanban-enabled" type="checkbox"> Show the kanban toggle on sub-issue lists</label>
-      <label class="check" style="margin-top:8px"><input id="kanban-drag" type="checkbox"> Move a card by dragging it to another column, when the columns come from a single-select field or the issue state</label>
-      <p class="hint">Dragging writes to GitHub: it sets the field value, or closes and reopens the issue. The token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones). Nothing is written unless you drag a card.</p>
-    </section>
+    <div class="panel" id="panel-badges" role="tabpanel" aria-labelledby="tab-badges" hidden>
+      <section class="card">
+        <h2>Fields to show (optional)</h2>
+        <p class="desc">Names of the issue fields to display, matched case-insensitively against the fields defined by the organization. Badges appear in this order; single-select values use the option's colour. An entry starting with <code>label:</code> shows labels instead: <code>label:area/*</code> every label starting with <code>area/</code>, <code>label:bug</code> only that one, in the badge colour nearest to the label's.</p>
+        <label for="field-input">Field names</label>
+        <div id="chips" class="chip-input" role="list" aria-label="Field names">
+          <input id="field-input" type="text" spellcheck="false" autocomplete="off" placeholder="Add a field and press Enter">
+        </div>
+        <p class="hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a field, <kbd>Backspace</kbd> or the × button to remove one. Leave it empty to show no field badges; the rest of the extension works without them.</p>
+        <label class="check" style="margin-top:14px"><input id="skip-shown" type="checkbox"> Skip fields the view already shows (project columns, card fields and the board's grouping)</label>
+      </section>
+      <section class="card">
+        <h2>Issue age</h2>
+        <p class="desc">Adds a badge with the time elapsed since the issue was created, next to the field badges, on sub-issue lists and on project table and board views.</p>
+        <label class="check"><input id="age-enabled" type="checkbox"> Show the age of each issue (off by default)</label>
+        <label for="age-unit">Unit</label>
+        <select id="age-unit">
+          <option value="months">Months (default), e.g. 3 mo</option>
+          <option value="weeks">Weeks, e.g. 14w</option>
+          <option value="days">Days, e.g. 98d</option>
+        </select>
+        <label for="age-warn">Highlight issues open longer than (days)</label>
+        <input id="age-warn" type="number" min="0" step="1" inputmode="numeric" placeholder="90">
+        <p class="hint">The badge turns yellow past this age. 0 turns the highlight off. Default 90.</p>
+        <p class="hint">An issue younger than the unit reads today, this week or this month. Hovering the badge shows the exact age in months and days and the creation date.</p>
+      </section>
+      <section class="card">
+        <h2>Pull requests</h2>
+        <p class="desc">Badges on the pull request list, next to the labels of each row. Everything comes from the same read-only API access as the field badges.</p>
+        <label class="check"><input id="pr-association" type="checkbox"> Author's relation to the repository</label>
+        <label class="check" style="margin-top:8px"><input id="pr-fork" type="checkbox"> Opened from a fork</label>
+        <label class="check" style="margin-top:8px"><input id="pr-size" type="checkbox"> Size: added lines in green and removed lines in red, changed files on hover</label>
+        <label class="check" style="margin-top:8px"><input id="pr-merge-state" type="checkbox"> Merge state: mergeable, behind base, blocked, conflicts, checks failing</label>
+      </section>
+    </div>
 
-    <section class="card">
-      <h2>Sub-issue progress</h2>
-      <p class="desc">On a Projects table grouped by parent issue, GitHub's bar in each group header counts every sub-issue of an issue, including the ones the view hides with a filter or a slice. This replaces it with one that counts only the sub-issues inside the scope the view is narrowed to and shows the scope as tags, for example <code>14 / 18 done</code> followed by <code>release:2.1</code>. The Sub-issues progress column keeps GitHub's own bar.</p>
-      <label class="check"><input id="progress-enabled" type="checkbox"> Replace GitHub's sub-issue progress (off by default)</label>
-      <label for="progress-scope">Scope field (optional)</label>
-      <input id="progress-scope" type="text" spellcheck="false" autocomplete="off" placeholder="Release">
-      <p class="hint">The field whose value narrows the count, or several separated by commas, <code>Release, Owner</code> for example, matched case-insensitively. Each value is read from what the view is sliced by, or from a <code>release:2.1</code> term in its filter, and a sub-issue must have all of them. When the view is narrowed to none of them, GitHub's own bar stays. Leave it empty to count every sub-issue.</p>
-      <label for="progress-done-field">Counts as done (optional)</label>
-      <div class="input-row">
-        <input id="progress-done-field" type="text" spellcheck="false" autocomplete="off" placeholder="Stage" aria-label="Field that marks a sub-issue as done">
-        <input id="progress-done-value" type="text" spellcheck="false" autocomplete="off" placeholder="Done" aria-label="Value of that field that marks a sub-issue as done">
-      </div>
-      <p class="hint">A sub-issue counts as done when this field has this value, <code>Stage</code> and <code>Done</code> for example. Leave both empty and a closed sub-issue is a done one. Needs a token that can read issue fields, like the badges.</p>
-    </section>
+    <div class="panel" id="panel-epics" role="tabpanel" aria-labelledby="tab-epics" hidden>
+      <section class="card">
+        <h2>Epic kanban</h2>
+        <p class="desc">Adds a List and Kanban toggle above the sub-issues list of an issue. The board reads every field the sub-issues carry, not only the ones above: you pick the field that forms the columns and the one that orders the cards inside each column, and both choices are remembered. Columns follow the order the organization gave the field's options. Filter the board down to one value of any dimension to see a single sprint or priority at a time, or hide the closed sub-issues with the checkbox in the toolbar.</p>
+        <label class="check"><input id="kanban-enabled" type="checkbox"> Show the kanban toggle on sub-issue lists</label>
+        <label class="check" style="margin-top:8px"><input id="kanban-drag" type="checkbox"> Move a card by dragging it to another column, when the columns come from a single-select field or the issue state</label>
+        <p class="hint">Dragging writes to GitHub: it sets the field value, or closes and reopens the issue. The token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones). Nothing is written unless you drag a card.</p>
+      </section>
+      <section class="card">
+        <h2>Sub-issue progress</h2>
+        <p class="desc">On a Projects table grouped by parent issue, GitHub's bar in each group header counts every sub-issue of an issue, including the ones the view hides with a filter or a slice. This replaces it with one that counts only the sub-issues inside the scope the view is narrowed to and shows the scope as tags, for example <code>14 / 18 done</code> followed by <code>release:2.1</code>. The Sub-issues progress column keeps GitHub's own bar.</p>
+        <label class="check"><input id="progress-enabled" type="checkbox"> Replace GitHub's sub-issue progress (off by default)</label>
+        <label for="progress-scope">Scope field (optional)</label>
+        <input id="progress-scope" type="text" spellcheck="false" autocomplete="off" placeholder="Release">
+        <p class="hint">The field whose value narrows the count, or several separated by commas, <code>Release, Owner</code> for example, matched case-insensitively. Each value is read from what the view is sliced by, or from a <code>release:2.1</code> term in its filter, and a sub-issue must have all of them. When the view is narrowed to none of them, GitHub's own bar stays. Leave it empty to count every sub-issue.</p>
+        <label for="progress-done-field">Counts as done (optional)</label>
+        <div class="input-row">
+          <input id="progress-done-field" type="text" spellcheck="false" autocomplete="off" placeholder="Stage" aria-label="Field that marks a sub-issue as done">
+          <input id="progress-done-value" type="text" spellcheck="false" autocomplete="off" placeholder="Done" aria-label="Value of that field that marks a sub-issue as done">
+        </div>
+        <p class="hint">A sub-issue counts as done when this field has this value, <code>Stage</code> and <code>Done</code> for example. Leave both empty and a closed sub-issue is a done one. Needs a token that can read issue fields, like the badges.</p>
+      </section>
+      <section class="card">
+        <h2>Pinned issues</h2>
+        <p class="desc">A pin button in GitHub's top bar, next to the notifications bell, opens a panel with your pinned issues, for example epics. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
+        <label class="check"><input id="pins-enabled" type="checkbox"> Show the pinned issues button in GitHub's top bar</label>
+        <div class="actions" style="margin-top:12px">
+          <span id="pins-count" class="hint" style="margin:0"></span>
+          <button id="pins-clear" type="button">Remove all pins</button>
+        </div>
+      </section>
+    </div>
 
-    <section class="card">
-      <h2>Pull requests</h2>
-      <p class="desc">Badges on the pull request list, next to the labels of each row. Everything comes from the same read-only API access as the field badges.</p>
-      <label class="check"><input id="pr-association" type="checkbox"> Author's relation to the repository</label>
-      <label class="check" style="margin-top:8px"><input id="pr-fork" type="checkbox"> Opened from a fork</label>
-      <label class="check" style="margin-top:8px"><input id="pr-size" type="checkbox"> Size: added lines in green and removed lines in red, changed files on hover</label>
-      <label class="check" style="margin-top:8px"><input id="pr-merge-state" type="checkbox"> Merge state: mergeable, behind base, blocked, conflicts, checks failing</label>
-    </section>
+    <div class="panel" id="panel-pages" role="tabpanel" aria-labelledby="tab-pages" hidden>
+      <section class="card">
+        <h2>Contributor load</h2>
+        <p class="desc">On an issue or pull request, a mark next to a username saying what that person already holds in the same organization. For deciding whether to assign someone one more thing.</p>
+        <label class="check"><input id="load-enabled" type="checkbox"> Show what each contributor is holding (off by default)</label>
+        <label for="load-limit">Flag anyone assigned more than (issues)</label>
+        <input id="load-limit" type="number" min="0" step="1" inputmode="numeric" placeholder="1">
+        <p class="hint">Default 1. The mark reads like this:</p>
+        <div class="marks">
+          <span><i class="mk-dot mk-free"></i></span><span class="t">Nothing assigned. <b>Free to take one.</b></span>
+          <span><i class="mk-dot mk-at"></i></span><span class="t">At or under the limit.</span>
+          <span><i class="mk-n">4/3</i></span><span class="t">Over the limit. <b>Four assigned, three pull requests open.</b></span>
+          <span><i class="mk-n mk-idle">3/0</i></span><span class="t">Over the limit and <b>nothing pushed yet</b>.</span>
+          <span><i class="mk-dot mk-err"></i></span><span class="t">Could not be read, usually a missing token. Hover the name again to retry.</span>
+        </div>
+        <p class="hint">Hovering the mark lists every issue that person holds, each with the pull request that closes it when there is one, and carries a refresh button for when the ten minute cache is behind. Your own name gets no mark. Counts cover the repositories your token can read, so a fine-grained token limited to a few repositories sees only those.</p>
+      </section>
+      <section class="card">
+        <h2>Issue sidebar</h2>
+        <p class="desc">A small button between the issue and its sidebar hides the whole metadata column, assignees, labels, type, fields, projects and the rest, giving the issue body and the kanban board the full width. The button stays in the same place either way, and what you choose holds on every issue until you press it again.</p>
+        <label class="check"><input id="sidebar-toggle" type="checkbox"> Show the button that hides the issue sidebar</label>
+        <label class="check" style="margin-top:8px"><input id="hide-projects" type="checkbox"> Hide the Projects section of the issue sidebar (off by default)</label>
+        <p class="hint">Takes GitHub's own Projects box, with its status and fields, out of the sidebar on every issue, while the rest of the sidebar stays. The issue remains in its projects; only the box is hidden.</p>
+      </section>
+    </div>
 
-    <section class="card">
-      <h2>Contributor load</h2>
-      <p class="desc">On an issue or pull request, a mark next to a username saying what that person already holds in the same organization. For deciding whether to assign someone one more thing.</p>
-      <label class="check"><input id="load-enabled" type="checkbox"> Show what each contributor is holding (off by default)</label>
-      <label for="load-limit">Flag anyone assigned more than (issues)</label>
-      <input id="load-limit" type="number" min="0" step="1" inputmode="numeric" placeholder="1">
-      <p class="hint">Default 1. The mark reads like this:</p>
-      <div class="marks">
-        <span><i class="mk-dot mk-free"></i></span><span class="t">Nothing assigned. <b>Free to take one.</b></span>
-        <span><i class="mk-dot mk-at"></i></span><span class="t">At or under the limit.</span>
-        <span><i class="mk-n">4/3</i></span><span class="t">Over the limit. <b>Four assigned, three pull requests open.</b></span>
-        <span><i class="mk-n mk-idle">3/0</i></span><span class="t">Over the limit and <b>nothing pushed yet</b>.</span>
-        <span><i class="mk-dot mk-err"></i></span><span class="t">Could not be read, usually a missing token. Hover the name again to retry.</span>
-      </div>
-      <p class="hint">Hovering the mark lists every issue that person holds, each with the pull request that closes it when there is one, and carries a refresh button for when the ten minute cache is behind. Your own name gets no mark. Counts cover the repositories your token can read, so a fine-grained token limited to a few repositories sees only those.</p>
-    </section>
+    <div class="panel" id="panel-search" role="tabpanel" aria-labelledby="tab-search" hidden>
+      <section class="card">
+        <h2>Address bar search</h2>
+        <p class="desc">Type <code>@gh</code> and a space in the address bar, then a shortcut name and the words to look for, for example <code>@gh repo flow</code>. Each shortcut searches one kind of item and adds its qualifiers to your words, so <code>org:acme</code> keeps the search inside one organization. A shortcut name on its own, <code>@gh pr</code>, lists what its qualifiers match right away. Text that does not start with a shortcut name goes to the default shortcut. Results appear as you type; Enter on the text itself opens the GitHub search page.</p>
+        <div class="shortcut shortcut-head" aria-hidden="true"><span>Name</span><span>Icon</span><span>Searches</span><span>Qualifiers</span><span>Default</span><span></span></div>
+        <div id="shortcuts"></div>
+        <div class="actions" style="margin-top:4px">
+          <button id="shortcut-add" type="button">Add shortcut</button>
+        </div>
+        <p class="hint">Qualifiers use <a href="https://docs.github.com/en/search-github/searching-on-github" target="_blank" rel="noopener">GitHub search syntax</a>, for example <code>org:acme is:open</code> or <code>repo:acme/webapp</code>. Repository names inside an <code>org:</code> or <code>user:</code> also match on any part of the name, so <code>app</code> finds <code>webapp</code>. With one <code>repo:</code> qualifier, a number such as <code>#1234</code> goes straight to that issue or pull request. The icon is optional, an emoji such as 📦 or 🔀, shown before each result of the shortcut: the browser puts the same magnifier in front of every suggestion and lets no extension change it.</p>
+      </section>
+    </div>
 
-    <section class="card">
-      <h2>Issue sidebar</h2>
-      <p class="desc">A small button between the issue and its sidebar hides the whole metadata column, assignees, labels, type, fields, projects and the rest, giving the issue body and the kanban board the full width. The button stays in the same place either way, and what you choose holds on every issue until you press it again.</p>
-      <label class="check"><input id="sidebar-toggle" type="checkbox"> Show the button that hides the issue sidebar</label>
-      <label class="check" style="margin-top:8px"><input id="hide-projects" type="checkbox"> Hide the Projects section of the issue sidebar (off by default)</label>
-      <p class="hint">Takes GitHub's own Projects box, with its status and fields, out of the sidebar on every issue, while the rest of the sidebar stays. The issue remains in its projects; only the box is hidden.</p>
-    </section>
-
-    <section class="card">
-      <h2>Pinned issues</h2>
-      <p class="desc">A pin button in GitHub's top bar, next to the notifications bell, opens a panel with your pinned issues, for example epics. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
-      <label class="check"><input id="pins-enabled" type="checkbox"> Show the pinned issues button in GitHub's top bar</label>
-      <div class="actions" style="margin-top:12px">
-        <span id="pins-count" class="hint" style="margin:0"></span>
-        <button id="pins-clear" type="button">Remove all pins</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Address bar search</h2>
-      <p class="desc">Type <code>@gh</code> and a space in the address bar, then a shortcut name and the words to look for, for example <code>@gh repo flow</code>. Each shortcut searches one kind of item and adds its qualifiers to your words, so <code>org:acme</code> keeps the search inside one organization. A shortcut name on its own, <code>@gh pr</code>, lists what its qualifiers match right away. Text that does not start with a shortcut name goes to the default shortcut. Results appear as you type; Enter on the text itself opens the GitHub search page.</p>
-      <div class="shortcut shortcut-head" aria-hidden="true"><span>Name</span><span>Icon</span><span>Searches</span><span>Qualifiers</span><span>Default</span><span></span></div>
-      <div id="shortcuts"></div>
-      <div class="actions" style="margin-top:4px">
-        <button id="shortcut-add" type="button">Add shortcut</button>
-      </div>
-      <p class="hint">Qualifiers use <a href="https://docs.github.com/en/search-github/searching-on-github" target="_blank" rel="noopener">GitHub search syntax</a>, for example <code>org:acme is:open</code> or <code>repo:acme/webapp</code>. Repository names inside an <code>org:</code> or <code>user:</code> also match on any part of the name, so <code>app</code> finds <code>webapp</code>. With one <code>repo:</code> qualifier, a number such as <code>#1234</code> goes straight to that issue or pull request. The icon is optional, an emoji such as 📦 or 🔀, shown before each result of the shortcut: the browser puts the same magnifier in front of every suggestion and lets no extension change it.</p>
-    </section>
-
-    <div class="actions">
+    <div class="savebar" id="savebar">
       <button id="save" class="primary" type="button">Save</button>
-      <button id="test" type="button">Test token</button>
       <span id="status" role="status"></span>
     </div>
 
     <footer>
-      <span>GitHub Issue Toolkit <span id="version" class="mono"></span></span>
+      <span>GitHub Issue Toolkit</span>
       <span>Not affiliated with GitHub.</span>
     </footer>
   </div>
