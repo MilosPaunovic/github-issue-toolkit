@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadSkipMembers: true, profileEnabled: false, profileOrgs: "", assignEnabled: false, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadSkipMembers: false, profileEnabled: false, profileOrgs: "", assignEnabled: false, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -3464,7 +3464,7 @@
     }
     if (changes.loadEnabled || changes.loadAuto || changes.loadMembers || changes.loadSkipMembers || changes.loadLimit || changes.loadRegular) {
       if (changes.loadMembers) settings.loadMembers = changes.loadMembers.newValue !== false;
-      if (changes.loadSkipMembers) settings.loadSkipMembers = changes.loadSkipMembers.newValue !== false;
+      if (changes.loadSkipMembers) settings.loadSkipMembers = changes.loadSkipMembers.newValue === true;
       if (changes.loadEnabled) settings.loadEnabled = changes.loadEnabled.newValue === true;
       if (changes.loadAuto) settings.loadAuto = changes.loadAuto.newValue === true;
       if (changes.loadLimit) settings.loadLimit = Math.max(0, Number(changes.loadLimit.newValue) || 0);
@@ -3538,7 +3538,7 @@
     settings.assignEnabled = stored.assignEnabled === true;
     settings.assignWords = String(stored.assignWords || "");
     settings.loadMembers = stored.loadMembers !== false;
-    settings.loadSkipMembers = stored.loadSkipMembers !== false;
+    settings.loadSkipMembers = stored.loadSkipMembers === true;
     settings.loadRegular = Number.isFinite(Number(stored.loadRegular)) && stored.loadRegular !== undefined ? Math.max(1, Number(stored.loadRegular)) : 5;
     settings.loadLimit = Number.isFinite(Number(stored.loadLimit)) && stored.loadLimit !== undefined ? Math.max(0, Number(stored.loadLimit)) : 1;
     sidebarCollapsed = stored.sidebarCollapsed === true;
