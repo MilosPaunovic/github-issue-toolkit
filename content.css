@@ -1251,6 +1251,7 @@ div:has(> .gsf-progress) {
   align-items: flex-start;
   gap: 10px;
   padding: 8px 16px;
+  font-weight: 400;
   color: inherit !important;
   text-decoration: none !important;
   cursor: pointer;
@@ -1267,6 +1268,7 @@ div:has(> .gsf-progress) {
 .gsf-assign-row input {
   flex: none;
   margin: 4px 0 0;
+  accent-color: var(--gsf-brand, var(--fgColor-accent));
 }
 .gsf-assign-text {
   min-width: 0;
@@ -1293,24 +1295,36 @@ div:has(> .gsf-progress) {
 }
 .gsf-assign-preview {
   font-size: 13px;
+  font-weight: 400;
   overflow-wrap: anywhere;
 }
+/* Only the word that was found is bold, on a soft highlight. */
 .gsf-assign-mark {
   padding: 0 2px;
   border-radius: 3px;
   background: var(--bgColor-attention-muted, rgba(212, 167, 44, 0.3));
   color: inherit;
+  font-weight: 700;
 }
 .gsf-assign-bar {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 8px 16px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 16px;
   border-top: 1px solid var(--borderColor-default);
 }
+.gsf-assign-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gsf-assign-spacer {
+  flex: 1;
+}
+/* Buttons in GitHub's own small button style: a neutral one, a filled one for the action, a plain one for the rest. */
 .gsf-assign-button {
-  padding: 3px 12px;
+  padding: 4px 12px;
   border: 1px solid var(--borderColor-default);
   border-radius: 6px;
   background: var(--bgColor-muted);
@@ -1318,15 +1332,41 @@ div:has(> .gsf-progress) {
   font: inherit;
   font-size: 12px;
   font-weight: 500;
+  line-height: 20px;
   cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
 }
 .gsf-assign-button:hover {
   border-color: var(--fgColor-muted);
+  background: var(--bgColor-neutral-muted);
+}
+.gsf-assign-primary {
+  border-color: transparent;
+  background: var(--gsf-brand, var(--bgColor-accent-emphasis, #0969da));
+  color: #fff;
+}
+.gsf-assign-primary:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--gsf-brand, var(--bgColor-accent-emphasis, #0969da)) 88%, #000);
+}
+.gsf-assign-ghost {
+  border-color: transparent;
+  background: none;
+  color: var(--fgColor-muted);
+}
+.gsf-assign-ghost:hover {
+  border-color: transparent;
+  background: var(--bgColor-neutral-muted);
+  color: var(--fgColor-default);
 }
 .gsf-assign-danger {
-  border-color: var(--borderColor-danger-emphasis, var(--fgColor-danger));
-  background: var(--bgColor-danger-muted);
-  color: var(--fgColor-danger);
+  border-color: transparent;
+  background: var(--bgColor-danger-emphasis, #cf222e);
+  color: #fff;
+}
+.gsf-assign-danger:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--bgColor-danger-emphasis, #cf222e) 88%, #000);
 }
 .gsf-assign-link {
   padding: 0;
@@ -1342,5 +1382,31 @@ div:has(> .gsf-progress) {
 }
 .gsf-assign-note {
   font-size: 12px;
+  color: var(--fgColor-muted);
+}
+.gsf-assign[data-brand] .gsf-assign-meta a,
+.gsf-assign[data-brand] .gsf-assign-link,
+.gsf-assign[data-brand] .gsf-assign-ghost:hover {
+  color: var(--gsf-ink) !important;
+}
+.gsf-assign[data-brand] .gsf-profile-title {
+  color: var(--fgColor-default) !important;
+}
+.gsf-assign-words {
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--borderColor-muted);
+}
+.gsf-assign-wordlist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.gsf-assign-word {
+  padding: 0 8px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 9999px;
+  font-size: 12px;
+  line-height: 20px;
   color: var(--fgColor-muted);
 }

@@ -1910,41 +1910,46 @@
 
       const bar = document.createElement("div");
       bar.className = "gsf-assign-bar";
+      const actions = document.createElement("div");
+      actions.className = "gsf-assign-actions";
       const chosen = hideable.filter((c) => state.chosen.has(c.id));
-      if (!hideable.length && !state.hidden.size) {
-        const note = document.createElement("span");
+      const say = (text) => {
+        const note = document.createElement("div");
         note.className = "gsf-assign-note";
-        note.textContent = "You cannot hide comments in this repository.";
-        bar.append(note);
+        note.textContent = text;
+        return note;
+      };
+      if (!hideable.length && !state.hidden.size) {
+        actions.append(say("You cannot hide comments in this repository."));
       } else if (state.confirming) {
-        const ask = document.createElement("span");
-        ask.className = "gsf-assign-note";
-        ask.textContent = `Mark ${chosen.length} comment${chosen.length === 1 ? "" : "s"} as outdated on GitHub?`;
-        bar.append(ask,
+        actions.append(
+          say(`Mark ${chosen.length} comment${chosen.length === 1 ? "" : "s"} as outdated on GitHub?`),
           assignButton("Confirm", () => assignHide(panel, info, entry, state, chosen), "gsf-assign-button gsf-assign-danger"),
-          assignButton("Cancel", () => { state.confirming = false; assignRender(panel, info, entry); }));
+          assignButton("Cancel", () => { state.confirming = false; assignRender(panel, info, entry); }, "gsf-assign-button"));
       } else {
         if (hideable.length) {
-          bar.append(
-            assignButton(`Hide ${chosen.length} as outdated`, () => {
-              if (!chosen.length) { state.note = "Tick at least one comment."; assignRender(panel, info, entry); return; }
+          // With nothing ticked there is nothing to press, so the bar says what to do instead of offering Hide 0.
+          if (chosen.length) {
+            actions.append(assignButton(`Hide ${chosen.length} as outdated`, () => {
               state.confirming = true;
               state.note = "";
               assignRender(panel, info, entry);
-            }),
-            assignButton("Select all", () => { hideable.forEach((c) => state.chosen.add(c.id)); assignRender(panel, info, entry); }, "gsf-assign-link"),
-            assignButton("None", () => { state.chosen.clear(); assignRender(panel, info, entry); }, "gsf-assign-link"));
+            }, "gsf-assign-button gsf-assign-primary"));
+          } else {
+            actions.append(say("Tick the comments to hide as outdated."));
+          }
+          const spacer = document.createElement("span");
+          spacer.className = "gsf-assign-spacer";
+          actions.append(spacer,
+            assignButton("Select all", () => { hideable.forEach((c) => state.chosen.add(c.id)); assignRender(panel, info, entry); }, "gsf-assign-button gsf-assign-ghost"),
+            assignButton("None", () => { state.chosen.clear(); assignRender(panel, info, entry); }, "gsf-assign-button gsf-assign-ghost"));
         }
         if (state.last.length) {
-          bar.append(assignButton("Undo", () => assignUndo(panel, info, entry, state), "gsf-assign-link"));
+          actions.append(assignButton("Undo", () => assignUndo(panel, info, entry, state), "gsf-assign-button"));
         }
       }
-      if (state.note) {
-        const note = document.createElement("span");
-        note.className = "gsf-assign-note";
-        note.textContent = state.note;
-        bar.append(note);
-      }
+      bar.append(actions);
+      if (state.note) bar.append(say(state.note));
       box.append(bar);
       panel.append(box);
     }
@@ -1976,6 +1981,33 @@
       box.append(list);
       panel.append(box);
     }
+
+    panel.append(assignWordsBox());
+  }
+
+  // Which words are being looked for, read-only, with the way to change them: the extension's settings page.
+  function assignWordsBox() {
+    const words = assignWordList();
+    const box = assignAccordion(`Words searched for (${words.length})`, false);
+    const body = document.createElement("div");
+    body.className = "gsf-assign-words";
+    const list = document.createElement("div");
+    list.className = "gsf-assign-wordlist";
+    for (const word of words) {
+      const tag = document.createElement("span");
+      tag.className = "gsf-assign-word";
+      tag.textContent = word;
+      list.append(tag);
+    }
+    const note = document.createElement("div");
+    note.className = "gsf-assign-note";
+    note.append("A comment is offered when it contains one of these. A single word also matches what it starts. ",
+      assignButton("Edit the list in the extension settings", () => {
+        api.runtime.sendMessage({ type: "openOptions" }).catch(() => {});
+      }, "gsf-assign-link"));
+    body.append(list, note);
+    box.append(body);
+    return box;
   }
 
   // Marks the chosen comments as outdated, after the person confirmed. GitHub shows them collapsed on the next load.
