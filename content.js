@@ -1372,20 +1372,20 @@
   // requests, what they did with issues, and how they take part. A tile is label, key of the answer, what
   // it counts for the tooltip, the terms behind the number, and an optional note for under it.
   const PROFILE_GROUPS = [
-    ["Pull requests", [
+    ["Pull requests they opened", [
       ["Open", "open", "Pull requests they opened that are still open", (l) => `is:pr is:open author:${l}`],
       ["Merged", "merged", "Pull requests they opened that were merged", (l) => `is:pr is:merged author:${l}`,
-        (d) => (d.merged + (d.closed || 0) ? `${Math.round((d.merged / (d.merged + (d.closed || 0))) * 100)}% merge rate` : ""),
-        (d) => `${(d.closed || 0).toLocaleString()} pull requests of theirs were closed without being merged`]
+        (d) => (d.merged + (d.closed || 0) ? `${Math.round((d.merged / (d.merged + (d.closed || 0))) * 100)}% of closed PRs merged` : ""),
+        (d) => `${d.merged.toLocaleString()} merged and ${(d.closed || 0).toLocaleString()} closed without being merged. Open pull requests are not counted.`]
     ]],
     ["Issues", [
-      ["Opened", "issues", "Issues they opened", (l) => `is:issue author:${l}`,
-        (d) => (d.issuesOpen === null || d.issuesOpen === undefined ? "" : `${d.issuesOpen.toLocaleString()} still open`)],
-      ["Assigned, open", "assignedOpen", "Issues assigned to them that are still open", (l) => `is:issue is:open assignee:${l}`]
+      ["Opened", "issues", "Issues they opened", (l) => `is:issue author:${l}`],
+      ["Still open", "issuesOpen", "Issues they opened that are still open", (l) => `is:issue is:open author:${l}`],
+      ["Assigned, open", "assignedOpen", "Issues assigned to them that are still open", (l) => `is:issue is:open assignee:${l}`, () => "assigned to them"]
     ]],
     ["Community", [
-      ["PRs reviewed", "reviewed", "Pull requests by other people that they reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`],
-      ["Commented on", "commented", "Issues and pull requests by other people that they commented on", (l) => `commenter:${l} -author:${l}`]
+      ["PRs reviewed", "reviewed", "Pull requests by other people that they reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`, () => "by other people"],
+      ["Commented on", "commented", "Issues and pull requests by other people that they commented on", (l) => `commenter:${l} -author:${l}`, () => "on others' work"]
     ]]
   ];
 
@@ -1555,9 +1555,11 @@
     if (data.topRepos && data.topRepos.length) {
       const row = document.createElement("div");
       row.className = "gsf-profile-where";
-      row.title = "The repositories their latest merged pull requests went to, up to a hundred of them";
+      // Counted over their latest merged pull requests, not over all of them, and the line says so.
+      const sample = data.mergedSample || 0;
+      row.title = `Where their latest ${sample} merged pull requests went`;
       const label = document.createElement("span");
-      label.textContent = "Most active in";
+      label.textContent = `Their latest ${sample} merged PRs went to`;
       row.append(label);
       data.topRepos.forEach((repo) => {
         const link = document.createElement("a");
@@ -1567,44 +1569,54 @@
         const name = document.createElement("b");
         name.textContent = repo.name;
         link.append(name, ` ${repo.merged}`);
-        link.title = `${repo.merged} of their latest merged pull requests`;
+        link.title = `${repo.merged} of their latest ${sample} merged pull requests went to ${repo.name}`;
         row.append(link);
       });
       block.append(row);
     }
     if (data.openWork && data.openWork.length) {
-      const box = document.createElement("div");
-      box.className = "gsf-profile-group gsf-profile-work";
-      box.style.setProperty("--n", "1");
-      const heading = document.createElement("div");
-      heading.className = "gsf-profile-grouphead";
-      heading.textContent = `Their open pull requests (${(data.open || data.openWork.length).toLocaleString()})`;
-      const list = document.createElement("div");
-      list.className = "gsf-profile-list";
-      for (const pull of data.openWork) {
-        const row = document.createElement("a");
-        row.className = "gsf-profile-pr";
-        row.href = pull.url;
-        row.target = "_blank";
-        row.rel = "noopener";
-        const ref = document.createElement("span");
-        ref.className = "gsf-profile-ref";
-        ref.textContent = `${pull.repo}#${pull.number}`;
-        const title = document.createElement("span");
-        title.className = "gsf-profile-prtitle";
-        title.textContent = pull.title;
-        row.append(ref, title);
-        if (pull.draft) {
-          const draft = document.createElement("span");
-          draft.className = "gsf-profile-draft";
-          draft.textContent = "Draft";
-          row.append(draft);
-        }
-        list.append(row);
-      }
-      box.append(heading, list);
-      block.append(box);
+      block.append(profileAccordion(`Their open pull requests (${(data.open || data.openWork.length).toLocaleString()})`, data.openWork));
     }
+    if (data.openIssues && data.openIssues.length) {
+      block.append(profileAccordion(`Open issues assigned to them (${(data.assignedOpen || data.openIssues.length).toLocaleString()})`, data.openIssues));
+    }
+  }
+
+  // An accordion, closed at first: what someone has open is a second question, asked by opening it. Opened, it
+  // shows up to five rows and the rest are below a scroll.
+  function profileAccordion(title, items) {
+    const box = document.createElement("details");
+    box.className = "gsf-profile-group gsf-profile-work";
+    box.style.setProperty("--n", "1");
+    const heading = document.createElement("summary");
+    heading.className = "gsf-profile-grouphead";
+    heading.textContent = title;
+    const list = document.createElement("div");
+    list.className = "gsf-profile-list";
+    for (const item of items) {
+      const row = document.createElement("a");
+      row.className = "gsf-profile-pr";
+      row.href = item.url;
+      row.target = "_blank";
+      row.rel = "noopener";
+      const ref = document.createElement("span");
+      ref.className = "gsf-profile-ref";
+      ref.textContent = `${item.repo}#${item.number}`;
+      const name = document.createElement("span");
+      name.className = "gsf-profile-prtitle";
+      name.textContent = item.title;
+      name.title = item.title;
+      row.append(ref, name);
+      if (item.draft) {
+        const draft = document.createElement("span");
+        draft.className = "gsf-profile-draft";
+        draft.textContent = "Draft";
+        row.append(draft);
+      }
+      list.append(row);
+    }
+    box.append(heading, list);
+    return box;
   }
 
   async function profileLoad(block, org, login, force) {

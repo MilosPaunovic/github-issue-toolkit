@@ -1125,9 +1125,39 @@ div:has(> .gsf-progress) {
   flex: none;
   margin-top: 10px;
 }
-/* Two rows in view, the rest below a scroll. */
+.gsf-profile-work > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.gsf-profile-work > summary::-webkit-details-marker {
+  display: none;
+}
+.gsf-profile-work > summary::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.12s ease;
+}
+.gsf-profile-work[open] > summary::before {
+  transform: rotate(45deg);
+}
+.gsf-profile-work:not([open]) > summary {
+  border-bottom: 0;
+}
+.gsf-profile-work > summary:hover {
+  background: color-mix(in srgb, var(--gsf-brand) 14%, var(--bgColor-default));
+}
+/* Opened, it shows up to five rows and the rest are below a scroll. */
 .gsf-profile-list {
-  max-height: 57px;
+  max-height: 142px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
