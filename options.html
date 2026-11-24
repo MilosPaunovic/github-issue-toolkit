@@ -64,20 +64,22 @@
     .card { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
     .card.access { border-color: var(--accent); }
     .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
-    .marks { display: grid; grid-template-columns: 124px 1fr; gap: 10px 10px; align-items: center; margin-top: 14px; }
+    .marks { display: grid; grid-template-columns: 136px 1fr; gap: 8px 14px; align-items: center; margin-top: 14px; }
+    .marks > span:nth-child(odd) { display: flex; align-items: center; min-height: 22px; }
+    .hint i { font-style: normal; }
     .marks .t { color: var(--text-secondary); font-size: 13px; }
     .marks .t b { color: var(--text-primary); font-weight: 600; }
     .marks i { font-style: normal; }
-    .hint i { font-style: normal; }
     .marks + .hint { margin-top: 14px; }
-    .mk-icon { display: inline-flex; color: var(--text-secondary); padding: 0 6px; }
-    .mk-pill { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-secondary); }
+    .mk-pill, .mk-n { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 136px; height: 22px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap; color: var(--text-secondary); }
     .mk-pill.mk-g { color: var(--green); border-color: var(--green); background: rgba(26, 127, 55, 0.12); }
     .mk-pill.mk-m { color: var(--purple); border-color: var(--purple); background: rgba(130, 80, 223, 0.12); }
     .mk-pill.mk-b { color: var(--accent); border-color: var(--accent); background: rgba(9, 105, 218, 0.12); }
-    .mk-n { padding: 1px 6px; border-radius: 9999px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; color: #9a6700; background: rgba(154, 103, 0, 0.14); }
-    .mk-idle { color: #ffffff; background: #9a6700; }
     .mk-pill.mk-err { color: var(--red); border-color: var(--red); }
+    .mk-n { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: #9a6700; border-color: transparent; background: rgba(154, 103, 0, 0.14); }
+    .mk-idle { color: #ffffff; background: #9a6700; }
+    .hint.sample { margin: 0 0 14px; }
+    .hint.sample .mk-pill { width: auto; height: 20px; }
     .card p.desc { color: var(--text-secondary); margin: 0 0 16px; font-size: 13px; }
     label { display: block; font-weight: 600; font-size: 13px; margin: 16px 0 6px; }
     label:first-of-type { margin-top: 0; }
@@ -162,8 +164,13 @@
     kbd { font: 11px var(--font-mono); padding: 1px 5px; border: 1px solid var(--border-default); border-bottom-width: 2px; border-radius: 4px; background: var(--code-bg); }
     footer { color: var(--text-secondary); font-size: 12px; margin-top: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
     .mono:empty { display: none; }
-    label.check { display: flex; align-items: center; gap: 8px; font-weight: 500; margin-top: 0; }
-    label.check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+    label.check { display: flex; align-items: flex-start; gap: 8px; font-weight: 500; margin-top: 0; }
+    label.check + label.check { margin-top: 8px; }
+    .hint + label.check { margin-top: 14px; }
+    .card .actions { margin-top: 14px; }
+    #shortcuts + .actions { margin-top: 6px; }
+    .actions .hint { margin: 0; }
+    label.check input { width: 16px; height: 16px; margin: 2px 0 0; flex: none; accent-color: var(--accent); }
     select {
       width: 100%; padding: 9px 12px; background: var(--bg-input); border: 1px solid var(--border-default); border-radius: 8px;
       color: var(--text-primary); font: 14px var(--font-sans); outline: none;
@@ -257,7 +264,7 @@
           <input id="field-input" type="text" spellcheck="false" autocomplete="off" placeholder="Add a field and press Enter">
         </div>
         <p class="hint">Press <kbd>Enter</kbd> or <kbd>,</kbd> to add a field, <kbd>Backspace</kbd> or the × button to remove one. Leave it empty to show no field badges; the rest of the extension works without them.</p>
-        <label class="check" style="margin-top:14px"><input id="skip-shown" type="checkbox"> Skip fields the view already shows (project columns, card fields and the board's grouping)</label>
+        <label class="check"><input id="skip-shown" type="checkbox"> Skip fields the view already shows (project columns, card fields and the board's grouping)</label>
       </section>
       <section class="card">
         <h2>Issue age</h2>
@@ -278,9 +285,9 @@
         <h2>Pull requests</h2>
         <p class="desc">Badges on the pull request list, next to the labels of each row. Everything comes from the same read-only API access as the field badges.</p>
         <label class="check"><input id="pr-association" type="checkbox"> Author's relation to the repository</label>
-        <label class="check" style="margin-top:8px"><input id="pr-fork" type="checkbox"> Opened from a fork</label>
-        <label class="check" style="margin-top:8px"><input id="pr-size" type="checkbox"> Size: added lines in green and removed lines in red, changed files on hover</label>
-        <label class="check" style="margin-top:8px"><input id="pr-merge-state" type="checkbox"> Merge state: mergeable, behind base, blocked, conflicts, checks failing</label>
+        <label class="check"><input id="pr-fork" type="checkbox"> Opened from a fork</label>
+        <label class="check"><input id="pr-size" type="checkbox"> Size: added lines in green and removed lines in red, changed files on hover</label>
+        <label class="check"><input id="pr-merge-state" type="checkbox"> Merge state: mergeable, behind base, blocked, conflicts, checks failing</label>
       </section>
     </div>
 
@@ -289,7 +296,7 @@
         <h2>Epic kanban</h2>
         <p class="desc">Adds a List and Kanban toggle above the sub-issues list of an issue. The board reads every field the sub-issues carry, not only the ones above: you pick the field that forms the columns and the one that orders the cards inside each column, and both choices are remembered. Columns follow the order the organization gave the field's options. Filter the board down to one value of any dimension to see a single sprint or priority at a time, or hide the closed sub-issues with the checkbox in the toolbar.</p>
         <label class="check"><input id="kanban-enabled" type="checkbox"> Show the kanban toggle on sub-issue lists</label>
-        <label class="check" style="margin-top:8px"><input id="kanban-drag" type="checkbox"> Move a card by dragging it to another column, when the columns come from a single-select field or the issue state</label>
+        <label class="check"><input id="kanban-drag" type="checkbox"> Move a card by dragging it to another column, when the columns come from a single-select field or the issue state</label>
         <p class="hint">Dragging writes to GitHub: it sets the field value, or closes and reopens the issue. The token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones). Nothing is written unless you drag a card.</p>
       </section>
       <section class="card">
@@ -310,7 +317,7 @@
         <h2>Issue sidebar</h2>
         <p class="desc">A small button between the issue and its sidebar hides the whole metadata column, assignees, labels, type, fields, projects and the rest, giving the issue body and the kanban board the full width. The button stays in the same place either way, and what you choose holds on every issue until you press it again.</p>
         <label class="check"><input id="sidebar-toggle" type="checkbox"> Show the button that hides the issue sidebar</label>
-        <label class="check" style="margin-top:8px"><input id="hide-projects" type="checkbox"> Hide the Projects section of the issue sidebar (off by default)</label>
+        <label class="check"><input id="hide-projects" type="checkbox"> Hide the Projects section of the issue sidebar (off by default)</label>
         <p class="hint">Takes GitHub's own Projects box, with its status and fields, out of the sidebar on every issue, while the rest of the sidebar stays. The issue remains in its projects; only the box is hidden.</p>
       </section>
     </div>
@@ -319,9 +326,9 @@
       <section class="card">
         <h2>Contributor button</h2>
         <p class="desc">Adds a small button after a person's name on an issue or pull request. Press it to see who they are to this repository, new, returning or a regular, and what they already hold: pull requests merged, open or closed without merging, and issues assigned to them. Handy before you reply to a stranger or hand someone one more thing. Nothing is looked up until you press the button, each person is looked up once, and the answer stays until you close the tab.</p>
-        <p class="hint" style="margin:0 0 14px">It looks like this next to a name: <i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
+        <p class="hint sample">It looks like this next to a name: <i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
         <label class="check"><input id="load-enabled" type="checkbox"> Show the button after usernames (off by default)</label>
-        <label class="check" style="margin-top:8px"><input id="load-auto" type="checkbox"> Look up the author and the assignees on their own, without pressing (off by default)</label>
+        <label class="check"><input id="load-auto" type="checkbox"> Look up the author and the assignees on their own, without pressing (off by default)</label>
         <p class="hint">Costs one request for each of them when an issue opens, and shows their status on sight. Everyone else is still looked up when you press their button.</p>
       </section>
       <section class="card">
@@ -338,7 +345,7 @@
         <div class="marks">
           <span><i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i></span><span class="t"><b>Not looked up yet.</b> Press it to look the person up.</span>
           <span><i class="mk-pill mk-b"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="26 12"/></svg> Looking up</i></span><span class="t">The ring turns while the answer is on its way.</span>
-          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> Shown before anything else, since a teammate's history is not the question.</span>
+          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> Shown before the others.</span>
           <span><i class="mk-pill mk-g">New contributor</i></span><span class="t">No merged pull request in the organization yet.</span>
           <span><i class="mk-pill mk-g">First PR here</i></span><span class="t">Merged elsewhere in the organization, not in this repository yet.</span>
           <span><i class="mk-pill">Returning</i></span><span class="t">Merged here, fewer than the regular limit.</span>
@@ -356,8 +363,8 @@
         <h2>Pinned issues</h2>
         <p class="desc">A pin button in GitHub's top bar, next to the notifications bell, opens a panel with your pinned issues, for example epics. From there you can copy the reference or make the issue you are looking at a sub-issue of a pinned epic. Linking writes to GitHub, so the token needs write access to the issue's repository (the <code>repo</code> scope for classic tokens, <code>Issues: Read and write</code> for fine-grained ones).</p>
         <label class="check"><input id="pins-enabled" type="checkbox"> Show the pinned issues button in GitHub's top bar</label>
-        <div class="actions" style="margin-top:12px">
-          <span id="pins-count" class="hint" style="margin:0"></span>
+        <div class="actions">
+          <span id="pins-count" class="hint"></span>
           <button id="pins-clear" type="button">Remove all pins</button>
         </div>
       </section>
@@ -366,7 +373,7 @@
         <p class="desc">Type <code>@gh</code> and a space in the address bar, then a shortcut name and the words to look for, for example <code>@gh repo flow</code>. Each shortcut searches one kind of item and adds its qualifiers to your words, so <code>org:acme</code> keeps the search inside one organization. A shortcut name on its own, <code>@gh pr</code>, lists what its qualifiers match right away. Text that does not start with a shortcut name goes to the default shortcut. Results appear as you type; Enter on the text itself opens the GitHub search page.</p>
         <div class="shortcut shortcut-head" aria-hidden="true"><span>Name</span><span>Icon</span><span>Searches</span><span>Qualifiers</span><span>Default</span><span></span></div>
         <div id="shortcuts"></div>
-        <div class="actions" style="margin-top:4px">
+        <div class="actions">
           <button id="shortcut-add" type="button">Add shortcut</button>
         </div>
         <p class="hint">Qualifiers use <a href="https://docs.github.com/en/search-github/searching-on-github" target="_blank" rel="noopener">GitHub search syntax</a>, for example <code>org:acme is:open</code> or <code>repo:acme/webapp</code>. Repository names inside an <code>org:</code> or <code>user:</code> also match on any part of the name, so <code>app</code> finds <code>webapp</code>. With one <code>repo:</code> qualifier, a number such as <code>#1234</code> goes straight to that issue or pull request. The icon is optional, an emoji such as 📦 or 🔀, shown before each result of the shortcut: the browser puts the same magnifier in front of every suggestion and lets no extension change it.</p>
