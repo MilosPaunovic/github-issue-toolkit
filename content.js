@@ -1229,7 +1229,7 @@
       tag.dataset.status = status.key;
       tag.textContent = status.label;
       tag.title = status.hint;
-      line.append(tag);
+      head.append(tag);
     }
     card.append(head);
 
@@ -1539,7 +1539,7 @@
       tag.dataset.status = status.key;
       tag.textContent = status.label;
       tag.title = status.hint;
-      head.append(tag);
+      line.append(tag);
     }
 
     const age = document.createElement("span");
