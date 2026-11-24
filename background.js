@@ -326,6 +326,40 @@ async function fetchContributorLoad(ref) {
   };
 }
 
+// What one person has done in one organization, for the panel on their profile. One request: counts of the
+// pull requests they merged, opened, had closed and reviewed, the issues they opened and are assigned, and
+// whether they belong to the organization.
+async function fetchOrgActivity(ref) {
+  const { token } = await getSettings();
+  if (!token) return { error: "NO_TOKEN" };
+  const org = String((ref && ref.org) || "").trim();
+  const login = String((ref && ref.login) || "").trim();
+  if (!org || !login) return { error: "An organization and a login are both needed." };
+  const count = (alias, terms) => `${alias}: search(query: ${JSON.stringify(`org:${org} ${terms}`)}, type: ISSUE, first: 1) { issueCount }`;
+  const data = await graphql(token, `{
+    member: user(login: ${JSON.stringify(login)}) { organization(login: ${JSON.stringify(org)}) { login } }
+    ${count("merged", `is:pr is:merged author:${login}`)}
+    ${count("open", `is:pr is:open author:${login}`)}
+    ${count("closed", `is:pr is:closed is:unmerged author:${login}`)}
+    ${count("issues", `is:issue author:${login}`)}
+    ${count("issuesOpen", `is:issue is:open author:${login}`)}
+    ${count("reviewed", `is:pr reviewed-by:${login} -author:${login}`)}
+    ${count("assignedOpen", `is:issue is:open assignee:${login}`)}
+    ${count("assignedDone", `is:issue is:closed reason:completed assignee:${login}`)}
+  }`, { partial: true });
+  return {
+    member: Boolean(data.member && data.member.organization),
+    merged: searchCount(data.merged),
+    open: searchCount(data.open),
+    closed: searchCount(data.closed),
+    issues: searchCount(data.issues),
+    issuesOpen: searchCount(data.issuesOpen),
+    reviewed: searchCount(data.reviewed),
+    assignedOpen: searchCount(data.assignedOpen),
+    assignedDone: searchCount(data.assignedDone)
+  };
+}
+
 // Whether each of a list of people belongs to an organization, for the mark that shows at once. One
 // lookup per person goes in a shared request, so a long thread costs a handful of requests rather than
 // one for every name. A person GitHub cannot find, a bot for example, comes back as null.
@@ -1055,6 +1089,9 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg.type === "viewerLogin") {
     return reply(viewer().then((login) => ({ login })), sendResponse);
+  }
+  if (msg.type === "fetchOrgActivity") {
+    return reply(fetchOrgActivity(msg.ref), sendResponse);
   }
   if (msg.type === "fetchMembers") {
     return reply(fetchMembers(msg.ref), sendResponse);

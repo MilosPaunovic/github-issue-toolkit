@@ -228,7 +228,7 @@
           <button type="button" data-tab="access"><b>Access</b><span>Your personal access token and the site access Firefox asks for.</span></button>
           <button type="button" data-tab="badges"><b>Badges</b><span>Issue fields, issue age and pull request badges.</span></button>
           <button type="button" data-tab="epics"><b>Epics</b><span>The kanban board, sub-issue progress and the button that hides the issue sidebar.</span></button>
-          <button type="button" data-tab="contributors"><b>Contributors</b><span>Who a person is to the repository, on issues and pull requests.</span></button>
+          <button type="button" data-tab="contributors"><b>Contributors</b><span>Who a person is to the repository, on issues and pull requests, and their record in an organization, on profiles.</span></button>
           <button type="button" data-tab="shortcuts"><b>Shortcuts</b><span>The pinned issues button in GitHub's top bar and search from the address bar with <code>@gh</code>.</span></button>
         </div>
         <p class="hint">Each tab has a Save button at the bottom. Nothing leaves your browser except requests to <code>api.github.com</code>.</p>
@@ -341,6 +341,15 @@
         <label for="load-limit">Flag anyone with more than (assigned issues)</label>
         <input id="load-limit" type="number" min="0" step="1" inputmode="numeric" placeholder="1">
       </section>
+      <section class="card">
+        <h2>Organization panel</h2>
+        <p class="desc">At the top of a person's profile, a panel for each organization you name, in that organization's colours where it has some, with what the person has done there: pull requests merged, open and closed without merging, issues opened and how many are still open, pull requests reviewed, and issues assigned to them, open and done. Each number links to the matching GitHub search. It is read once per person and organization when the profile opens, in one request, and kept until you close the tab.</p>
+        <label class="check"><input id="profile-enabled" type="checkbox"> Show the organization panel on profiles (off by default)</label>
+        <label for="profile-orgs">Organizations</label>
+        <input id="profile-orgs" type="text" spellcheck="false" autocomplete="off" placeholder="kestra-io">
+        <p class="hint">One or more organization names, separated by commas, up to three. Nothing is shown until at least one is named. The status beside the name, Member, Regular contributor or Contributor, uses the same regular limit as the contributor button.</p>
+      </section>
+
       <section class="card">
         <h2>Reading the button</h2>
         <p class="desc">What each state of the button means.</p>
