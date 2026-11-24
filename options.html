@@ -64,6 +64,7 @@
     .marks .t { color: var(--text-secondary); font-size: 13px; }
     .marks .t b { color: var(--text-primary); font-weight: 600; }
     .marks i { font-style: normal; }
+    .hint i { font-style: normal; }
     .mk-icon { display: inline-flex; color: var(--text-secondary); padding: 0 6px; }
     .mk-pill { display: inline-block; padding: 0 8px; border: 1px solid var(--border-default); border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-secondary); }
     .mk-pill.mk-g { color: var(--green); border-color: var(--green); background: rgba(26, 127, 55, 0.12); }
@@ -313,17 +314,18 @@
     <div class="panel" id="panel-pages" role="tabpanel" aria-labelledby="tab-pages" hidden>
       <section class="card">
         <h2>Contributor load</h2>
-        <p class="desc">On an issue or pull request, a button next to a username says who that person is to the repository and what they already hold in its organization: pull requests merged here and elsewhere, open, and closed without merging, and the issues assigned to them. For deciding whether to look closer, trust or assign someone one more thing. Nothing is read until the button is pressed, once per person and repository, and the answer is kept until the tab is closed.</p>
-        <label class="check"><input id="load-enabled" type="checkbox"> Show a contributor button next to usernames (off by default)</label>
-        <label class="check" style="margin-top:8px"><input id="load-auto" type="checkbox"> Read the author and the assignees without pressing the button (off by default)</label>
-        <p class="hint">Costs one request for each of them when an issue opens, and shows their status on sight. Everyone else is still read on a press.</p>
-        <label for="load-regular">Call someone a regular from (merged pull requests in the repository)</label>
+        <p class="desc">Adds a small button after a person's name on an issue or pull request. Press it to see who they are to this repository, new, returning or a regular, and what they already hold: pull requests merged, open or closed without merging, and issues assigned to them. Handy before you reply to a stranger or hand someone one more thing. Nothing is looked up until you press the button, each person is looked up once, and the answer stays until you close the tab.</p>
+        <p class="hint" style="margin:0 0 14px">It looks like this next to a name: <i class="mk-icon"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg></i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
+        <label class="check"><input id="load-enabled" type="checkbox"> Show the button after usernames (off by default)</label>
+        <label class="check" style="margin-top:8px"><input id="load-auto" type="checkbox"> Look up the author and the assignees on their own, without pressing (off by default)</label>
+        <p class="hint">Costs one request for each of them when an issue opens, and shows their status on sight. Everyone else is still looked up when you press their button.</p>
+        <label for="load-regular">Call someone a regular after (merged pull requests in this repository)</label>
         <input id="load-regular" type="number" min="1" step="1" inputmode="numeric" placeholder="5">
-        <label for="load-limit">Flag anyone assigned more than (issues)</label>
+        <label for="load-limit">Flag anyone with more than (assigned issues)</label>
         <input id="load-limit" type="number" min="0" step="1" inputmode="numeric" placeholder="1">
         <p class="hint">Defaults 5 and 1. The button reads like this:</p>
         <div class="marks">
-          <span><i class="mk-icon"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg></i></span><span class="t"><b>Not read yet.</b> Press it to read the person.</span>
+          <span><i class="mk-icon"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg></i></span><span class="t"><b>Not looked up yet.</b> Press it to look the person up.</span>
           <span><i class="mk-pill mk-g">New contributor</i></span><span class="t">No merged pull request in the organization yet.</span>
           <span><i class="mk-pill mk-g">First PR here</i></span><span class="t">Merged elsewhere in the organization, not in this repository yet.</span>
           <span><i class="mk-pill">Returning</i></span><span class="t">Merged here, fewer than the regular limit.</span>
