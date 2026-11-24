@@ -361,6 +361,7 @@
     .mock-profile .sb { font-size: 12px; color: var(--fg-muted); }
     .mock-profile .tg { padding: 0 8px; border: 1px solid var(--b); border-radius: 9999px; background: color-mix(in srgb, var(--b) 12%, transparent); color: var(--ink); font-size: 12px; font-weight: 500; line-height: 20px; }
     .mock-profile .ag { margin-left: auto; font-size: 12px; color: var(--fg-muted); }
+    .mock-profile .bl { display: flex; flex: 1; align-items: baseline; gap: 0 8px; min-width: 0; }
     .mock-profile .st { display: flex; flex-wrap: wrap; }
     .mock-profile .gr { display: flex; flex-direction: column; gap: 8px; flex: var(--n) 1 calc(var(--n) * 110px); min-width: 0; padding: 12px 16px 14px; }
     .mock-profile .gr + .gr { border-left: 1px solid var(--border); }
@@ -616,7 +617,7 @@
       <p class="muted" style="font-size:14px">At the top of a person's profile, a panel for each organization you name, in that organization's colours where it has some. It shows what the person has done there: in three groups, pull requests (open, merged), issues (opened, and assigned to them and still open) and community (pull requests reviewed, issues and pull requests commented on), each number linking to the matching GitHub search. Under them, two accordions, one of their open pull requests and one of the open issues assigned to them, closed at first and showing up to five rows when opened, the rest below a scroll. A status beside the name says whether they are a member of the organization, a regular contributor or a contributor. It is read once per person and organization when the profile opens, in one request, and kept until the tab is closed. Off by default; name the organizations in the settings.</p>
       <div class="panel gh-card mock-profile" id="ex-profile" style="max-width:900px;padding:14px 16px">
         <div class="org">
-          <div class="hd"><span class="lg"><i></i></span><span class="ti">kestra-io</span><span class="sb">contributions</span><span class="tg">Member</span><span class="ag">Read just now</span></div>
+          <div class="hd"><span class="lg"><i></i></span><div class="bl"><span class="ti">kestra-io</span><span class="sb">contributions</span><span class="tg">Member</span><span class="ag">Read just now</span></div></div>
           <div class="st">
             <div class="gr" style="--n:2"><div class="gh2">Pull requests</div><div class="ts" style="--n:2"><div><span class="nm">3</span><span class="lb">Open</span></div><div><span class="nm">329</span><span class="lb">Merged</span></div></div></div>
             <div class="gr" style="--n:2"><div class="gh2">Issues</div><div class="ts" style="--n:2"><div><span class="nm">719</span><span class="lb">Opened</span></div><div><span class="nm">18</span><span class="lb">Assigned</span></div></div></div>
@@ -636,7 +637,7 @@
       <p class="muted" style="font-size:14px">Once an issue has been assigned, the comments of other people asking to be assigned pile up under it and go stale. With this on, a box at the top of the issue, above its description, lists them, with the words that gave them away highlighted in a preview, and a second, closed list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation, with an Undo to bring them back. The words and phrases that count as a request, <em>assign</em>, <em>work on</em>, <em>can I</em> and so on, are a list of tags you can add to and remove from in the settings, starting from sensible defaults. Only comments of up to 400 characters are offered, and your own and the assignee's are left out. Marking comments writes to GitHub, so the token needs write access. Off by default.</p>
       <div class="panel gh-card mock-profile mock-assign" id="ex-assign" style="max-width:800px;padding:14px 16px">
         <div class="org">
-          <div class="hd"><span class="lg"><i></i></span><span class="ti">Assignment requests</span><span class="sb">assigned to flcarre</span><span class="ag">Read just now</span></div>
+          <div class="hd"><span class="lg"><i></i></span><div class="bl"><span class="ti">Assignment requests</span><span class="sb">assigned to flcarre</span><span class="ag">Read just now</span></div></div>
           <div class="wk"><div class="acc">Comments asking to be assigned (2)</div><div class="wl">
             <div class="ar"><i></i><div><div class="am"><b>sam-k</b><span>5 d ago</span><a>Open</a></div><div class="ap">Hi, <mark>can I</mark> <mark>work on</mark> this issue? <mark>I would like to</mark> take it.</div></div></div>
             <div class="ar"><i></i><div><div class="am"><b>lee-p</b><span>3 d ago</span><a>Open</a></div><div class="ap">Please <mark>assign</mark> this to me, I have experience with the scheduler.</div></div></div>

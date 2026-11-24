@@ -1229,7 +1229,7 @@
       tag.dataset.status = status.key;
       tag.textContent = status.label;
       tag.title = status.hint;
-      head.append(tag);
+      line.append(tag);
     }
     card.append(head);
 
@@ -1526,7 +1526,11 @@
     const sub = document.createElement("span");
     sub.className = "gsf-profile-sub";
     sub.textContent = "contributions";
-    head.append(logo, title, sub);
+    // The words of the header share a baseline, in a line of their own beside the avatar.
+    const line = document.createElement("div");
+    line.className = "gsf-profile-line";
+    head.append(logo, line);
+    line.append(title, sub);
 
     if (entry && entry.data) {
       const status = profileStatus(entry.data);
@@ -1546,7 +1550,7 @@
       refresh.addEventListener("click", () => profileLoad(block, org, login, true).catch((err) => console.warn("[github-issue-toolkit]", err)));
       age.append(refresh);
     }
-    head.append(age);
+    line.append(age);
     block.append(head);
 
     if (!entry) {
@@ -1872,7 +1876,10 @@
     const refresh = profileRefreshIcon();
     refresh.addEventListener("click", () => assignLoad(panel, info, true).catch((err) => console.warn("[github-issue-toolkit]", err)));
     age.append(refresh);
-    head.append(logo, title, sub, age);
+    const line = document.createElement("div");
+    line.className = "gsf-profile-line";
+    line.append(title, sub, age);
+    head.append(logo, line);
     panel.append(head);
 
     if (requests.length) {

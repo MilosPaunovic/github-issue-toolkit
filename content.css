@@ -979,12 +979,20 @@ div:has(> .gsf-progress) {
   background: var(--bgColor-muted);
 }
 .gsf-profile-logo {
+  display: block;
   flex: none;
   border-radius: 6px;
 }
+/* Title, subtitle, status and age on one baseline; the avatar beside them stays centred. */
+.gsf-profile-line {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  min-width: 0;
+}
 .gsf-profile-title {
-  position: relative;
-  top: -1px;
   font-weight: 600;
   color: var(--fgColor-default) !important;
   text-decoration: none !important;
@@ -994,8 +1002,6 @@ div:has(> .gsf-progress) {
   text-decoration: underline !important;
 }
 .gsf-profile-sub {
-  position: relative;
-  top: -1px;
   font-size: 12px;
   color: var(--fgColor-muted);
 }
