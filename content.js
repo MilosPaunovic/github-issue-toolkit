@@ -821,15 +821,24 @@
     return `https://github.com/issues?q=${encodeURIComponent(`${scope} ${terms}`)}`;
   }
 
-  // A read is complete when the counts the status is made of came back.
+  // An answer is usable when it has the shape of one. A count GitHub did not return, a search that was rate
+  // limited for example, is shown as a dash rather than throwing the rest away.
   function loadComplete(data) {
-    return Boolean(data && data.merged && data.merged.repo !== null && data.merged.org !== null && data.open && data.assigned);
+    return Boolean(data && data.merged && data.open && data.closed && data.assigned && data.done);
+  }
+
+  // Why a read failed, in words the person at the keyboard can act on.
+  function loadReason(res) {
+    if (!res || !res.error) return "The extension did not answer. Reload the page and try again.";
+    if (res.error === "NO_TOKEN") return "No token yet. Add one on the Access tab of the extension settings.";
+    return String(res.error).slice(0, 240);
   }
 
   function loadStatus(data, org, repo) {
     const here = data.merged.repo;
     const all = data.merged.org;
     if (data.member) return { key: "member", label: "Member", hint: `Member of ${org}` };
+    if (here === null || all === null) return { key: "unknown", label: "Contributor", hint: "Some of the counts could not be read" };
     if (!all) return { key: "new", label: "New contributor", hint: `No merged pull request in ${org} yet` };
     if (!here) return { key: "first", label: "First PR here", hint: `No merged pull request in ${org}/${repo} yet, ${all} merged elsewhere in ${org}` };
     if (here >= settings.loadRegular) return { key: "regular", label: "Regular", hint: `${here} merged pull requests in ${org}/${repo}` };
@@ -899,7 +908,7 @@
         button.append(loadIcon(), state === "err" ? "Try again" : "Contributor");
       }
       const text = state === "err"
-        ? `${login}: could not be read, click to try again`
+        ? `${login}: could not be read. ${entry.error || ""} Click to try again.`.replace("  ", " ")
         : (state === "busy" ? `Looking up ${login}` : `Show who ${login} is to ${org}/${repo}`);
       button.title = text;
       button.setAttribute("aria-label", text);
@@ -944,13 +953,16 @@
 
     const request = (async () => {
       let data = null;
+      let error = "";
       try {
         const res = await api.runtime.sendMessage({ type: "fetchContributorLoad", contributor: { org: ref.org, repo: ref.repo, login } });
         data = res && !res.error && loadComplete(res) ? res : null;
+        if (!data) error = loadReason(res && !res.error ? { error: "GitHub answered with something this extension could not read." } : res);
       } catch {
-        // The worker is gone, or the extension reloaded under this tab. There is nothing to show.
+        // The worker is gone, or the extension reloaded under this tab.
+        error = loadReason(null);
       }
-      loadCache.set(key, { at: Date.now(), data });
+      loadCache.set(key, { at: Date.now(), data, error });
       // A forced read replaces the entry, so only the request that still owns it clears it.
       if (loadPending.get(key) === request) loadPending.delete(key);
       loadRepaint(key);
@@ -1178,7 +1190,7 @@
     if (!data) {
       const error = document.createElement("div");
       error.className = "gsf-load-empty";
-      error.textContent = "This person could not be read. Check the token in the extension settings.";
+      error.textContent = (entry && entry.error) || "This person could not be read.";
       card.append(error, foot);
       return card;
     }
