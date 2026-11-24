@@ -129,6 +129,9 @@
       width: 18px; height: 18px; border-radius: 50%; cursor: pointer; color: inherit; font-size: 14px; line-height: 1; opacity: .7;
     }
     .chip button:hover { opacity: 1; background: rgba(0, 0, 0, 0.12); }
+    .chips-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    button.linklike { all: unset; color: var(--accent); cursor: pointer; font-size: 12px; }
+    button.linklike:hover { text-decoration: underline; }
     .chip.c0 { --chip-bg: rgba(9, 105, 218, 0.12); --chip-border: rgba(9, 105, 218, 0.4); --chip-fg: #0969da; }
     .chip.c1 { --chip-bg: rgba(130, 80, 223, 0.12); --chip-border: rgba(130, 80, 223, 0.4); --chip-fg: #8250df; }
     .chip.c2 { --chip-bg: rgba(26, 127, 55, 0.12); --chip-border: rgba(26, 127, 55, 0.4); --chip-fg: #1a7f37; }
@@ -247,7 +250,7 @@
         </div>
         <p class="hint">
           Recommended: a <a href="https://github.com/settings/tokens/new?scopes=repo&description=github-issue-toolkit" target="_blank" rel="noopener">classic token</a> with the <code>repo</code> scope. If the organization enforces SSO, open "Configure SSO" next to the new token and authorize it for that organization.
-          A <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> also works: set the organization as resource owner, pick the repositories, and under Repository permissions set <code>Issues</code> to <code>Read-only</code>.
+          A <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> also works: set the organization as resource owner, pick the repositories, and under Repository permissions set <code>Issues</code> and <code>Pull requests</code> to <code>Read-only</code>, or <code>Issues</code> to <code>Read and write</code> to hide comments as outdated, link or drag. Hiding comments also needs write or triage access to the repository.
         </p>
         <div class="actions">
           <button id="test" type="button">Test token</button>
@@ -355,8 +358,9 @@
         <p class="desc">On an issue that has been assigned, a box above the conversation lists the comments from other people asking to be assigned, with the words that gave them away highlighted in a preview, and a separate list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation; an Undo brings them back. Marking comments writes to GitHub, so the token needs write access to the repository, as it does for linking and dragging. Only comments of up to 400 characters are offered, and your own and the assignee's are left out.</p>
         <label class="check"><input id="assign-enabled" type="checkbox"> Show the assignment requests box on assigned issues (off by default)</label>
         <label for="assign-words">Words and phrases that mark a request</label>
-        <input id="assign-words" type="text" spellcheck="false" autocomplete="off" placeholder="assign, work on, can i, may i">
-        <p class="hint">Separated by commas, matched without regard to case. A single word also matches what it starts, so <code>assign</code> finds assigned and assigning, while a phrase such as <code>work on</code> must appear as written. Leave it empty for the defaults: assign, work on, working on, take this, pick this, pick up, can i, may i, i'd like to, i would like to, i want to, let me, contribute, claim, interested.</p>
+        <input id="assign-words" type="text" spellcheck="false" autocomplete="off" placeholder="Add a word or phrase and press Enter">
+        <div id="assign-chips" class="chips-list" role="list" aria-label="Words and phrases"></div>
+        <p class="hint">The list starts with these defaults. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, the &times; on a tag to remove it. Matching ignores case. A single word also matches what it starts, so <code>assign</code> finds assigned and assigning, while a phrase such as <code>work on</code> must appear as written. <button id="assign-reset" type="button" class="linklike">Reset to the defaults</button></p>
       </section>
 
       <section class="card">
