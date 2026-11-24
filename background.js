@@ -327,8 +327,12 @@ async function fetchContributorLoad(ref) {
 }
 
 // What one person has done in one organization, for the panel on their profile. One request: counts of the
-// pull requests they merged, opened, had closed and reviewed, the issues they opened and are assigned, and
-// whether they belong to the organization.
+// pull requests they have open, merged and had closed, those they reviewed, the issues they opened and are
+// assigned, what they commented on, whether they belong to the organization, which repositories their latest
+// merged pull requests went to, and their open pull requests.
+const PROFILE_MERGED_SAMPLE = 100;
+const PROFILE_OPEN_SAMPLE = 20;
+
 async function fetchOrgActivity(ref) {
   const { token } = await getSettings();
   if (!token) return { error: "NO_TOKEN" };
@@ -344,9 +348,30 @@ async function fetchOrgActivity(ref) {
     ${count("issues", `is:issue author:${login}`)}
     ${count("issuesOpen", `is:issue is:open author:${login}`)}
     ${count("reviewed", `is:pr reviewed-by:${login} -author:${login}`)}
+    ${count("commented", `commenter:${login} -author:${login}`)}
     ${count("assignedOpen", `is:issue is:open assignee:${login}`)}
-    ${count("assignedDone", `is:issue is:closed reason:completed assignee:${login}`)}
+    recentMerged: search(query: ${JSON.stringify(`org:${org} is:pr is:merged author:${login} sort:updated-desc`)}, type: ISSUE, first: ${PROFILE_MERGED_SAMPLE}) {
+      nodes { ... on PullRequest { repository { name } } }
+    }
+    openWork: search(query: ${JSON.stringify(`org:${org} is:pr is:open author:${login} sort:updated-desc`)}, type: ISSUE, first: ${PROFILE_OPEN_SAMPLE}) {
+      nodes { ... on PullRequest { number title url isDraft repository { name } } }
+    }
   }`, { partial: true });
+
+  // Where their latest merged pull requests went, most first: where they work, not where they once passed through.
+  const byRepo = new Map();
+  for (const node of (data.recentMerged && data.recentMerged.nodes) || []) {
+    if (!node || !node.repository) continue;
+    byRepo.set(node.repository.name, (byRepo.get(node.repository.name) || 0) + 1);
+  }
+  const topRepos = [...byRepo].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name, merged]) => ({ name, merged }));
+  const openWork = ((data.openWork && data.openWork.nodes) || []).filter(Boolean).map((pull) => ({
+    repo: pull.repository ? pull.repository.name : "",
+    number: pull.number,
+    title: pull.title,
+    url: pull.url,
+    draft: Boolean(pull.isDraft)
+  }));
   return {
     member: Boolean(data.member && data.member.organization),
     merged: searchCount(data.merged),
@@ -355,8 +380,10 @@ async function fetchOrgActivity(ref) {
     issues: searchCount(data.issues),
     issuesOpen: searchCount(data.issuesOpen),
     reviewed: searchCount(data.reviewed),
+    commented: searchCount(data.commented),
     assignedOpen: searchCount(data.assignedOpen),
-    assignedDone: searchCount(data.assignedDone)
+    topRepos,
+    openWork
   };
 }
 

@@ -762,7 +762,7 @@
     ["Pull requests", [
       ["Open", "open", (login) => `is:pr is:open author:${login}`],
       ["Merged", "merged", (login) => `is:pr is:merged author:${login}`],
-      ["Closed, not merged", "closed", (login) => `is:pr is:closed is:unmerged author:${login}`]
+      ["Closed", "closed", (login) => `is:pr is:closed is:unmerged author:${login}`, "Pull requests closed without being merged"]
     ]],
     ["Issues", [
       ["Assigned, open", "assigned", (login) => `is:issue is:open assignee:${login}`],
@@ -1093,6 +1093,7 @@
     title.target = "_blank";
     title.rel = "noopener";
     title.textContent = item.title;
+    title.title = item.title;
 
     row.append(meta, title);
     return row;
@@ -1122,11 +1123,12 @@
 
   function loadCounts(ref, login, data, title, rows) {
     const section = loadSection(title, [["This repo", `${ref.org}/${ref.repo}`], ["Organization", ref.org]]);
-    for (const [label, key, terms] of rows) {
+    for (const [label, key, terms, hint] of rows) {
       const line = document.createElement("div");
       line.className = "gsf-load-line";
       const name = document.createElement("span");
       name.textContent = label;
+      if (hint) name.title = hint;
       line.append(name);
       [[`repo:${ref.org}/${ref.repo}`, data[key].repo], [`org:${ref.org}`, data[key].org]].forEach(([scope, value]) => {
         const cell = document.createElement("span");
@@ -1206,7 +1208,7 @@
     );
 
     if (data.items.length) {
-      const section = loadSection(`Open issues (${data.assigned.org || data.items.length})`);
+      const section = loadSection(`Open issues assigned to them (${data.assigned.org || data.items.length})`);
       // Two are shown and the rest scroll, so a person with many open issues does not push the card off the screen.
       const list = document.createElement("div");
       list.className = "gsf-load-list";
@@ -1367,21 +1369,23 @@
   const profileCache = new Map();
   const profilePending = new Map();
   // The numbers come in three groups, so each reads as part of one question: what they did with pull
-  // requests, what they did with issues, and what they reviewed. A tile is label, key of the answer, what
-  // it counts for the tooltip, and the terms behind the number.
+  // requests, what they did with issues, and how they take part. A tile is label, key of the answer, what
+  // it counts for the tooltip, the terms behind the number, and an optional note for under it.
   const PROFILE_GROUPS = [
     ["Pull requests", [
       ["Open", "open", "Pull requests they opened that are still open", (l) => `is:pr is:open author:${l}`],
-      ["Merged", "merged", "Pull requests they opened that were merged", (l) => `is:pr is:merged author:${l}`],
-      ["Closed unmerged", "closed", "Pull requests they opened that were closed without being merged", (l) => `is:pr is:closed is:unmerged author:${l}`]
+      ["Merged", "merged", "Pull requests they opened that were merged", (l) => `is:pr is:merged author:${l}`,
+        (d) => (d.merged + (d.closed || 0) ? `${Math.round((d.merged / (d.merged + (d.closed || 0))) * 100)}% merge rate` : ""),
+        (d) => `${(d.closed || 0).toLocaleString()} pull requests of theirs were closed without being merged`]
     ]],
     ["Issues", [
-      ["Opened", "issues", "Issues they opened", (l) => `is:issue author:${l}`],
-      ["Assigned, open", "assignedOpen", "Issues assigned to them that are still open", (l) => `is:issue is:open assignee:${l}`],
-      ["Assigned, done", "assignedDone", "Issues assigned to them that were closed as completed", (l) => `is:issue is:closed reason:completed assignee:${l}`]
+      ["Opened", "issues", "Issues they opened", (l) => `is:issue author:${l}`,
+        (d) => (d.issuesOpen === null || d.issuesOpen === undefined ? "" : `${d.issuesOpen.toLocaleString()} still open`)],
+      ["Assigned, open", "assignedOpen", "Issues assigned to them that are still open", (l) => `is:issue is:open assignee:${l}`]
     ]],
-    ["Reviews", [
-      ["PRs reviewed", "reviewed", "Pull requests by other people that they reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`]
+    ["Community", [
+      ["PRs reviewed", "reviewed", "Pull requests by other people that they reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`],
+      ["Commented on", "commented", "Issues and pull requests by other people that they commented on", (l) => `commenter:${l} -author:${l}`]
     ]]
   ];
 
@@ -1512,7 +1516,7 @@
       heading.textContent = title;
       const row = document.createElement("div");
       row.className = "gsf-profile-tiles";
-      for (const [label, key, what, terms] of tiles) {
+      for (const [label, key, what, terms, note, noteWhat] of tiles) {
         const value = entry.data[key];
         const tile = document.createElement("a");
         tile.className = "gsf-profile-tile";
@@ -1528,12 +1532,14 @@
         name.className = "gsf-profile-label";
         name.textContent = label;
         tile.append(number, name);
-        // Of the issues opened, how many are still open.
-        if (key === "issues" && entry.data.issuesOpen !== null && entry.data.issuesOpen !== undefined) {
-          const note = document.createElement("span");
-          note.className = "gsf-profile-label";
-          note.textContent = `${entry.data.issuesOpen.toLocaleString()} still open`;
-          tile.append(note);
+        // What goes under the number: how many issues are still open, the merge rate.
+        const text = note ? note(entry.data) : "";
+        if (text) {
+          const line = document.createElement("span");
+          line.className = "gsf-profile-label";
+          line.textContent = text;
+          if (noteWhat) line.title = noteWhat(entry.data);
+          tile.append(line);
         }
         row.append(tile);
       }
@@ -1541,6 +1547,64 @@
       stats.append(group);
     }
     block.append(stats);
+    profileExtras(block, org, entry.data);
+  }
+
+  // Under the numbers: where they work, and what they have open right now.
+  function profileExtras(block, org, data) {
+    if (data.topRepos && data.topRepos.length) {
+      const row = document.createElement("div");
+      row.className = "gsf-profile-where";
+      row.title = "The repositories their latest merged pull requests went to, up to a hundred of them";
+      const label = document.createElement("span");
+      label.textContent = "Most active in";
+      row.append(label);
+      data.topRepos.forEach((repo) => {
+        const link = document.createElement("a");
+        link.href = `https://github.com/${org}/${repo.name}`;
+        link.target = "_blank";
+        link.rel = "noopener";
+        const name = document.createElement("b");
+        name.textContent = repo.name;
+        link.append(name, ` ${repo.merged}`);
+        link.title = `${repo.merged} of their latest merged pull requests`;
+        row.append(link);
+      });
+      block.append(row);
+    }
+    if (data.openWork && data.openWork.length) {
+      const box = document.createElement("div");
+      box.className = "gsf-profile-group gsf-profile-work";
+      box.style.setProperty("--n", "1");
+      const heading = document.createElement("div");
+      heading.className = "gsf-profile-grouphead";
+      heading.textContent = `Their open pull requests (${(data.open || data.openWork.length).toLocaleString()})`;
+      const list = document.createElement("div");
+      list.className = "gsf-profile-list";
+      for (const pull of data.openWork) {
+        const row = document.createElement("a");
+        row.className = "gsf-profile-pr";
+        row.href = pull.url;
+        row.target = "_blank";
+        row.rel = "noopener";
+        const ref = document.createElement("span");
+        ref.className = "gsf-profile-ref";
+        ref.textContent = `${pull.repo}#${pull.number}`;
+        const title = document.createElement("span");
+        title.className = "gsf-profile-prtitle";
+        title.textContent = pull.title;
+        row.append(ref, title);
+        if (pull.draft) {
+          const draft = document.createElement("span");
+          draft.className = "gsf-profile-draft";
+          draft.textContent = "Draft";
+          row.append(draft);
+        }
+        list.append(row);
+      }
+      box.append(heading, list);
+      block.append(box);
+    }
   }
 
   async function profileLoad(block, org, login, force) {

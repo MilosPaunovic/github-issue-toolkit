@@ -337,8 +337,9 @@
     .mock-load .ln span + span { text-align: right; font-weight: 600; }
     .mock-load .sh { padding-bottom: 5px; font-size: 11.5px; font-weight: 600; }
     .mock-load .sh span:first-child { color: var(--fg); }
+    .mock-load .sh span:only-child { grid-column: 1 / -1; }
     .mock-load .sh span + span { font-weight: 500; color: var(--fg-muted); }
-    .mock-load .clist { position: relative; height: 128px; overflow: hidden; }
+    .mock-load .clist { position: relative; height: 94px; overflow: hidden; }
     .mock-load .thumb { position: absolute; top: 4px; right: 1px; width: 4px; height: 56px; border-radius: 9999px; background: var(--border-strong); opacity: .6; }
     .mock-load .cfoot { display: flex; align-items: center; gap: 6px; margin: 0 -10px; padding: 7px 10px 0; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--fg-muted); }
     .mock-load .cr { display: flex; flex-direction: column; gap: 2px; padding: 6px 7px; border-radius: 6px; }
@@ -346,7 +347,7 @@
     .mock-load .cref { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; font-weight: 500; color: var(--fg); }
     .mock-load .cr.linked .cref { color: var(--fg-muted); }
     .mock-load .cpr { padding: 0 5px; border: 1px solid var(--success); border-radius: 9999px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; line-height: 15px; color: var(--success); }
-    .mock-load .ct { font-size: 12.5px; line-height: 1.35; }
+    .mock-load .ct { font-size: 12.5px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .mock-load .crf { width: 12px; height: 12px; fill: var(--fg-muted); flex: none; }
     /* Profile panel: the organization's colour on a tinted panel, with the counts as tiles */
     .mock-profile { display: flex; flex-direction: column; gap: 12px; --b: #8405ff; }
@@ -366,6 +367,15 @@
     .mock-profile .tl + .tl { border-left: 1px solid var(--border); }
     .mock-profile .nm { display: block; font-size: 22px; font-weight: 600; line-height: 1.25; font-variant-numeric: tabular-nums; }
     .mock-profile .lb { display: block; font-size: 12px; color: var(--fg-muted); }
+    .mock-profile .wh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-top: 10px; color: var(--fg-muted); }
+    .mock-profile .wh b { color: var(--fg); font-weight: 600; }
+    .mock-profile .wk { margin-top: 10px; border: 1px solid color-mix(in srgb, var(--b) 22%, var(--border)); border-radius: 6px; background: var(--bg-card); overflow: hidden; }
+    .mock-profile .wl { position: relative; height: 57px; overflow: hidden; }
+    .mock-profile .pr { display: flex; align-items: baseline; gap: 8px; padding: 5px 12px; }
+    .mock-profile .pr + .pr { border-top: 1px solid var(--border); }
+    .mock-profile .pr code { font-size: 11.5px; color: var(--fg-muted); background: none; padding: 0; }
+    .mock-profile .pr em { font-style: normal; padding: 0 6px; border: 1px solid var(--border); border-radius: 9999px; font-size: 11px; color: var(--fg-muted); }
+    .mock-profile .th { position: absolute; top: 4px; right: 1px; width: 4px; height: 30px; border-radius: 9999px; background: var(--border-strong); opacity: .6; }
     .mock-omni { padding: 8px 0; overflow: hidden; }
     .mock-omni .bar { display: flex; align-items: center; gap: 10px; margin: 0 8px 6px; padding: 7px 12px; border-radius: 9999px; background: var(--bg-muted); font-size: 14px; }
     .mock-omni .kw { padding: 2px 10px; border-radius: 9999px; background: var(--info-bg); color: var(--accent); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
@@ -569,11 +579,11 @@
           <div class="sec"><div class="ln sh"><span>Pull requests</span><span>This repo</span><span>Organization</span></div>
             <div class="ln"><span>Open</span><span>2</span><span>3</span></div>
             <div class="ln"><span>Merged</span><span>14</span><span>38</span></div>
-            <div class="ln"><span>Closed, not merged</span><span>1</span><span>4</span></div></div>
+            <div class="ln"><span>Closed</span><span>1</span><span>4</span></div></div>
           <div class="sec"><div class="ln sh"><span>Issues</span><span>This repo</span><span>Organization</span></div>
             <div class="ln"><span>Assigned, open</span><span>3</span><span>4</span></div>
             <div class="ln"><span>Assigned, done</span><span>11</span><span>29</span></div></div>
-          <div class="sec"><div class="ln sh"><span>Open issues (4)</span></div>
+          <div class="sec"><div class="ln sh"><span>Open issues assigned to them (4)</span></div>
             <div class="clist"><span class="thumb"></span>
               <div class="cr linked"><div class="cm"><span class="cref">webapp#1521</span><span class="cpr">PR #1544</span></div><div class="ct">Retry policy is never applied to the webhook sender</div></div>
               <div class="cr"><div class="cm"><span class="cref">webapp#1498</span></div><div class="ct">Keyboard shortcuts stop working after the results list reloads</div></div>
@@ -586,15 +596,21 @@
       <p class="example-caption">The card belongs to the third row, opened by pressing its button, and priya-s is a member of the organization. The limit is 1 here, so the amber count says four issues are assigned and three pull requests are open; it fills in when that second number is zero.</p>
 
       <h3 style="margin-top:28px">Profile panel</h3>
-      <p class="muted" style="font-size:14px">At the top of a person's profile, a panel for each organization you name, in that organization's colours where it has some. It shows what the person has done there: in three groups, pull requests (open, merged, closed unmerged), issues (opened with how many are still open, assigned and open, assigned and done) and reviews, each number linking to the matching GitHub search. A status beside the name says whether they are a member of the organization, a regular contributor or a contributor. It is read once per person and organization when the profile opens, in one request, and kept until the tab is closed. Off by default; name the organizations in the settings.</p>
+      <p class="muted" style="font-size:14px">At the top of a person's profile, a panel for each organization you name, in that organization's colours where it has some. It shows what the person has done there: in three groups, pull requests (open, merged with the merge rate), issues (opened with how many are still open, assigned and open) and community (pull requests reviewed, issues and pull requests commented on), each number linking to the matching GitHub search. Under them, the repositories where their latest merged pull requests went and their open pull requests, two in view and the rest below a scroll. A status beside the name says whether they are a member of the organization, a regular contributor or a contributor. It is read once per person and organization when the profile opens, in one request, and kept until the tab is closed. Off by default; name the organizations in the settings.</p>
       <div class="panel gh-card mock-profile" id="ex-profile" style="max-width:900px;padding:14px 16px">
         <div class="org">
           <div class="hd"><span class="lg"><i></i></span><span class="ti">kestra-io</span><span class="sb">contributions</span><span class="tg">Member</span><span class="ag">Read just now</span></div>
           <div class="st">
-            <div class="gr" style="--n:3"><div class="gh2">Pull requests</div><div class="ts" style="--n:3"><div class="tl"><span class="nm">3</span><span class="lb">Open</span></div><div class="tl"><span class="nm">329</span><span class="lb">Merged</span></div><div class="tl"><span class="nm">30</span><span class="lb">Closed unmerged</span></div></div></div>
-            <div class="gr" style="--n:3"><div class="gh2">Issues</div><div class="ts" style="--n:3"><div class="tl"><span class="nm">719</span><span class="lb">Opened</span><span class="lb">68 still open</span></div><div class="tl"><span class="nm">18</span><span class="lb">Assigned, open</span></div><div class="tl"><span class="nm">80</span><span class="lb">Assigned, done</span></div></div></div>
-            <div class="gr" style="--n:1"><div class="gh2">Reviews</div><div class="ts" style="--n:1"><div class="tl"><span class="nm">1,243</span><span class="lb">PRs reviewed</span></div></div></div>
+            <div class="gr" style="--n:2"><div class="gh2">Pull requests</div><div class="ts" style="--n:2"><div class="tl"><span class="nm">3</span><span class="lb">Open</span></div><div class="tl"><span class="nm">329</span><span class="lb">Merged</span><span class="lb">92% merge rate</span></div></div></div>
+            <div class="gr" style="--n:2"><div class="gh2">Issues</div><div class="ts" style="--n:2"><div class="tl"><span class="nm">719</span><span class="lb">Opened</span><span class="lb">68 still open</span></div><div class="tl"><span class="nm">18</span><span class="lb">Assigned, open</span></div></div></div>
+            <div class="gr" style="--n:2"><div class="gh2">Community</div><div class="ts" style="--n:2"><div class="tl"><span class="nm">1,243</span><span class="lb">PRs reviewed</span></div><div class="tl"><span class="nm">1,382</span><span class="lb">Commented on</span></div></div></div>
           </div>
+          <div class="wh"><span>Most active in</span><span><b>docs</b> 44</span><span><b>academy</b> 32</span><span><b>blueprints</b> 9</span></div>
+          <div class="wk"><div class="gh2">Their open pull requests (3)</div><div class="wl"><span class="th"></span>
+            <div class="pr"><code>docs#2201</code><span>Document the new scheduler backfill options</span></div>
+            <div class="pr"><code>academy#88</code><span>Add the monitoring course outline</span><em>Draft</em></div>
+            <div class="pr"><code>blueprints#410</code><span>New blueprint for Slack alerts</span></div>
+          </div></div>
         </div>
       </div>
       <p class="example-caption">A member of the organization. A person with nothing merged yet reads <em>No merged PR yet</em> in place of the tag.</p>

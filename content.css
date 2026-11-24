@@ -736,6 +736,10 @@
 .gsf-load-sectionhead > span:first-child {
   color: var(--fgColor-default);
 }
+/* A heading with no columns, such as the list of open issues, takes the whole line. */
+.gsf-load-sectionhead > span:only-child {
+  grid-column: 1 / -1;
+}
 .gsf-load-sectionhead > span:not(:first-child) {
   font-weight: 500;
   color: var(--fgColor-muted);
@@ -785,7 +789,7 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  max-height: 130px;
+  max-height: 94px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -850,7 +854,7 @@
 }
 .gsf-load-title {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
   font-size: 12.5px;
@@ -1095,4 +1099,73 @@ div:has(> .gsf-progress) {
 }
 .gsf-profile-org[data-state="busy"] .gsf-profile-note {
   animation: gsf-load-pulse 0.9s ease-in-out infinite;
+}
+
+/* Under the numbers of the profile panel: where the person works, and what they have open */
+.gsf-profile-where {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 10px;
+  color: var(--fgColor-muted);
+}
+.gsf-profile-where a {
+  color: var(--fgColor-default) !important;
+  text-decoration: none !important;
+}
+.gsf-profile-where a:hover {
+  color: color-mix(in srgb, var(--gsf-brand) 80%, var(--fgColor-default)) !important;
+}
+.gsf-profile-where b {
+  font-weight: 600;
+}
+.gsf-profile-work {
+  display: block;
+  flex: none;
+  margin-top: 10px;
+}
+/* Two rows in view, the rest below a scroll. */
+.gsf-profile-list {
+  max-height: 57px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--borderColor-default) transparent;
+}
+.gsf-profile-pr {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 5px 12px;
+  color: inherit !important;
+  text-decoration: none !important;
+}
+.gsf-profile-pr + .gsf-profile-pr {
+  border-top: 1px solid var(--borderColor-muted);
+}
+.gsf-profile-pr:hover {
+  background: color-mix(in srgb, var(--gsf-brand) 6%, var(--bgColor-default));
+}
+.gsf-profile-ref {
+  flex: none;
+  font-family: var(--fontStack-monospace, ui-monospace, monospace);
+  font-size: 11.5px;
+  color: var(--fgColor-muted);
+}
+.gsf-profile-prtitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gsf-profile-draft {
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 9999px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fgColor-muted);
 }
