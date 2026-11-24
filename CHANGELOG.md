@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.11.4] - 2026-11-24
+
 ### Fixed
 
 - **Show Member is now really the default.** The choice is stored under a new name, so a value saved by 2.11.2 no longer overrides it; everyone starts on **Show Member in place of the button** and can pick again on the Contributors tab.
@@ -261,7 +265,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.3...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.4...HEAD
+[2.11.4]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.3...v2.11.4
 [2.11.3]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.2...v2.11.3
 [2.11.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.1...v2.11.2
 [2.11.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.0...v2.11.1
