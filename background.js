@@ -219,10 +219,10 @@ async function fetchFieldValues(issues) {
 }
 
 // ---------------------------------------------------------------------------
-// Contributor load: what one person already holds in one organization
+// Contributor load: who one person is to a repository and what they already hold in its organization
 // ---------------------------------------------------------------------------
 
-// Who the token belongs to, so the mark can skip the reader's own name. Held for the life of the
+// Who the token belongs to, so the button can skip the reader's own name. Held for the life of the
 // worker and read again after it restarts, which is cheap enough not to need storing.
 let viewerLogin = null;
 
@@ -238,17 +238,30 @@ async function viewer() {
 const LOAD_ISSUE_SAMPLE = 25;
 const LOAD_PULL_SAMPLE = 50;
 
-// GraphQL knows which issue a pull request actually closes, so the card can say which of the
-// assigned issues is already being worked on instead of guessing from closing keywords in the body.
+// A count from a search, or null when that part of the answer did not come back.
+function searchCount(node) {
+  return node && Number.isFinite(node.issueCount) ? node.issueCount : null;
+}
+
+// One request per person answers everything the card shows: the counts for the repository and for the
+// whole organization, and the open work with the pull request that closes each issue, which GraphQL
+// knows, so the card can say which of the assigned issues is already being worked on instead of
+// guessing from closing keywords in the body.
 async function fetchContributorLoad(ref) {
   const { token } = await getSettings();
   if (!token) return { error: "NO_TOKEN" };
   const org = String((ref && ref.org) || "").trim();
+  const repo = String((ref && ref.repo) || "").trim();
   const login = String((ref && ref.login) || "").trim();
-  if (!org || !login) return { error: "An organization and a login are both needed." };
+  if (!org || !repo || !login) return { error: "An organization, a repository and a login are all needed." };
 
-  const assigned = JSON.stringify(`org:${org} is:issue is:open assignee:${login}`);
-  const pulls = JSON.stringify(`org:${org} is:pr is:open author:${login}`);
+  const count = (alias, scope, terms) => `${alias}: search(query: ${JSON.stringify(`${scope} ${terms}`)}, type: ISSUE, first: 1) { issueCount }`;
+  const here = `repo:${org}/${repo}`;
+  const all = `org:${org}`;
+  const author = `author:${login}`;
+  const assignee = `assignee:${login}`;
+  const assigned = JSON.stringify(`${all} is:issue is:open ${assignee}`);
+  const pulls = JSON.stringify(`${all} is:pr is:open ${author}`);
   const data = await graphql(token, `{
     assigned: search(query: ${assigned}, type: ISSUE, first: ${LOAD_ISSUE_SAMPLE}) {
       issueCount
@@ -263,6 +276,14 @@ async function fetchContributorLoad(ref) {
         }
       }
     }
+    ${count("mergedHere", here, `is:pr is:merged ${author}`)}
+    ${count("mergedAll", all, `is:pr is:merged ${author}`)}
+    ${count("openHere", here, `is:pr is:open ${author}`)}
+    ${count("closedHere", here, `is:pr is:closed is:unmerged ${author}`)}
+    ${count("closedAll", all, `is:pr is:closed is:unmerged ${author}`)}
+    ${count("assignedHere", here, `is:issue is:open ${assignee}`)}
+    ${count("doneHere", here, `is:issue is:closed reason:completed ${assignee}`)}
+    ${count("doneAll", all, `is:issue is:closed reason:completed ${assignee}`)}
   }`, { partial: true });
 
   const closes = new Map();
@@ -290,8 +311,11 @@ async function fetchContributorLoad(ref) {
   }
 
   return {
-    assigned: (data.assigned && data.assigned.issueCount) || 0,
-    pulls: (data.pulls && data.pulls.issueCount) || 0,
+    merged: { repo: searchCount(data.mergedHere), org: searchCount(data.mergedAll) },
+    open: { repo: searchCount(data.openHere), org: searchCount(data.pulls) },
+    closed: { repo: searchCount(data.closedHere), org: searchCount(data.closedAll) },
+    assigned: { repo: searchCount(data.assignedHere), org: searchCount(data.assigned) },
+    done: { repo: searchCount(data.doneHere), org: searchCount(data.doneAll) },
     items
   };
 }

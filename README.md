@@ -21,12 +21,12 @@ Illustrations of an invented repository, rendered from the documentation site wi
 </picture>
 </p>
 
-**Contributor load**: what the person behind a username already holds, and the card listing it.
+**Contributor load**: who the person behind a username is to the repository and what they already hold, on a button that reads them when pressed.
 
 <p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/example-load-dark.png">
-  <img src="docs/example-load-light.png" alt="Comment headers with a contributor load mark after each username, and the card listing the issues one of them holds" width="700">
+  <img src="docs/example-load-light.png" alt="Comment headers with a contributor button after each username showing the status, and the card with the numbers and issues one of them holds" width="700">
 </picture>
 </p>
 
@@ -120,7 +120,7 @@ Illustrations of an invented repository, rendered from the documentation site wi
 - A **sub-issue progress** bar that replaces GitHub's in the group headers of a grouped Projects table and counts only the sub-issues inside the scope the view is narrowed to, a release for example, reading `12 / 18 done` followed by a `release:2.1` tag. Optional, off by default.
 - An **epic kanban**: above the sub-issues list of an issue, a List and Kanban toggle draws those sub-issues as a board. The columns come from any field the sub-issues carry (or their state, type or assignee), the cards inside a column are ordered by another, a filter keeps one value of a third, and a checkbox hides the closed sub-issues; every choice is remembered. Dragging a card to another column writes the field value back to GitHub, or closes and reopens the issue. Both the board and the dragging can be switched off in the settings.
 - A button that **hides the issue sidebar**: one press folds away the whole metadata column, assignees, labels, type, fields, projects and the rest, and gives the issue body and the board that width. The button sits in the gutter between the two, so it does not move when the sidebar goes, and what you chose holds on every issue. Can be switched off in the settings. A separate, optional setting hides only GitHub's **Projects** section of the sidebar and leaves the rest in place.
-- A **contributor load** mark next to usernames on issues and pull requests: an outlined dot for nothing assigned, a filled dot at or under the limit you set, and a count above it reading assigned over open pull requests. Hovering lists the issues that person holds in the organization, each with the pull request that closes it. Off by default.
+- A **contributor load** button next to usernames on issues and pull requests. Pressed, it reads the person and becomes their status (new contributor, first PR here, returning or regular), with a count beside it when they hold more than the limit you set, and opens a card with the merged, open and closed pull requests and the assigned issues for the repository and the organization. Nothing is read until it is pressed. Off by default.
 - **Address bar search**: `@gh`, a space, then a shortcut name and your words, `@gh repo flow`, lists matching repositories, issues or pull requests as you type. Shortcuts are yours to define on the settings page, each with a kind and GitHub qualifiers such as `org:acme is:open`; one is the default for text that starts with no shortcut name.
 - A **Pinned issues** button in GitHub's top bar: pin epics, copy their reference, or make the issue you are looking at a sub-issue of a pinned epic with one click. Can be switched off in the settings.
 - Any field type works: single-select, multi-select, text, number, date.
@@ -209,15 +209,22 @@ A small chevron in the gutter between an issue and its sidebar hides the metadat
 
 Maintainers who hand out issues keep asking the same question when somebody volunteers: is this person already holding something? Answering it means opening a search, reading a count, then checking whether any of it has a pull request yet.
 
-With **Contributor load** enabled, hovering a username on an issue or pull request puts a mark after it. An outlined dot means nothing assigned in this organization. A filled dot means they are at or under the limit. Above the limit the mark becomes a count, `3/2`, three issues assigned and two pull requests open, and it fills in when that second number is zero, which is the case worth a comment.
+With **Contributor load** enabled, a small button follows the author, the assignees and the comment authors on an issue or pull request, and any other name you hover, an @mention for example. It is an icon until you press it. Pressing it reads that person with one request and the button turns into their status:
 
-Hovering the mark opens a card with every issue that person holds, scrolling when there are many, each carrying the pull request that closes it when one exists. Those links come from GitHub's own issue to pull request references, not from reading closing keywords out of descriptions, so a pull request that never wrote `Closes #12` is still shown against its issue. A refresh button in the card reads that one person again when the ten minute cache is behind what just happened.
+- **New contributor**: no merged pull request in the organization yet.
+- **First PR here**: merged elsewhere in the organization, none in this repository yet.
+- **Returning**: merged here, fewer than the regular limit.
+- **Regular**: merged here at least as many as the regular limit, 5 by default.
 
-The organization is the one in the page URL, so the mark reads the same whichever organization you are looking at. Your own name gets no mark. Counts are cached for ten minutes per person.
+Above the assigned limit, an amber count is added, `3/2`: three issues assigned and two pull requests open. It fills in when that second number is zero, which is the case worth a comment.
+
+The card the button opens has a table of merged pull requests, open pull requests, pull requests closed without merging, assigned issues and issues assigned and done, each for the repository and for the whole organization and each a link to the matching GitHub search, then every open issue the person holds with the pull request that closes it, scrolling when there are many. Those links come from GitHub's own issue to pull request references, not from reading closing keywords out of descriptions, so a pull request that never wrote `Closes #12` is still shown against its issue. The card says how old the answer is, and its refresh button reads that one person again.
+
+Nothing is read until a button is pressed, and a person is read once per repository: the same name appearing ten times on a thread, or on the next issue you open, reuses the answer for as long as the tab stays open, since GitHub moves between pages without reloading. A setting reads the author and the assignees automatically when an issue opens, so their status is there on sight and costs one request each (off by default). Your own name gets no button.
 
 - Counts come from GitHub search with your token, so they cover the repositories that token can read. A fine-grained token limited to a few repositories counts only those.
-- A red outlined dot means the read failed, usually because no token is set. Hovering the name again retries.
-- Nothing is read for a name you only pass over; the mark appears once the pointer rests on it.
+- A red outline on the button means the read failed, usually because no token is set. Pressing it again retries, and an automatic read is not repeated on its own, so a bad token is not asked again on every page.
+- Hovering a name only gives it a button, which asks GitHub for nothing.
 
 ### Address bar search
 
