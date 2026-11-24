@@ -748,9 +748,11 @@
   const LOAD_CARD_ITEMS = 25;
   // Single segment paths that look like a login but are not one.
   const LOAD_RESERVED = new Set(["orgs", "issues", "pulls", "notifications", "settings", "apps", "marketplace", "search", "about", "sponsors", "topics", "collections", "explore"]);
-  // The author and the assignees are who a decision is about, so they are the only ones the automatic read covers.
-  const LOAD_AUTO_SELECTOR = "[data-testid=\"issue-body-header-author\"], .gh-header-meta a.author, [data-testid=\"sidebar-assignees-section\"] a[data-hovercard-type=\"user\"], .js-issue-assignees a[data-hovercard-type=\"user\"]";
-  // Where a button is put without being asked: those two, and the authors of the comments.
+  // The author is who an issue or pull request is about, so they are the only one the automatic read covers.
+  const LOAD_AUTO_SELECTOR = "[data-testid=\"issue-body-header-author\"], .gh-header-meta a.author";
+  // The sidebar is left alone: its assignees, reviewers and participants get no button, only names in the conversation do.
+  const LOAD_EXCLUDE = "[data-testid=\"sidebar-section\"], [data-testid=\"sidebar-assignees-section\"], [data-testid=\"issue-assignees\"], #partial-discussion-sidebar, .discussion-sidebar-item, aside";
+  // Where a button is put without being asked: the author, and the authors of the comments.
   const LOAD_NAME_SELECTOR = `${LOAD_AUTO_SELECTOR}, [data-testid="avatar-link"], .timeline-comment-header a.author`;
   // Any other name, an @mention for example, gets its button when it is hovered.
   const LOAD_HOVER_SELECTOR = "a[data-hovercard-type=\"user\"], a.author";
@@ -982,7 +984,7 @@
 
   function loadDecorate(anchor, ref, viewer) {
     // The page may rebuild a comment header and drop what was put in it, so what counts is the button itself, not a mark on the name.
-    if (!anchor.isConnected || loadHasButton(anchor)) return null;
+    if (!anchor.isConnected || loadHasButton(anchor) || anchor.closest(LOAD_EXCLUDE)) return null;
     // An avatar on its own is not a name; the sidebar's assignee link is an avatar with the login beside it.
     if (anchor.querySelector("img") && !anchor.textContent.trim()) return null;
     const login = loadLogin(anchor);
@@ -999,13 +1001,14 @@
     return button;
   }
 
-  // Buttons for the author, the assignees and the comment authors, and with the automatic read on, the
-  // reading of the first two. Nothing else is asked of GitHub until a button is pressed.
+  // Buttons for the author and the comment authors, and with the automatic read on, the reading of the
+  // author. Nothing else is asked of GitHub until a button is pressed.
   async function scanLoad() {
     if (!settings.loadEnabled) return;
     const ref = loadRef();
     if (!ref) return;
     const viewer = await loadWhoami();
+    document.querySelectorAll(".gsf-load").forEach((button) => { if (button.closest(LOAD_EXCLUDE)) button.remove(); });
     for (const anchor of document.querySelectorAll(LOAD_NAME_SELECTOR)) {
       loadDecorate(anchor, ref, viewer);
       if (!settings.loadAuto || !anchor.matches(LOAD_AUTO_SELECTOR)) continue;

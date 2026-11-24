@@ -9,9 +9,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - **Contributor status**: the contributor load mark is now a button. Pressed, it reads the person and becomes their status: new contributor (no merged pull request in the organization), first PR here (merged elsewhere in the organization, none in this repository), returning, or regular from a number of merged pull requests in the repository you set, 5 by default. The card it opens has merged, open and closed-without-merge pull requests and assigned and finished issues, each for the repository and for the whole organization and each linking to the matching search, above the open issues the person holds with the pull request that closes each.
 - When a person cannot be looked up, the card and the button's tooltip now say why, a missing token, a rejected one or whatever GitHub answered, and a count GitHub did not return shows as a dash instead of failing the whole read.
 - The two columns of counts in the card are headed **This repo** and **Organization**, with the full names on hover, since a repository and its organization often have near-identical names.
+- The contributor button no longer appears in the sidebar, on its assignees, reviewers or participants, only on names in the conversation, and the automatic read covers the author only.
 - A **Member** status, shown before the others, for people who belong to the organization: GitHub says so for your token, or marks the person's own pull requests in the organization as made by a member. It comes in the same request, with no extra call.
 - Organization members are marked at once: the extension asks GitHub, in one shared request for every name on the page, which of them belong to the organization and shows **Member** in place of the button for them, without a press. Everything else about a person still waits for the button. A setting turns it off.
-- A setting that reads the author and the assignees of an issue or pull request automatically when it opens, so their status is there on sight. Off by default; everyone else is still read on a press.
+- A setting that reads the author of an issue or pull request automatically when it opens, so their status is there on sight. Off by default; everyone else is still read on a press.
 
 ### Changed
 
