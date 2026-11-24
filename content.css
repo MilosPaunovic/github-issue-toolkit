@@ -715,10 +715,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The counts are links to the matching GitHub search, so they look like links: the accent colour, underlined when the pointer is over them. */
 .gsf-load-line a {
   font-weight: 600;
-  color: var(--fgColor-default) !important;
+  color: var(--fgColor-accent) !important;
   text-decoration: none !important;
+  cursor: pointer;
 }
 .gsf-load-line a:hover {
   text-decoration: underline !important;
@@ -1077,9 +1079,10 @@ div:has(> .gsf-progress) {
   font-weight: 600;
   line-height: 1.25;
   font-variant-numeric: tabular-nums;
+  color: var(--fgColor-accent);
 }
 .gsf-profile-tile:hover .gsf-profile-num {
-  color: var(--gsf-brand);
+  text-decoration: underline;
 }
 .gsf-profile-tile[data-zero] .gsf-profile-num {
   color: var(--fgColor-muted);
