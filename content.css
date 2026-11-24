@@ -1172,18 +1172,24 @@ div:has(> .gsf-progress) {
   color: var(--fgColor-muted);
 }
 
-/* An organization's own colour, where it has one, as an accent on the GitHub design: a bar down the left edge of the card and
-   the panel, the colour on headings, counts and the member status. Without one, none of this applies. */
+/* An organization's own colour, where it has one, as an accent on the GitHub design: a thin outline in the colour
+   around the card and the panel, and the colour on headings, counts, chevrons and the member status. Without one,
+   none of this applies. */
 .gsf-load-card[data-brand],
 .gsf-profile-org[data-brand],
 .gsf-load[data-brand] {
   --gsf-ink: color-mix(in srgb, var(--gsf-brand) 78%, var(--fgColor-default));
+  --gsf-edge: color-mix(in srgb, var(--gsf-brand) 55%, var(--borderColor-default));
+  --gsf-rule: color-mix(in srgb, var(--gsf-brand) 30%, var(--borderColor-default));
 }
-.gsf-load-card[data-brand] {
-  border-left: 4px solid var(--gsf-brand);
+.gsf-load-card[data-brand],
+.gsf-profile-org[data-brand] {
+  border-color: var(--gsf-edge);
 }
-.gsf-load-card[data-brand] .gsf-load-sectionhead > span:first-child,
-.gsf-load-card[data-brand] .gsf-load-name {
+.gsf-load-card[data-brand] .gsf-load-head + .gsf-load-section {
+  border-top-color: var(--gsf-rule);
+}
+.gsf-load-card[data-brand] .gsf-load-sectionhead > span:first-child {
   color: var(--gsf-ink);
 }
 .gsf-load-card[data-brand] .gsf-load-line a {
@@ -1192,35 +1198,22 @@ div:has(> .gsf-progress) {
 .gsf-load-card[data-brand] .gsf-load-line a.gsf-load-none {
   color: var(--fgColor-muted) !important;
 }
-.gsf-load-card[data-brand] .gsf-load-tag[data-status="member"] {
-  border-color: var(--gsf-brand);
-  background: var(--gsf-brand);
-  color: #fff;
-}
+.gsf-load-card[data-brand] .gsf-load-tag[data-status="member"],
+.gsf-profile-org[data-brand] .gsf-profile-tag[data-status="member"],
 .gsf-load[data-brand][data-status="member"] {
   border-color: var(--gsf-brand);
-  background: color-mix(in srgb, var(--gsf-brand) 14%, transparent);
+  background: color-mix(in srgb, var(--gsf-brand) 12%, transparent);
   color: var(--gsf-ink);
 }
-.gsf-profile-org[data-brand] {
-  border-left: 4px solid var(--gsf-brand);
-}
 .gsf-profile-org[data-brand] .gsf-profile-head {
-  border-bottom-color: color-mix(in srgb, var(--gsf-brand) 30%, var(--borderColor-default));
-  background: color-mix(in srgb, var(--gsf-brand) 8%, var(--bgColor-muted));
+  border-bottom-color: var(--gsf-rule);
 }
-.gsf-profile-org[data-brand] .gsf-profile-title,
 .gsf-profile-org[data-brand] .gsf-profile-grouphead,
 .gsf-profile-org[data-brand] .gsf-profile-num {
   color: var(--gsf-ink) !important;
 }
 .gsf-profile-org[data-brand] .gsf-profile-tile[data-zero] .gsf-profile-num {
   color: var(--fgColor-muted) !important;
-}
-.gsf-profile-org[data-brand] .gsf-profile-tag[data-status="member"] {
-  border-color: var(--gsf-brand);
-  background: var(--gsf-brand);
-  color: #fff;
 }
 .gsf-profile-org[data-brand] .gsf-profile-work > summary::before {
   border-color: var(--gsf-ink);
