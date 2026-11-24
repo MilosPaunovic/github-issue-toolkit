@@ -1380,11 +1380,10 @@
     ]],
     ["Issues", [
       ["Opened", "issues", "Issues they opened", (l) => `is:issue author:${l}`],
-      ["Still open", "issuesOpen", "Issues they opened that are still open", (l) => `is:issue is:open author:${l}`],
-      ["Assigned, open", "assignedOpen", "Issues assigned to them that are still open", (l) => `is:issue is:open assignee:${l}`, () => "assigned to them"]
+      ["Assigned to them", "assignedOpen", "Issues assigned to them that are still open", (l) => `is:issue is:open assignee:${l}`, () => "still open"]
     ]],
     ["Community", [
-      ["PRs reviewed", "reviewed", "Pull requests by other people that they reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`, () => "by other people"],
+      ["PRs reviewed", "reviewed", "Pull requests by other people that they reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`, () => "written by others"],
       ["Commented on", "commented", "Issues and pull requests by other people that they commented on", (l) => `commenter:${l} -author:${l}`, () => "on others' work"]
     ]]
   ];
