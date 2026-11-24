@@ -700,7 +700,7 @@
 /* One line of a section: a label and up to two counts that line up from one section to the next. */
 .gsf-load-line {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 72px 72px;
+  grid-template-columns: minmax(0, 1fr) 84px 84px;
   align-items: baseline;
   gap: 8px;
   padding: 3px 0;

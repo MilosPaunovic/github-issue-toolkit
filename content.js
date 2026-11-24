@@ -1098,6 +1098,7 @@
   // their pull requests, their issues, the issues they hold open, and when it was read. The two sections
   // of counts share their columns, the repository and the organization, and name them in their headings.
   function loadSection(title, columns) {
+    // columns: [label, full name] pairs, the label on the card and the name when the pointer rests on it
     const section = document.createElement("section");
     section.className = "gsf-load-section";
     const head = document.createElement("div");
@@ -1105,10 +1106,10 @@
     const name = document.createElement("span");
     name.textContent = title;
     head.append(name);
-    for (const column of columns || []) {
+    for (const [text, full] of columns || []) {
       const label = document.createElement("span");
-      label.textContent = column;
-      label.title = column;
+      label.textContent = text;
+      label.title = full;
       head.append(label);
     }
     section.append(head);
@@ -1116,7 +1117,7 @@
   }
 
   function loadCounts(ref, login, data, title, rows) {
-    const section = loadSection(title, [ref.repo, ref.org]);
+    const section = loadSection(title, [["This repo", `${ref.org}/${ref.repo}`], ["Organization", ref.org]]);
     for (const [label, key, terms] of rows) {
       const line = document.createElement("div");
       line.className = "gsf-load-line";
