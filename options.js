@@ -358,7 +358,7 @@ if (hasChrome) {
     hideProjectsInput.checked = stored.hideProjectsSection === true;
     loadEnabledInput.checked = stored.loadEnabled === true;
     loadAutoInput.checked = stored.loadAuto === true;
-    showMembersMode(stored.loadSkipMembers !== false, stored.loadMembers !== false);
+    showMembersMode(stored.loadSkipMembers === true, stored.loadMembers !== false);
     profileEnabledInput.checked = stored.profileEnabled === true;
     profileOrgsInput.value = stored.profileOrgs || "";
     assignEnabledInput.checked = stored.assignEnabled === true;
@@ -410,7 +410,7 @@ if (hasChrome) {
   ageWarn.value = 90;
   loadLimit.value = 1;
   loadRegular.value = 5;
-  showMembersMode(true, true);
+  showMembersMode(false, true);
   renderAssignWords();
 }
 
