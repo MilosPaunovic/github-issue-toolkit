@@ -983,6 +983,8 @@ div:has(> .gsf-progress) {
   border-radius: 6px;
 }
 .gsf-profile-title {
+  position: relative;
+  top: -1px;
   font-weight: 600;
   color: var(--fgColor-default) !important;
   text-decoration: none !important;
@@ -992,6 +994,8 @@ div:has(> .gsf-progress) {
   text-decoration: underline !important;
 }
 .gsf-profile-sub {
+  position: relative;
+  top: -1px;
   font-size: 12px;
   color: var(--fgColor-muted);
 }
@@ -1112,6 +1116,8 @@ div:has(> .gsf-progress) {
 }
 .gsf-profile-work > summary::before {
   content: "";
+  position: relative;
+  top: -1px;
   flex: none;
   width: 6px;
   height: 6px;
