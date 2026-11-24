@@ -745,6 +745,26 @@
   // Contributor load: who the person behind a username is to this repository, and what they hold
   // ---------------------------------------------------------------------------
 
+  // A colour for the organizations that have one, used as an accent on what belongs to them, the card, the status
+  // and the profile panel; any other organization keeps GitHub's own colours.
+  const ORG_BRANDS = { "kestra-io": "#8405ff" };
+
+  function brandOf(org) {
+    return ORG_BRANDS[String(org || "").toLowerCase()] || "";
+  }
+
+  // Marks an element as an organization's own and gives it the colour, or leaves it plain.
+  function brandApply(el, org) {
+    const brand = brandOf(org);
+    if (brand) {
+      el.dataset.brand = "1";
+      el.style.setProperty("--gsf-brand", brand);
+    } else {
+      delete el.dataset.brand;
+      el.style.removeProperty("--gsf-brand");
+    }
+  }
+
   const LOAD_HOVER_MS = 200;
   const LOAD_CARD_ITEMS = 25;
   // Single segment paths that look like a login but are not one.
@@ -889,6 +909,7 @@
     const key = button.dataset.gsfKey;
     const entry = loadCache.get(key);
     button.textContent = "";
+    brandApply(button, org);
     button.removeAttribute("aria-busy");
     delete button.dataset.status;
     delete button.dataset.idle;
@@ -1154,6 +1175,7 @@
   function loadCardBuild(ref, login) {
     const card = loadCardElement();
     card.textContent = "";
+    brandApply(card, ref.org);
     const entry = loadCache.get(loadKey(ref, login));
     const data = entry && entry.data;
 
@@ -1363,8 +1385,6 @@
   // Profile panel: what a person has done in an organization, at the top of their profile
   // ---------------------------------------------------------------------------
 
-  // A colour for the organizations that have one; any other gets GitHub's own accent.
-  const PROFILE_BRANDS = { "kestra-io": "#8405ff" };
   const PROFILE_MAX_ORGS = 3;
   // Kept for as long as the tab is open, like the contributor reads: "org/login" -> { at, data, error }.
   const profileCache = new Map();
@@ -1631,7 +1651,7 @@
     for (const org of orgs) {
       const block = document.createElement("div");
       block.className = "gsf-profile-org";
-      block.style.setProperty("--gsf-brand", PROFILE_BRANDS[org.toLowerCase()] || "var(--fgColor-accent, #0969da)");
+      brandApply(block, org);
       host.append(block);
       profileLoad(block, org, login, false).catch((err) => console.warn("[github-issue-toolkit]", err));
     }

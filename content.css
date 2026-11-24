@@ -1171,3 +1171,61 @@ div:has(> .gsf-progress) {
   line-height: 16px;
   color: var(--fgColor-muted);
 }
+
+/* An organization's own colour, where it has one, as an accent on the GitHub design: a bar on top of the card and
+   the panel, the colour on headings, counts and the member status. Without one, none of this applies. */
+.gsf-load-card[data-brand],
+.gsf-profile-org[data-brand],
+.gsf-load[data-brand] {
+  --gsf-ink: color-mix(in srgb, var(--gsf-brand) 78%, var(--fgColor-default));
+}
+.gsf-load-card[data-brand] {
+  border-top: 3px solid var(--gsf-brand);
+}
+.gsf-load-card[data-brand] .gsf-load-sectionhead > span:first-child,
+.gsf-load-card[data-brand] .gsf-load-name {
+  color: var(--gsf-ink);
+}
+.gsf-load-card[data-brand] .gsf-load-line a {
+  color: var(--gsf-ink) !important;
+}
+.gsf-load-card[data-brand] .gsf-load-line a.gsf-load-none {
+  color: var(--fgColor-muted) !important;
+}
+.gsf-load-card[data-brand] .gsf-load-tag[data-status="member"] {
+  border-color: var(--gsf-brand);
+  background: var(--gsf-brand);
+  color: #fff;
+}
+.gsf-load[data-brand][data-status="member"] {
+  border-color: var(--gsf-brand);
+  background: color-mix(in srgb, var(--gsf-brand) 14%, transparent);
+  color: var(--gsf-ink);
+}
+.gsf-profile-org[data-brand] {
+  border-top: 3px solid var(--gsf-brand);
+}
+.gsf-profile-org[data-brand] .gsf-profile-head {
+  border-bottom-color: color-mix(in srgb, var(--gsf-brand) 30%, var(--borderColor-default));
+  background: color-mix(in srgb, var(--gsf-brand) 8%, var(--bgColor-muted));
+}
+.gsf-profile-org[data-brand] .gsf-profile-title,
+.gsf-profile-org[data-brand] .gsf-profile-grouphead,
+.gsf-profile-org[data-brand] .gsf-profile-num {
+  color: var(--gsf-ink) !important;
+}
+.gsf-profile-org[data-brand] .gsf-profile-tile[data-zero] .gsf-profile-num {
+  color: var(--fgColor-muted) !important;
+}
+.gsf-profile-org[data-brand] .gsf-profile-tag[data-status="member"] {
+  border-color: var(--gsf-brand);
+  background: var(--gsf-brand);
+  color: #fff;
+}
+.gsf-profile-org[data-brand] .gsf-profile-work > summary::before {
+  border-color: var(--gsf-ink);
+}
+.gsf-profile-org[data-brand] .gsf-profile-work > summary:hover,
+.gsf-profile-org[data-brand] .gsf-profile-pr:hover {
+  background: color-mix(in srgb, var(--gsf-brand) 7%, var(--bgColor-default));
+}
