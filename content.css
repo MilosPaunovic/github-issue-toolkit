@@ -604,7 +604,9 @@
   color: var(--fgColor-success);
 }
 .gsf-load[data-status="returning"],
-.gsf-load-tag[data-status="returning"] {
+.gsf-load[data-status="unknown"],
+.gsf-load-tag[data-status="returning"],
+.gsf-load-tag[data-status="unknown"] {
   color: var(--fgColor-muted);
 }
 .gsf-load[data-status="member"],
