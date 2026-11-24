@@ -572,6 +572,11 @@
 .gsf-load[data-pending] {
   display: none;
 }
+/* A member is a mark, not a control. */
+.gsf-load[data-static] {
+  pointer-events: none;
+  cursor: default;
+}
 .gsf-load:hover {
   border-color: var(--fgColor-accent);
   background: var(--bgColor-accent-muted);

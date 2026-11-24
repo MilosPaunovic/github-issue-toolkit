@@ -828,6 +828,11 @@
   let loadViewer = null;
   // Who belongs to the organization, known before anyone presses a button: "org/login" -> true, false or null when it could not be told.
   const loadMembership = new Map();
+  // "show" (the default): a member gets a plain Member mark. "skip": a member gets nothing. "plain": a member is like anyone else.
+  function loadModeApply(mode) {
+    settings.loadMembers = mode !== "plain";
+    settings.loadSkipMembers = mode === "skip";
+  }
   let loadMembersBusy = false;
 
   // Only issue and pull request conversations. The question "who is this person to us" only comes up
@@ -937,22 +942,29 @@
     const key = button.dataset.gsfKey;
     const entry = loadCache.get(key);
     button.textContent = "";
+    delete button.dataset.static;
+    button.removeAttribute("tabindex");
+    button.removeAttribute("aria-disabled");
     brandApply(button, org);
+    // A member is shown as a plain mark: nothing to press and nothing read for them.
+    if (settings.loadMembers && !settings.loadSkipMembers && loadMembership.get(`${org}/${login.toLowerCase()}`) === true) {
+      button.removeAttribute("aria-busy");
+      button.dataset.state = "static";
+      button.dataset.status = "member";
+      button.dataset.static = "1";
+      button.tabIndex = -1;
+      button.setAttribute("aria-disabled", "true");
+      button.append("Member");
+      button.title = `${login} is a member of ${org}`;
+      button.setAttribute("aria-label", button.title);
+      return;
+    }
     button.removeAttribute("aria-busy");
     delete button.dataset.status;
     delete button.dataset.idle;
     if (!entry || !entry.data) {
       const state = loadPending.has(key) ? "busy" : (entry ? "err" : "idle");
       button.dataset.state = state;
-      // Membership is known from the batch before the person is read, and is worth showing at once.
-      if (state === "idle" && settings.loadMembers && loadMembership.get(`${org}/${login.toLowerCase()}`) === true) {
-        button.dataset.status = "member";
-        button.append("Member");
-        const text = `${login} is a member of ${org}. Press for the details.`;
-        button.title = text;
-        button.setAttribute("aria-label", text);
-        return;
-      }
       if (state === "busy") {
         button.setAttribute("aria-busy", "true");
         button.append(loadSpinner(), "Looking up");
@@ -1006,7 +1018,7 @@
         button.remove();
         return;
       }
-      if (belongs !== undefined || !settings.loadSkipMembers) delete button.dataset.pending;
+      if (belongs !== undefined || !settings.loadMembers) delete button.dataset.pending;
     });
   }
 
@@ -1068,7 +1080,7 @@
     button.dataset.org = ref.org;
     button.dataset.repo = ref.repo;
     button.dataset.login = login;
-    if (settings.loadSkipMembers && belongs === undefined) button.dataset.pending = "1";
+    if (settings.loadMembers && belongs === undefined) button.dataset.pending = "1";
     loadPaint(button);
     anchor.after(button);
     return button;
@@ -1088,13 +1100,13 @@
       const login = loadLogin(anchor);
       if (!login || login.toLowerCase() === viewer) continue;
       const key = loadKey(ref, login);
-      // With members left out, the author is read only once it is known that they do not belong.
-      if (settings.loadSkipMembers && loadMembership.get(`${ref.org}/${login.toLowerCase()}`) === undefined) continue;
-      if (settings.loadSkipMembers && loadMembership.get(`${ref.org}/${login.toLowerCase()}`) === true) continue;
+      // Unless members are treated like anyone else, the author is read only once it is known that they do not belong.
+      const belongsAuto = loadMembership.get(`${ref.org}/${login.toLowerCase()}`);
+      if (settings.loadMembers && (belongsAuto === undefined || belongsAuto === true)) continue;
       // A person who could not be read is left alone here, so a bad token is not asked again on every scan.
       if (!loadCache.has(key) && !loadPending.has(key)) loadFetch(ref, login, false);
     }
-    if (settings.loadMembers || settings.loadSkipMembers) loadMarkMembers(ref);
+    if (settings.loadMembers) loadMarkMembers(ref);
     loadHideAssociation();
   }
 
@@ -1393,7 +1405,7 @@
     if (!target || !target.closest) return;
     const button = target.closest(".gsf-load");
     if (button) {
-      if (!settings.loadEnabled) return;
+      if (!settings.loadEnabled || button.dataset.static) return;
       event.preventDefault();
       event.stopPropagation();
       loadToggle(button).catch((err) => console.warn("[github-issue-toolkit]", err));
@@ -3462,9 +3474,8 @@
       clearProgress();
       schedule();
     }
-    if (changes.loadEnabled || changes.loadAuto || changes.loadMembers || changes.loadSkipMembers || changes.loadLimit || changes.loadRegular) {
-      if (changes.loadMembers) settings.loadMembers = changes.loadMembers.newValue !== false;
-      if (changes.loadSkipMembers) settings.loadSkipMembers = changes.loadSkipMembers.newValue === true;
+    if (changes.loadEnabled || changes.loadAuto || changes.loadMembersMode || changes.loadLimit || changes.loadRegular) {
+      if (changes.loadMembersMode) loadModeApply(changes.loadMembersMode.newValue);
       if (changes.loadEnabled) settings.loadEnabled = changes.loadEnabled.newValue === true;
       if (changes.loadAuto) settings.loadAuto = changes.loadAuto.newValue === true;
       if (changes.loadLimit) settings.loadLimit = Math.max(0, Number(changes.loadLimit.newValue) || 0);
@@ -3518,7 +3529,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembers", "loadSkipMembers", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -3537,8 +3548,7 @@
     settings.profileOrgs = String(stored.profileOrgs || "");
     settings.assignEnabled = stored.assignEnabled === true;
     settings.assignWords = String(stored.assignWords || "");
-    settings.loadMembers = stored.loadMembers !== false;
-    settings.loadSkipMembers = stored.loadSkipMembers === true;
+    loadModeApply(stored.loadMembersMode);
     settings.loadRegular = Number.isFinite(Number(stored.loadRegular)) && stored.loadRegular !== undefined ? Math.max(1, Number(stored.loadRegular)) : 5;
     settings.loadLimit = Number.isFinite(Number(stored.loadLimit)) && stored.loadLimit !== undefined ? Math.max(0, Number(stored.loadLimit)) : 1;
     sidebarCollapsed = stored.sidebarCollapsed === true;
