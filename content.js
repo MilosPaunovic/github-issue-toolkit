@@ -1707,7 +1707,7 @@
   // as outdated. The box sits at the top of the issue.
   // ---------------------------------------------------------------------------
 
-  const ASSIGN_DEFAULT_WORDS = "assign, work on, working on, take this, pick this, pick up, can i, may i, i'd like to, i would like to, i want to, let me, contribute, claim, interested";
+  const ASSIGN_DEFAULT_WORDS = "assign, work on, working on, take this, take on, pick this, pick up, can i, may i, i'd like to, i would like to, would love to, i'd love to, i want to, let me work, let me take, let me try, let me handle, give it a shot, give it a try, have a go, still available, is this available, start working, volunteer, claim, contribute, interested";
   // A longer comment is discussion, not a request, so it is never offered.
   const ASSIGN_MAX_CHARS = 400;
   const ASSIGN_PREVIEW_CHARS = 240;
