@@ -327,7 +327,7 @@
     .ld-idle { color: var(--bg); background: var(--attention); }
     .palette .bs .ld, .palette .bs .ld-n { margin: 0; align-self: center; }
     .mock-load .card2 { --ink: color-mix(in srgb, #8405ff 78%, var(--fg)); width: 340px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); box-shadow: 0 8px 24px rgba(0,0,0,.18); }
-    .mock-load .card2 { border-top: 3px solid #8405ff; }
+    .mock-load .card2 { border-left: 4px solid #8405ff; }
     .mock-load .ch { display: flex; align-items: center; gap: 9px; padding: 2px 4px 9px; margin-bottom: 7px; border-bottom: 1px solid var(--border); }
     .mock-load .cn { font-size: 13px; font-weight: 600; }
     .mock-load .ctag { margin-left: 2px; }
@@ -352,7 +352,7 @@
       .mock-load .crf { width: 12px; height: 12px; fill: var(--fg-muted); flex: none; }
     /* Profile panel: one flat box in GitHub's style, the organization's colour only an accent */
     .mock-profile { --b: #8405ff; --ink: color-mix(in srgb, #8405ff 78%, var(--fg)); }
-    .mock-profile .org { border: 1px solid var(--border); border-top: 3px solid var(--b); border-radius: 6px; background: var(--bg-card); font-size: 14px; overflow: hidden; }
+    .mock-profile .org { border: 1px solid var(--border); border-left: 4px solid var(--b); border-radius: 6px; background: var(--bg-card); font-size: 14px; overflow: hidden; }
     .mock-profile .hd { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid color-mix(in srgb, var(--b) 30%, var(--border)); background: color-mix(in srgb, var(--b) 8%, var(--bg-muted)); }
     .mock-profile .lg { width: 24px; height: 24px; border-radius: 6px; background: #111; display: grid; place-items: center; }
     .mock-profile .lg i { width: 10px; height: 10px; background: var(--b); transform: rotate(45deg); border-radius: 2px; }
@@ -593,7 +593,7 @@
           <div class="cfoot">Read 2 min ago<svg class="crf" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5a5.5 5.5 0 1 0 5.17 3.63.75.75 0 0 1 1.41.5A7 7 0 1 1 8 1a6.97 6.97 0 0 1 4.5 1.64V1.75a.75.75 0 0 1 1.5 0v3a.75.75 0 0 1-.75.75h-3a.75.75 0 0 1 0-1.5h1.3A5.47 5.47 0 0 0 8 2.5Z"/></svg></div>
         </div>
       </div>
-      <p class="example-caption">The card belongs to the third row, opened by pressing its button, and priya-s is a member of the organization. In an organization with its own colour, here Kestra's violet for `kestra-io`, the card takes it as an accent: a bar on top, the headings and the counts, and the Member status. The limit is 1 here, so the amber count says four issues are assigned and three pull requests are open; it fills in when that second number is zero.</p>
+      <p class="example-caption">The card belongs to the third row, opened by pressing its button, and priya-s is a member of the organization. In an organization with its own colour, here Kestra's violet for `kestra-io`, the card takes it as an accent: a bar down the left edge, the headings and the counts, and the Member status. The limit is 1 here, so the amber count says four issues are assigned and three pull requests are open; it fills in when that second number is zero.</p>
 
       <h3 style="margin-top:28px">Profile panel</h3>
       <p class="muted" style="font-size:14px">At the top of a person's profile, a panel for each organization you name, in that organization's colours where it has some. It shows what the person has done there: in three groups, pull requests (open, merged), issues (opened, and assigned to them and still open) and community (pull requests reviewed, issues and pull requests commented on), each number linking to the matching GitHub search. Under them, two accordions, one of their open pull requests and one of the open issues assigned to them, closed at first and showing up to five rows when opened, the rest below a scroll. A status beside the name says whether they are a member of the organization, a regular contributor or a contributor. It is read once per person and organization when the profile opens, in one request, and kept until the tab is closed. Off by default; name the organizations in the settings.</p>
