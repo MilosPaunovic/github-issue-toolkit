@@ -1396,6 +1396,9 @@
   function profileLogin() {
     const parts = location.pathname.split("/").filter(Boolean);
     if (parts.length !== 1 || LOAD_RESERVED.has(parts[0].toLowerCase())) return null;
+    // Only the first page of the profile, the overview: its other tabs, repositories, stars, followers, are lists of their own.
+    const tab = new URLSearchParams(location.search).get("tab");
+    if (tab && tab !== "overview") return null;
     return document.querySelector("[itemtype=\"http://schema.org/Person\"]") ? parts[0] : null;
   }
 
@@ -1549,32 +1552,8 @@
     profileExtras(block, org, entry.data);
   }
 
-  // Under the numbers: where they work, and what they have open right now.
+  // Under the numbers: what the person has open right now.
   function profileExtras(block, org, data) {
-    if (data.topRepos && data.topRepos.length) {
-      const row = document.createElement("div");
-      row.className = "gsf-profile-where";
-      // Counted over their latest merged pull requests, not over all of them, and the line says so.
-      const sample = data.mergedSample || 0;
-      // Up to a hundred are looked at; a person with fewer has all of theirs counted, and the line says which.
-      const all = typeof data.merged === "number" && data.merged <= sample;
-      row.title = all ? `Where all ${sample} merged pull requests went` : `Where the latest ${sample} merged pull requests went`;
-      const label = document.createElement("span");
-      label.textContent = all ? `All ${sample} merged PRs, by repository` : `Latest ${sample} merged PRs, by repository`;
-      row.append(label);
-      data.topRepos.forEach((repo) => {
-        const link = document.createElement("a");
-        link.href = `https://github.com/${org}/${repo.name}`;
-        link.target = "_blank";
-        link.rel = "noopener";
-        const name = document.createElement("b");
-        name.textContent = repo.name;
-        link.append(name, ` ${repo.merged}`);
-        link.title = `${repo.merged} of their latest ${sample} merged pull requests went to ${repo.name}`;
-        row.append(link);
-      });
-      block.append(row);
-    }
     if (data.openWork && data.openWork.length) {
       block.append(profileAccordion(`Open pull requests (${(data.open || data.openWork.length).toLocaleString()})`, data.openWork));
     }
@@ -1587,10 +1566,8 @@
   // shows up to five rows and the rest are below a scroll.
   function profileAccordion(title, items) {
     const box = document.createElement("details");
-    box.className = "gsf-profile-group gsf-profile-work";
-    box.style.setProperty("--n", "1");
+    box.className = "gsf-profile-work";
     const heading = document.createElement("summary");
-    heading.className = "gsf-profile-grouphead";
     heading.textContent = title;
     const list = document.createElement("div");
     list.className = "gsf-profile-list";
