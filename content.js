@@ -1704,7 +1704,7 @@
 
   // ---------------------------------------------------------------------------
   // Assignment requests: on an issue that has been assigned, the comments of other people asking to be, to hide
-  // as outdated
+  // as outdated. The box sits at the top of the issue.
   // ---------------------------------------------------------------------------
 
   const ASSIGN_DEFAULT_WORDS = "assign, work on, working on, take this, pick this, pick up, can i, may i, i'd like to, i would like to, i want to, let me, contribute, claim, interested";
@@ -1853,6 +1853,13 @@
 
     const head = document.createElement("div");
     head.className = "gsf-profile-head";
+    // The organization's avatar, as on the profile panel.
+    const logo = document.createElement("img");
+    logo.className = "gsf-profile-logo";
+    logo.src = `https://github.com/${encodeURIComponent(info.org)}.png?size=48`;
+    logo.alt = "";
+    logo.width = 24;
+    logo.height = 24;
     const title = document.createElement("span");
     title.className = "gsf-profile-title";
     title.textContent = "Assignment requests";
@@ -1865,7 +1872,7 @@
     const refresh = profileRefreshIcon();
     refresh.addEventListener("click", () => assignLoad(panel, info, true).catch((err) => console.warn("[github-issue-toolkit]", err)));
     age.append(refresh);
-    head.append(title, sub, age);
+    head.append(logo, title, sub, age);
     panel.append(head);
 
     if (requests.length) {
@@ -2058,7 +2065,7 @@
     if (panel.isConnected) await assignRender(panel, info, entry);
   }
 
-  // One panel at the top of the conversation of an issue, there only while the setting is on, and only shown when
+  // One panel at the top of an issue, above its description, there only while the setting is on, and only shown when
   // the issue has an assignee and something to show.
   function scanAssign() {
     const existing = document.querySelector(".gsf-assign");
@@ -2069,7 +2076,8 @@
     }
     if (existing && existing.dataset.key === info.key && existing.isConnected) return;
     if (existing) existing.remove();
-    const anchor = document.querySelector("[data-testid=\"issue-viewer-comments-container\"]") || document.querySelector(".js-discussion");
+    // At the very top of the issue, above its description; the conversation below is the fallback for a page laid out differently.
+    const anchor = document.querySelector("[data-testid=\"issue-viewer-issue-container\"]") || document.querySelector("[data-testid=\"issue-viewer-comments-container\"]") || document.querySelector(".js-discussion");
     if (!anchor) return;
     const panel = document.createElement("section");
     panel.className = "gsf-assign gsf-profile-org";
