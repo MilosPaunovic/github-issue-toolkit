@@ -330,16 +330,17 @@
     .mock-load .ch { display: flex; align-items: center; gap: 9px; padding: 2px 4px 9px; margin-bottom: 7px; border-bottom: 1px solid var(--border); }
     .mock-load .cn { font-size: 13px; font-weight: 600; }
     .mock-load .ctag { margin-left: 2px; }
-    .mock-load .cfoot { display: flex; align-items: center; gap: 6px; }
-    .mock-load .grp td, .mock-load .grp td:first-child { padding: 8px 6px 3px; border-top: 0; font-size: 11.5px; font-weight: 600; text-align: left; color: var(--fg); }
-    .mock-load tbody + tbody .grp td { border-top: 1px solid var(--border); }
-    .mock-load td:first-child { padding-left: 12px; }
-    .mock-load table { width: 100%; margin-bottom: 4px; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
-    .mock-load th { padding: 4px 6px; font-size: 11.5px; font-weight: 500; text-align: right; color: var(--fg-muted); }
-    .mock-load td { padding: 3px 6px; border-top: 1px solid var(--border); text-align: right; font-weight: 600; }
-    .mock-load td:first-child { text-align: left; font-weight: 400; color: var(--fg-muted); }
-    .mock-load .csub { padding: 6px 7px 2px; font-size: 11.5px; font-weight: 500; color: var(--fg-muted); }
-    .mock-load .cmore, .mock-load .cfoot { padding: 4px 7px 0; font-size: 11.5px; color: var(--fg-muted); }
+    .mock-load .ch { border-bottom: 0; margin-bottom: 0; padding-bottom: 9px; }
+    .mock-load .sec { margin: 0 -10px; padding: 8px 10px 6px; border-top: 1px solid var(--border); }
+    .mock-load .ln { display: grid; grid-template-columns: minmax(0, 1fr) 72px 72px; gap: 8px; padding: 3px 0; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+    .mock-load .ln span:first-child { color: var(--fg-muted); }
+    .mock-load .ln span + span { text-align: right; font-weight: 600; }
+    .mock-load .sh { padding-bottom: 5px; font-size: 11.5px; font-weight: 600; }
+    .mock-load .sh span:first-child { color: var(--fg); }
+    .mock-load .sh span + span { font-weight: 500; color: var(--fg-muted); }
+    .mock-load .clist { position: relative; height: 128px; overflow: hidden; }
+    .mock-load .thumb { position: absolute; top: 4px; right: 1px; width: 4px; height: 56px; border-radius: 9999px; background: var(--border-strong); opacity: .6; }
+    .mock-load .cfoot { display: flex; align-items: center; gap: 6px; margin: 0 -10px; padding: 7px 10px 0; border-top: 1px solid var(--border); font-size: 11.5px; color: var(--fg-muted); }
     .mock-load .cr { display: flex; flex-direction: column; gap: 2px; padding: 6px 7px; border-radius: 6px; }
     .mock-load .cm { display: flex; align-items: center; gap: 7px; }
     .mock-load .cref { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; font-weight: 500; color: var(--fg); }
@@ -433,7 +434,7 @@
         <div class="card"><h3>Issue age, if you want it</h3><p>An optional gray badge shows how long ago each issue was created, in months, weeks or days, and turns yellow once an issue has been open longer than a threshold you set, 90 days by default. An issue younger than the unit reads today, this week or this month. Off by default, one checkbox in the settings.</p></div>
         <div class="card"><h3>Progress that matches the view</h3><p>On a Projects table grouped by parent issue, GitHub's sub-issue progress counts every sub-issue, filtered out or not. An optional replacement counts only the ones inside the scope the view is narrowed to, a release for example, with one field or several, and counts a sub-issue as done when a field has the value you choose or when it is closed. The scope shows as tags: <code>12 / 18 done</code> followed by <code>release:2.1</code>.</p></div>
         <div class="card"><h3>Pull request badges</h3><p>On the pull request list and on Projects views that contain pull requests: whether the author is a first-time contributor, external, a contributor, a collaborator, a member or a bot, plus optional badges for forks, size and merge state.</p></div>
-        <div class="card"><h3>Who they are to you</h3><p>A button after a username on an issue or pull request says whether that person is a member of the organization, or else new to it, on a first pull request here, returning or a regular, and a count appears when they already hold more than your limit. Pressing it opens the merged, open and closed pull requests and the assigned issues for the repository and for the organization. Nothing is read until you press it. Off by default.</p></div>
+        <div class="card"><h3>Who they are to you</h3><p>A button after a username on an issue or pull request says whether that person is a member of the organization, or else new to it, on a first pull request here, returning or a regular, and a count appears when they already hold more than your limit. Pressing it opens the merged, open and closed pull requests and the assigned issues for the repository and for the organization. Whether someone is a member of the organization shows at once; everything else waits until you press it. Off by default.</p></div>
         <div class="card"><h3>Epics as a board</h3><p>An issue with sub-issues gets a List and Kanban toggle. The board groups the sub-issues by any field they carry, orders each column by another, filters everything down to one value of a third, and hides the closed ones on request. Drag a card to another column and the field value, or the issue state, is written back to GitHub.</p></div>
         <div class="card"><h3>Sidebar out of the way</h3><p>A chevron in the gutter hides an issue's whole metadata column, and the issue body and the board take the width. It holds on every issue until you press it again, and a setting can hide just the Projects section instead.</p></div>
         <div class="card"><h3>Search from the address bar</h3><p>Type <code>@gh</code>, a space, a shortcut and a few words: <code>@gh repo web</code> lists the repositories, issues or pull requests that match as you type. Each shortcut adds its own GitHub qualifiers, such as <code>org:acme</code>, and repository names match on any part of the name.</p></div>
@@ -538,7 +539,7 @@
 
 
       <h3 style="margin-top:28px">Contributor load</h3>
-      <p class="muted" style="font-size:14px">A button after a username on an issue or pull request. It reads <em>Contributor</em> until pressed and shows a turning ring while it looks the person up, then becomes their status: <em>Member</em> for someone in the organization, otherwise <em>New contributor</em> with no merged pull request in the organization, <em>First PR here</em> with some elsewhere but none in this repository, <em>Returning</em> and, from the number you set (5 by default), <em>Regular</em>. Above the assigned limit an amber count is added, reading assigned over open pull requests, and it fills in when that second number is zero. Pressing the button opens the numbers for the repository and the organization, grouped as pull requests and issues, each a link to the matching search, and the open issues the person holds, each carrying the pull request that closes it when there is one. An optional setting reads the author and the assignees on its own when an issue opens.</p>
+      <p class="muted" style="font-size:14px">A button after a username on an issue or pull request. It reads <em>Contributor</em> until pressed and shows a turning ring while it looks the person up, then becomes their status: <em>Member</em> for someone in the organization, otherwise <em>New contributor</em> with no merged pull request in the organization, <em>First PR here</em> with some elsewhere but none in this repository, <em>Returning</em> and, from the number you set (5 by default), <em>Regular</em>. Above the assigned limit an amber count is added, reading assigned over open pull requests, and it fills in when that second number is zero. Pressing the button opens the numbers for the repository and the organization, in sections for pull requests and issues, each a link to the matching search, and the open issues the person holds, two in view and the rest below a scroll, each carrying the pull request that closes it when there is one. Whether a person belongs to the organization is the one exception: it is asked for every name on the page in a shared request, so members are marked at once, and a setting turns that off. Another optional setting reads the author and the assignees on its own when an issue opens.</p>
       <div class="panel gh-card mock-load" id="ex-load" style="max-width:700px;padding:14px 16px">
         <div class="cmt"><span class="av"></span><span class="who">t-nakamura</span><span class="ld ld-g">First PR here</span><span class="when">3 hours ago</span><span class="said">I would like to take this one.</span></div>
         <div class="cmt"><span class="av"></span><span class="who">priya-s</span><span class="ld ld-m">Member</span><span class="when">2 hours ago</span><span class="said">Can you assign this to me?</span></div>
@@ -546,20 +547,20 @@
         <div class="cmt"><span class="av"></span><span class="who">a-whitfield</span><span class="ld ld-g">New contributor<span class="ld-n ld-idle">3/0</span></span><span class="when">32 minutes ago</span><span class="said">Assign me please.</span></div>
         <div class="card2">
           <div class="ch"><span class="cn">m.ortega</span><span class="ld ld-b ctag">Regular</span></div>
-          <table><thead><tr><th></th><th>webapp</th><th>acme</th></tr></thead>
-            <tbody><tr class="grp"><td colspan="3">Pull requests</td></tr>
-            <tr><td>Merged</td><td>14</td><td>38</td></tr>
-            <tr><td>Open</td><td>2</td><td>3</td></tr>
-            <tr><td>Closed, not merged</td><td>1</td><td>4</td></tr></tbody>
-            <tbody><tr class="grp"><td colspan="3">Issues</td></tr>
-            <tr><td>Assigned, open</td><td>3</td><td>4</td></tr>
-            <tr><td>Assigned, done</td><td>11</td><td>29</td></tr></tbody>
-          </table>
-          <div class="csub">Open issues</div>
-          <div class="cr linked"><div class="cm"><span class="cref">webapp#1521</span><span class="cpr">PR #1544</span></div><div class="ct">Retry policy is never applied to the webhook sender</div></div>
-          <div class="cr"><div class="cm"><span class="cref">webapp#1498</span></div><div class="ct">Keyboard shortcuts stop working after the results list reloads</div></div>
-          <div class="cr linked"><div class="cm"><span class="cref">docs#312</span><span class="cpr">PR #318</span></div><div class="ct">Install page still points at the old package name</div></div>
-          <div class="cmore">1 more, open the full list</div>
+          <div class="sec"><div class="ln sh"><span>Pull requests</span><span>webapp</span><span>acme</span></div>
+            <div class="ln"><span>Merged</span><span>14</span><span>38</span></div>
+            <div class="ln"><span>Open</span><span>2</span><span>3</span></div>
+            <div class="ln"><span>Closed, not merged</span><span>1</span><span>4</span></div></div>
+          <div class="sec"><div class="ln sh"><span>Issues</span><span>webapp</span><span>acme</span></div>
+            <div class="ln"><span>Assigned, open</span><span>3</span><span>4</span></div>
+            <div class="ln"><span>Assigned, done</span><span>11</span><span>29</span></div></div>
+          <div class="sec"><div class="ln sh"><span>Open issues (4)</span></div>
+            <div class="clist"><span class="thumb"></span>
+              <div class="cr linked"><div class="cm"><span class="cref">webapp#1521</span><span class="cpr">PR #1544</span></div><div class="ct">Retry policy is never applied to the webhook sender</div></div>
+              <div class="cr"><div class="cm"><span class="cref">webapp#1498</span></div><div class="ct">Keyboard shortcuts stop working after the results list reloads</div></div>
+              <div class="cr linked"><div class="cm"><span class="cref">docs#312</span><span class="cpr">PR #318</span></div><div class="ct">Install page still points at the old package name</div></div>
+              <div class="cr"><div class="cm"><span class="cref">webapp#1402</span></div><div class="ct">Export button is hidden on narrow screens</div></div>
+            </div></div>
           <div class="cfoot">Read 2 min ago<svg class="crf" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5a5.5 5.5 0 1 0 5.17 3.63.75.75 0 0 1 1.41.5A7 7 0 1 1 8 1a6.97 6.97 0 0 1 4.5 1.64V1.75a.75.75 0 0 1 1.5 0v3a.75.75 0 0 1-.75.75h-3a.75.75 0 0 1 0-1.5h1.3A5.47 5.47 0 0 0 8 2.5Z"/></svg></div>
         </div>
       </div>
@@ -610,7 +611,7 @@
         <div class="step"><h3>Keep what you chose</h3><p>From the returned values it keeps only the fields and labels you configured, in your order, and hands back <code>field</code>, <code>value</code>, <code>colour</code> and the creation date per issue.</p></div>
         <div class="step"><h3>Or draw a board</h3><p>When the kanban toggle is on, the sub-issues of the open issue are read in one <code>subIssues</code> query with every field value they carry, and drawn as columns in place of the list. Grouping, ordering and filtering happen in the page, so switching any of them is instant. Dropping a card in another column is the one write: <code>createIssueFieldValue</code> for a field, <code>closeIssue</code> or <code>reopenIssue</code> for the state, with the card moving back if GitHub refuses.</p></div>
         <div class="step"><h3>Or count a scope</h3><p>With the sub-issue progress on, the issues behind the progress bars of a grouped table are read in batches of ten with their sub-issues, only the state of each unless a scope or a done field is set, and then the values of their fields. The scope comes from the value the view is sliced by, or from a term of its filter, and the counts are drawn in place of GitHub's own bar.</p></div>
-        <div class="step"><h3>Or ask about a person</h3><p>With the contributor button on, pressing it runs one request of <code>search</code> counts for that login: merged, open and closed pull requests and assigned and finished issues, for the repository and for the organization, plus the open assigned issues with <code>closingIssuesReferences</code> pairing each with the pull request that closes it. Nothing is read until you press, and each person is kept until the tab is closed, so a name that appears ten times costs one request. Whether the person is a member of the organization comes in the same request.</p></div>
+        <div class="step"><h3>Or ask about a person</h3><p>With the contributor button on, pressing it runs one request of <code>search</code> counts for that login: merged, open and closed pull requests and assigned and finished issues, for the repository and for the organization, plus the open assigned issues with <code>closingIssuesReferences</code> pairing each with the pull request that closes it. Nothing is read until you press, and each person is kept until the tab is closed, so a name that appears ten times costs one request. Whether the person is a member of the organization comes in the same request, and is also asked for every name on the page in one shared request so that <em>Member</em> shows without a press.</p></div>
         <div class="step"><h3>Or search from the address bar</h3><p>After the <code>@gh</code> keyword, the first word picks a shortcut and the rest is sent, with that shortcut's qualifiers, to GitHub <code>search</code> as you type. For repositories inside an <code>org:</code> or <code>user:</code>, the owner's repository list is read once and matched in the background script, which is what lets part of a name match.</p></div>
         <div class="step"><h3>Render badges</h3><p>The content script inserts a badge per value right after the issue type badge, after the issue number in project tables, or under the title on board cards, plus the age badge when enabled. It re-renders when GitHub redraws the page.</p></div>
       </div>
@@ -717,7 +718,7 @@
       <h2>Privacy</h2>
       <div class="grid">
         <div class="card"><h3>What is stored</h3><p>Your token, your field list, your preferences and your pinned issues, in <code>chrome.storage.local</code>, on your device. Uninstalling removes all of it.</p></div>
-        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. With the contributor button on, the login you press it for, or the author and the assignees if you let them be read on their own, with the repository and organization of the page. After the <code>@gh</code> keyword in the address bar, the words you type and the shortcut's qualifiers. The only writes are the sub-issue link you click and the card you drag on the board. Nothing else, to no one else.</p></div>
+        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. With the contributor button on, the logins of the people named on the page, to tell which belong to the organization, the login you press the button for, or the author and the assignees if you let them be read on their own, with the repository and organization of the page. After the <code>@gh</code> keyword in the address bar, the words you type and the shortcut's qualifiers. The only writes are the sub-issue link you click and the card you drag on the board. Nothing else, to no one else.</p></div>
         <div class="card"><h3>What is not</h3><p>No analytics, telemetry, crash reports, cookies or third-party services. The full policy is in <a href="https://github.com/MilosPaunovic/github-issue-toolkit/blob/main/PRIVACY.md">PRIVACY.md</a>.</p></div>
       </div>
     </div>

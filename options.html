@@ -328,6 +328,8 @@
         <p class="desc">Adds a small button after a person's name on an issue or pull request. Press it to see who they are to this repository, new, returning or a regular, and what they already hold: pull requests merged, open or closed without merging, and issues assigned to them. Handy before you reply to a stranger or hand someone one more thing. Nothing is looked up until you press the button, each person is looked up once, and the answer stays until you close the tab.</p>
         <p class="hint sample">It looks like this next to a name: <i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
         <label class="check"><input id="load-enabled" type="checkbox"> Show the button after usernames (off by default)</label>
+        <label class="check"><input id="load-members" type="checkbox"> Mark members of the organization right away (on by default)</label>
+        <p class="hint">Asks GitHub once for every name on the page, in a shared request, and shows <b>Member</b> in place of the button for those who belong to the organization. Nothing else about them is read until you press the button.</p>
         <label class="check"><input id="load-auto" type="checkbox"> Look up the author and the assignees on their own, without pressing (off by default)</label>
         <p class="hint">Costs one request for each of them when an issue opens, and shows their status on sight. Everyone else is still looked up when you press their button.</p>
       </section>
@@ -345,7 +347,7 @@
         <div class="marks">
           <span><i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i></span><span class="t"><b>Not looked up yet.</b> Press it to look the person up.</span>
           <span><i class="mk-pill mk-b"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="26 12"/></svg> Looking up</i></span><span class="t">The ring turns while the answer is on its way.</span>
-          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> Shown before the others.</span>
+          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> Shown right away.</span>
           <span><i class="mk-pill mk-g">New contributor</i></span><span class="t">No merged pull request in the organization yet.</span>
           <span><i class="mk-pill mk-g">First PR here</i></span><span class="t">Merged elsewhere in the organization, not in this repository yet.</span>
           <span><i class="mk-pill">Returning</i></span><span class="t">Merged here, fewer than the regular limit.</span>
@@ -354,7 +356,7 @@
           <span><i class="mk-n mk-idle">3/0</i></span><span class="t">Over the limit and <b>nothing pushed yet</b>.</span>
           <span><i class="mk-pill mk-err"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Try again</i></span><span class="t">Could not be looked up, usually a missing token. Press it to try again.</span>
         </div>
-        <p class="hint">The card the button opens has the numbers for the repository and for the whole organization, grouped as pull requests and issues, each a link to the matching GitHub search, then the open issues with the pull request that closes each, and how old the answer is with a refresh button beside it. Your own name gets no button. Counts cover the repositories your token can read, so a fine-grained token limited to a few repositories sees only those.</p>
+        <p class="hint">The card the button opens has the numbers for the repository and for the whole organization, split into sections for pull requests and issues, each a link to the matching GitHub search, then the open issues with the pull request that closes each, two in view and the rest below a scroll, and how old the answer is with a refresh button beside it. Your own name gets no button. Counts cover the repositories your token can read, so a fine-grained token limited to a few repositories sees only those.</p>
       </section>
     </div>
 

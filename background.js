@@ -326,6 +326,31 @@ async function fetchContributorLoad(ref) {
   };
 }
 
+// Whether each of a list of people belongs to an organization, for the mark that shows at once. One
+// lookup per person goes in a shared request, so a long thread costs a handful of requests rather than
+// one for every name. A person GitHub cannot find, a bot for example, comes back as null.
+const MEMBER_CHUNK = 40;
+const MEMBER_MAX = 200;
+
+async function fetchMembers(ref) {
+  const { token } = await getSettings();
+  if (!token) return { error: "NO_TOKEN" };
+  const org = String((ref && ref.org) || "").trim();
+  const logins = [...new Set(((ref && ref.logins) || []).map((l) => String(l).trim()).filter(Boolean))].slice(0, MEMBER_MAX);
+  if (!org || !logins.length) return { error: "An organization and at least one login are needed." };
+  const members = {};
+  for (let i = 0; i < logins.length; i += MEMBER_CHUNK) {
+    const chunk = logins.slice(i, i + MEMBER_CHUNK);
+    const lookups = chunk.map((login, n) => `m${n}: user(login: ${JSON.stringify(login)}) { organization(login: ${JSON.stringify(org)}) { login } }`).join("\n");
+    const data = await graphql(token, `{ ${lookups} }`, { partial: true });
+    chunk.forEach((login, n) => {
+      const node = data[`m${n}`];
+      members[login] = node ? Boolean(node.organization) : null;
+    });
+  }
+  return { members };
+}
+
 // ---------------------------------------------------------------------------
 // Address bar search: `@gh <shortcut> <words>`, each shortcut a kind of item and GitHub qualifiers
 // ---------------------------------------------------------------------------
@@ -1030,6 +1055,9 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg.type === "viewerLogin") {
     return reply(viewer().then((login) => ({ login })), sendResponse);
+  }
+  if (msg.type === "fetchMembers") {
+    return reply(fetchMembers(msg.ref), sendResponse);
   }
   if (msg.type === "fetchContributorLoad") {
     return reply(fetchContributorLoad(msg.contributor), sendResponse);

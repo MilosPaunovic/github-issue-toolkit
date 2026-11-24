@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -775,6 +775,9 @@
   let loadAnchor = null;
   let loadHoverTimer = null;
   let loadViewer = null;
+  // Who belongs to the organization, known before anyone presses a button: "org/login" -> true, false or null when it could not be told.
+  const loadMembership = new Map();
+  let loadMembersBusy = false;
 
   // Only issue and pull request conversations. The question "who is this person to us" only comes up
   // where someone is asking for work or offering it.
@@ -880,6 +883,15 @@
     if (!entry || !entry.data) {
       const state = loadPending.has(key) ? "busy" : (entry ? "err" : "idle");
       button.dataset.state = state;
+      // Membership is known from the batch before the person is read, and is worth showing at once.
+      if (state === "idle" && settings.loadMembers && loadMembership.get(`${org}/${login.toLowerCase()}`) === true) {
+        button.dataset.status = "member";
+        button.append("Member");
+        const text = `${login} is a member of ${org}. Press for the details.`;
+        button.title = text;
+        button.setAttribute("aria-label", text);
+        return;
+      }
       if (state === "busy") {
         button.setAttribute("aria-busy", "true");
         button.append(loadSpinner(), "Looking up");
@@ -951,15 +963,18 @@
   }
 
   // Puts the button after a name. Returns the button, or null when this name gets none.
+  function loadHasButton(anchor) {
+    const next = anchor.nextElementSibling;
+    return Boolean(next && next.classList.contains("gsf-load"));
+  }
+
   function loadDecorate(anchor, ref, viewer) {
-    if (anchor.dataset.gsfLoad || !anchor.isConnected) return null;
+    // The page may rebuild a comment header and drop what was put in it, so what counts is the button itself, not a mark on the name.
+    if (!anchor.isConnected || loadHasButton(anchor)) return null;
     // An avatar on its own is not a name; the sidebar's assignee link is an avatar with the login beside it.
     if (anchor.querySelector("img") && !anchor.textContent.trim()) return null;
     const login = loadLogin(anchor);
     if (!login || login.toLowerCase() === viewer) return null;
-    const next = anchor.nextElementSibling;
-    if (next && next.classList.contains("gsf-load")) return null;
-    anchor.dataset.gsfLoad = "1";
     const button = document.createElement("button");
     button.type = "button";
     button.className = "gsf-load";
@@ -988,6 +1003,33 @@
       // A person who could not be read is left alone here, so a bad token is not asked again on every scan.
       if (!loadCache.has(key) && !loadPending.has(key)) loadFetch(ref, login, false);
     }
+    if (settings.loadMembers) loadMarkMembers(ref);
+  }
+
+  // One request for every name on the page that is not yet known to belong or not to the organization.
+  // Names that appear while it is out wait for the next scan, and a failed lookup is not asked again.
+  async function loadMarkMembers(ref) {
+    if (loadMembersBusy) return;
+    const asked = [...new Set([...document.querySelectorAll(".gsf-load")]
+      .filter((button) => button.dataset.org === ref.org && !loadMembership.has(`${ref.org}/${button.dataset.login.toLowerCase()}`))
+      .map((button) => button.dataset.login))];
+    if (!asked.length) return;
+    loadMembersBusy = true;
+    let answer = null;
+    try {
+      const res = await api.runtime.sendMessage({ type: "fetchMembers", ref: { org: ref.org, logins: asked } });
+      answer = res && !res.error ? res.members : null;
+    } catch {
+      // The worker is gone, or the extension reloaded under this tab.
+    }
+    for (const login of asked) {
+      const known = answer && Object.prototype.hasOwnProperty.call(answer, login) ? answer[login] : null;
+      loadMembership.set(`${ref.org}/${login.toLowerCase()}`, known);
+    }
+    loadMembersBusy = false;
+    loadRepaintAll();
+    // Anyone added to the page meanwhile.
+    schedule();
   }
 
   function loadCardElement() {
@@ -1040,45 +1082,53 @@
     return row;
   }
 
-  function loadTable(ref, login, data) {
-    const table = document.createElement("table");
-    table.className = "gsf-load-table";
-    const head = table.createTHead().insertRow();
-    head.append(document.createElement("th"));
-    for (const name of [ref.repo, ref.org]) {
-      const th = document.createElement("th");
-      th.textContent = name;
-      th.title = name;
-      head.append(th);
+  // The card is a stack of sections, each with its own heading and a rule above it: who the person is,
+  // their pull requests, their issues, the issues they hold open, and when it was read. The two sections
+  // of counts share their columns, the repository and the organization, and name them in their headings.
+  function loadSection(title, columns) {
+    const section = document.createElement("section");
+    section.className = "gsf-load-section";
+    const head = document.createElement("div");
+    head.className = "gsf-load-line gsf-load-sectionhead";
+    const name = document.createElement("span");
+    name.textContent = title;
+    head.append(name);
+    for (const column of columns || []) {
+      const label = document.createElement("span");
+      label.textContent = column;
+      label.title = column;
+      head.append(label);
     }
-    // Pull requests and issues are two different questions, so each gets its own heading.
-    for (const [title, rows] of LOAD_GROUPS) {
-      const body = table.createTBody();
-      const heading = body.insertRow();
-      heading.className = "gsf-load-group";
-      const cell = heading.insertCell();
-      cell.colSpan = 3;
-      cell.textContent = title;
-      for (const [label, key, terms] of rows) {
-        const row = body.insertRow();
-        row.insertCell().textContent = label;
-        [[`repo:${ref.org}/${ref.repo}`, data[key].repo], [`org:${ref.org}`, data[key].org]].forEach(([scope, value]) => {
-          const count = row.insertCell();
-          if (value === null || value === undefined) {
-            count.textContent = "-";
-            return;
-          }
+    section.append(head);
+    return section;
+  }
+
+  function loadCounts(ref, login, data, title, rows) {
+    const section = loadSection(title, [ref.repo, ref.org]);
+    for (const [label, key, terms] of rows) {
+      const line = document.createElement("div");
+      line.className = "gsf-load-line";
+      const name = document.createElement("span");
+      name.textContent = label;
+      line.append(name);
+      [[`repo:${ref.org}/${ref.repo}`, data[key].repo], [`org:${ref.org}`, data[key].org]].forEach(([scope, value]) => {
+        const cell = document.createElement("span");
+        if (value === null || value === undefined) {
+          cell.textContent = "-";
+        } else {
           const link = document.createElement("a");
           link.href = loadSearchUrl(scope, terms(login));
           link.target = "_blank";
           link.rel = "noopener";
           link.textContent = String(value);
           if (!value) link.className = "gsf-load-none";
-          count.append(link);
-        });
-      }
+          cell.append(link);
+        }
+        line.append(cell);
+      });
+      section.append(line);
     }
-    return table;
+    return section;
   }
 
   function loadCardBuild(ref, login) {
@@ -1105,7 +1155,6 @@
       tag.title = status.hint;
       head.append(tag);
     }
-
     card.append(head);
 
     // The counts are as old as the page, which is long enough for someone to open the very pull request
@@ -1134,18 +1183,18 @@
       return card;
     }
 
-    card.append(loadTable(ref, login, data));
+    card.append(
+      loadCounts(ref, login, data, "Pull requests", LOAD_GROUPS[0][1]),
+      loadCounts(ref, login, data, "Issues", LOAD_GROUPS[1][1])
+    );
 
     if (data.items.length) {
-      const title = document.createElement("div");
-      title.className = "gsf-load-sub";
-      title.textContent = "Open issues";
-      card.append(title);
+      const section = loadSection(`Open issues (${data.assigned.org || data.items.length})`);
+      // Two are shown and the rest scroll, so a person with many open issues does not push the card off the screen.
       const list = document.createElement("div");
       list.className = "gsf-load-list";
       data.items.slice(0, LOAD_CARD_ITEMS).forEach((item) => list.append(loadRow(item)));
-      card.append(list);
-
+      section.append(list);
       const rest = (data.assigned.org || 0) - data.items.length;
       if (rest > 0) {
         const more = document.createElement("a");
@@ -1154,8 +1203,9 @@
         more.target = "_blank";
         more.rel = "noopener";
         more.textContent = `${rest} more, open the full list`;
-        card.append(more);
+        section.append(more);
       }
+      card.append(section);
     }
 
     card.append(foot);
@@ -1219,9 +1269,13 @@
     const entry = loadCache.get(loadKey(ref, login));
     loadAnchor = button;
     if (!entry || !entry.data) await loadFetch(ref, login, Boolean(entry));
-    if (!button.isConnected || loadAnchor !== button) return;
+    if (loadAnchor !== button) return;
+    // The page can rebuild a header while the person is being read and drop the button that was pressed; the card opens at the one that took its place.
+    const target = button.isConnected ? button : [...document.querySelectorAll(".gsf-load")].find((other) => other.dataset.gsfKey === button.dataset.gsfKey);
+    if (!target) return;
+    loadAnchor = target;
     loadCardBuild(ref, login);
-    loadCardPlace(button);
+    loadCardPlace(target);
   }
 
   // `drop` also forgets what was read, which only a different token calls for.
@@ -1230,10 +1284,10 @@
       loadCache.clear();
       loadPending.clear();
       loadViewer = null;
+      loadMembership.clear();
     }
     loadCardClose();
     document.querySelectorAll(".gsf-load").forEach((el) => el.remove());
-    document.querySelectorAll("[data-gsf-load]").forEach((el) => delete el.dataset.gsfLoad);
   }
 
   document.addEventListener("click", (event) => {
@@ -1260,7 +1314,7 @@
     const target = event.target;
     if (!target || !target.closest) return;
     const anchor = target.closest(LOAD_HOVER_SELECTOR);
-    if (!anchor || anchor.dataset.gsfLoad) return;
+    if (!anchor || loadHasButton(anchor)) return;
     clearTimeout(loadHoverTimer);
     loadHoverTimer = setTimeout(async () => {
       const ref = loadRef();
@@ -2619,7 +2673,8 @@
       clearProgress();
       schedule();
     }
-    if (changes.loadEnabled || changes.loadAuto || changes.loadLimit || changes.loadRegular) {
+    if (changes.loadEnabled || changes.loadAuto || changes.loadMembers || changes.loadLimit || changes.loadRegular) {
+      if (changes.loadMembers) settings.loadMembers = changes.loadMembers.newValue !== false;
       if (changes.loadEnabled) settings.loadEnabled = changes.loadEnabled.newValue === true;
       if (changes.loadAuto) settings.loadAuto = changes.loadAuto.newValue === true;
       if (changes.loadLimit) settings.loadLimit = Math.max(0, Number(changes.loadLimit.newValue) || 0);
@@ -2661,7 +2716,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembers", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -2676,6 +2731,7 @@
     settings.sidebarToggle = stored.sidebarToggle !== false;
     settings.loadEnabled = stored.loadEnabled === true;
     settings.loadAuto = stored.loadAuto === true;
+    settings.loadMembers = stored.loadMembers !== false;
     settings.loadRegular = Number.isFinite(Number(stored.loadRegular)) && stored.loadRegular !== undefined ? Math.max(1, Number(stored.loadRegular)) : 5;
     settings.loadLimit = Number.isFinite(Number(stored.loadLimit)) && stored.loadLimit !== undefined ? Math.max(0, Number(stored.loadLimit)) : 1;
     sidebarCollapsed = stored.sidebarCollapsed === true;
