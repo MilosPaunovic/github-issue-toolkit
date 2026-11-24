@@ -4,7 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The settings page is split into tabs, Home, Access, Badges, Epics, Issue pages and Search, instead of one long page. Home is a short welcome with the state of the token and of the site access and a map of the other tabs; it opens by itself the first time and not again once another tab is picked, after which the page opens on the tab used last. A Save button stays at the bottom of every tab and saves all of them at once.
+- The toolbar icon opens the settings page again, as it did before 2.10.0.
+
+### Removed
+
+- The toolbar dropdown of quick switches. Every switch it held is on the settings page, in the tab of its feature.
 
 ## [2.10.1] - 2026-10-29
 

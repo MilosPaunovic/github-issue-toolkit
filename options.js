@@ -37,13 +37,66 @@ const DEFAULT_SHORTCUTS = [
 ];
 const SHORTCUT_KINDS = { repo: "Repositories", issue: "Issues", pr: "Pull requests" };
 
+const TABS = ["home", "access", "badges", "epics", "pages", "search"];
+const savebar = document.getElementById("savebar");
+let currentTab = "";
+
 let fields = [];
 let shortcuts = [];
 let defaultShortcut = 0;
 
+// The save bar is always there, except on Home while it has nothing to say.
+function updateBar() {
+  savebar.hidden = currentTab === "home" && !status.textContent;
+}
+
 function setStatus(text, ok) {
   status.textContent = text;
   status.className = ok ? "ok" : "err";
+  updateBar();
+}
+
+// A user's own choice of tab also counts as having read the welcome, so Home opens by itself only once.
+function showTab(name, byUser) {
+  if (!TABS.includes(name)) name = "badges";
+  currentTab = name;
+  for (const id of TABS) {
+    const on = id === name;
+    document.getElementById(`panel-${id}`).hidden = !on;
+    const tab = document.getElementById(`tab-${id}`);
+    tab.setAttribute("aria-selected", String(on));
+    tab.tabIndex = on ? 0 : -1;
+  }
+  status.textContent = "";
+  status.className = "";
+  updateBar();
+  try { localStorage.setItem("tab", name); } catch (_) { /* private mode: the tab is just not remembered */ }
+  if (byUser && name !== "home" && hasChrome) api.storage.local.set({ welcomeSeen: true });
+}
+
+function initialTab(welcomeSeen) {
+  const hash = location.hash.slice(1);
+  if (TABS.includes(hash)) return hash;
+  if (!welcomeSeen) return "home";
+  let last = "";
+  try { last = localStorage.getItem("tab") || ""; } catch (_) { /* see showTab */ }
+  return TABS.includes(last) ? last : "badges";
+}
+
+document.querySelectorAll("[data-tab]").forEach((el) => el.addEventListener("click", () => showTab(el.dataset.tab, true)));
+document.querySelector(".tabs").addEventListener("keydown", (e) => {
+  const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+  if (!step) return;
+  e.preventDefault();
+  const next = TABS[(TABS.indexOf(currentTab) + step + TABS.length) % TABS.length];
+  showTab(next, true);
+  document.getElementById(`tab-${next}`).focus();
+});
+
+function renderHomeToken(token) {
+  const pill = document.getElementById("home-token");
+  pill.textContent = token ? "Token saved" : "No token yet";
+  pill.className = `pill ${token ? "ok" : "warn"}`;
 }
 
 function renderPinsCount(pins) {
@@ -190,6 +243,7 @@ async function refreshAccess() {
   if (!hasChrome || !api.permissions) return;
   const granted = await api.permissions.contains({ origins: HOSTS });
   box.hidden = granted;
+  document.getElementById("home-access").hidden = granted;
 }
 
 if (hasChrome) {
@@ -199,8 +253,9 @@ if (hasChrome) {
     setStatus(ok ? "Access to github.com granted." : "Access was not granted.", ok);
     refreshAccess();
   });
-  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadLimit", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "searchShortcuts", "searchDefault", "pins"]).then((stored) => {
+  api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadLimit", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "searchShortcuts", "searchDefault", "pins", "welcomeSeen"]).then((stored) => {
     tokenInput.value = stored.token || "";
+    renderHomeToken(String(stored.token || "").trim());
     fields = parseFields(stored.fields);
     renderChips();
     ageEnabled.checked = stored.ageEnabled === true;
@@ -224,9 +279,12 @@ if (hasChrome) {
     ageWarn.value = stored.ageWarnDays === undefined ? 90 : stored.ageWarnDays;
     loadShortcuts(stored.searchShortcuts, stored.searchDefault);
     renderPinsCount(stored.pins);
+    showTab(initialTab(stored.welcomeSeen === true), false);
   });
   api.storage.onChanged.addListener((changes, area) => {
-    if (area === "local" && changes.pins) renderPinsCount(changes.pins.newValue);
+    if (area !== "local") return;
+    if (changes.pins) renderPinsCount(changes.pins.newValue);
+    if (changes.token) renderHomeToken(String(changes.token.newValue || "").trim());
   });
   document.getElementById("pins-clear").addEventListener("click", async () => {
     await api.storage.local.set({ pins: [] });
@@ -234,6 +292,8 @@ if (hasChrome) {
   });
   document.getElementById("version").textContent = `v${api.runtime.getManifest().version}`;
 } else {
+  document.documentElement.classList.add("preview");
+  showTab(initialTab(false), false);
   renderChips();
   renderPinsCount([]);
   loadShortcuts(DEFAULT_SHORTCUTS, "repo");
@@ -262,6 +322,7 @@ document.getElementById("save").addEventListener("click", async () => {
   if (Boolean(progressDoneField.value.trim()) !== Boolean(progressDoneValue.value.trim())) return setStatus("Fill in both the field and the value that count as done, or leave both empty.", false);
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
   await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, progressEnabled: progressEnabledInput.checked, progressScopeField: progressScope.value.trim(), progressDoneField: progressDoneField.value.trim(), progressDoneValue: progressDoneValue.value.trim(), searchShortcuts: search.list, searchDefault: search.defaultName });
+  renderHomeToken(token);
   if (!token) setStatus("Saved without a token. Badges need one.", false);
   else setStatus("Saved. Reload the GitHub tab if badges do not appear.", true);
 });
