@@ -24,6 +24,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- The words in the header of the profile panel and of the assignment requests box, the title, the subtitle, the status and the age, share one baseline, instead of being centred each on its own, which left the subtitle two pixels above the title.
 - A **Discard** button beside Save, shown once something has been changed, puts every setting back to what is saved and forgets what was typed since.
 - The Save button of the settings page is larger and its bar stands out with a shadow, and once something has been changed the bar says Unsaved changes, in the accent colour with a ring around the button, until Save is pressed.
 - Pressing the contributor button, or opening a profile, on a tab that was open when the extension was reloaded no longer throws a ReferenceError: the lookup now fails the way it should, with the message to reload the page.
