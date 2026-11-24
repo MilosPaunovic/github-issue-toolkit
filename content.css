@@ -1230,3 +1230,117 @@ div:has(> .gsf-progress) {
 .gsf-profile-org[data-brand] .gsf-profile-pr:hover {
   background: color-mix(in srgb, var(--gsf-brand) 7%, var(--bgColor-default));
 }
+
+/* Assignment requests: a box above the conversation of an assigned issue, in the same flat style as the profile panel */
+.gsf-assign {
+  margin: 16px 0;
+}
+.gsf-assign[hidden] {
+  display: none;
+}
+.gsf-assign-list {
+  max-height: 330px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--borderColor-muted);
+  scrollbar-width: thin;
+  scrollbar-color: var(--borderColor-default) transparent;
+}
+.gsf-assign-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 16px;
+  color: inherit !important;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+.gsf-assign-row + .gsf-assign-row {
+  border-top: 1px solid var(--borderColor-muted);
+}
+.gsf-assign-row:hover {
+  background: var(--bgColor-muted);
+}
+.gsf-assign-row[data-hidden] {
+  opacity: 0.55;
+}
+.gsf-assign-row input {
+  flex: none;
+  margin: 4px 0 0;
+}
+.gsf-assign-text {
+  min-width: 0;
+  flex: 1;
+}
+.gsf-assign-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fgColor-muted);
+}
+.gsf-assign-meta b {
+  font-weight: 600;
+  color: var(--fgColor-default);
+}
+.gsf-assign-meta a {
+  margin-left: auto;
+  color: var(--fgColor-accent) !important;
+  text-decoration: none !important;
+}
+.gsf-assign-meta a:hover {
+  text-decoration: underline !important;
+}
+.gsf-assign-preview {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.gsf-assign-mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  background: var(--bgColor-attention-muted, rgba(212, 167, 44, 0.3));
+  color: inherit;
+}
+.gsf-assign-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--borderColor-default);
+}
+.gsf-assign-button {
+  padding: 3px 12px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 6px;
+  background: var(--bgColor-muted);
+  color: var(--fgColor-default);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.gsf-assign-button:hover {
+  border-color: var(--fgColor-muted);
+}
+.gsf-assign-danger {
+  border-color: var(--borderColor-danger-emphasis, var(--fgColor-danger));
+  background: var(--bgColor-danger-muted);
+  color: var(--fgColor-danger);
+}
+.gsf-assign-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fgColor-accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.gsf-assign-link:hover {
+  text-decoration: underline;
+}
+.gsf-assign-note {
+  font-size: 12px;
+  color: var(--fgColor-muted);
+}
