@@ -22,7 +22,7 @@ const assignEnabledInput = document.getElementById("assign-enabled");
 const assignWordsInput = document.getElementById("assign-words");
 const assignChips = document.getElementById("assign-chips");
 // The same list as content.js, which uses it when none is saved.
-const ASSIGN_DEFAULT_WORDS = ["assign", "work on", "working on", "take this", "pick this", "pick up", "can i", "may i", "i'd like to", "i would like to", "i want to", "let me", "contribute", "claim", "interested"];
+const ASSIGN_DEFAULT_WORDS = ["assign", "work on", "working on", "take this", "take on", "pick this", "pick up", "can i", "may i", "i'd like to", "i would like to", "would love to", "i'd love to", "i want to", "let me work", "let me take", "let me try", "let me handle", "give it a shot", "give it a try", "have a go", "still available", "is this available", "start working", "volunteer", "claim", "contribute", "interested"];
 let assignWords = ASSIGN_DEFAULT_WORDS.slice();
 const loadRegular = document.getElementById("load-regular");
 const progressEnabledInput = document.getElementById("progress-enabled");
