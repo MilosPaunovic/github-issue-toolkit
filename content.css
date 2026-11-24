@@ -546,55 +546,85 @@
   fill: currentColor;
 }
 
-/* Contributor load: the mark next to a username and the card it opens */
+/* Contributor load: the button next to a username and the card it opens */
 .gsf-load {
-  display: inline-block;
-  vertical-align: baseline;
-  margin-left: 5px;
-  text-decoration: none !important;
-  border: 0;
-  transition: transform 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-sizing: border-box;
+  height: 20px;
+  margin: 0 0 0 5px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--fgColor-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
 }
 .gsf-load:hover {
-  transform: scale(1.25);
+  background: var(--bgColor-neutral-muted);
+  color: var(--fgColor-default);
 }
-.gsf-load-dot {
-  width: 6px;
-  height: 6px;
-  position: relative;
-  top: -1px;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 0;
+/* Not read yet: only an icon, quiet until the pointer comes near it. */
+.gsf-load[data-state="idle"] {
+  opacity: 0.55;
 }
-/* Nothing assigned: an outline, because an empty slot is the quiet case. */
-.gsf-load-dot[data-state="free"] {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--fgColor-muted);
-  opacity: 0.45;
+.gsf-load[data-state="idle"]:hover {
+  opacity: 1;
 }
-/* At the limit: filled, but still only a dot, since no decision is needed. */
-.gsf-load-dot[data-state="at"] {
-  background: var(--fgColor-success);
-  opacity: 0.75;
+.gsf-load[data-state="busy"] {
+  animation: gsf-load-pulse 0.9s ease-in-out infinite;
 }
-.gsf-load-dot[data-state="err"] {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--fgColor-danger);
+.gsf-load[data-state="err"] {
+  border-color: var(--borderColor-danger-muted, var(--fgColor-danger));
+  color: var(--fgColor-danger);
 }
-/* Over the limit: the digits carry how far over, the colour only says that it is over. */
-.gsf-load-count {
-  padding: 0 6px;
+@keyframes gsf-load-pulse {
+  50% { opacity: 0.35; }
+}
+/* Read: the button is the status. */
+.gsf-load[data-state="ready"] {
+  padding: 0 8px;
+  border-color: var(--borderColor-default);
+}
+.gsf-load[data-status="new"],
+.gsf-load[data-status="first"],
+.gsf-load-tag[data-status="new"],
+.gsf-load-tag[data-status="first"] {
+  border-color: var(--borderColor-success-muted);
+  background: var(--bgColor-success-muted);
+  color: var(--fgColor-success);
+}
+.gsf-load[data-status="returning"],
+.gsf-load-tag[data-status="returning"] {
+  color: var(--fgColor-muted);
+}
+.gsf-load[data-status="regular"],
+.gsf-load-tag[data-status="regular"] {
+  border-color: var(--borderColor-accent-muted);
+  background: var(--bgColor-accent-muted);
+  color: var(--fgColor-accent);
+}
+/* Holding more than the limit: the digits carry how far over, the colour only says that it is over. */
+.gsf-load-over {
+  padding: 0 5px;
   border-radius: 9999px;
   font-size: 11px;
   font-weight: 600;
-  line-height: 17px;
+  line-height: 15px;
   font-variant-numeric: tabular-nums;
   color: var(--fgColor-attention);
   background: var(--bgColor-attention-muted);
 }
 /* Over the limit with nothing pushed for any of it, which is the case worth acting on. */
-.gsf-load-count[data-idle] {
+.gsf-load-over[data-idle] {
   color: var(--fgColor-onEmphasis);
   background: var(--bgColor-attention-emphasis);
 }
@@ -603,7 +633,7 @@
   position: fixed;
   z-index: 2147483000;
   box-sizing: border-box;
-  width: 310px;
+  width: 340px;
   padding: 10px;
   border: 1px solid var(--borderColor-default);
   border-radius: 10px;
@@ -625,12 +655,12 @@
 .gsf-load-head {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   padding: 2px 2px 9px 4px;
-  margin-bottom: 7px;
+  margin-bottom: 4px;
   border-bottom: 1px solid var(--borderColor-muted);
 }
-/* A long login must give way rather than push the counts and the refresh button off the card. */
+/* A long login must give way rather than push the status and the refresh button off the card. */
 .gsf-load-name {
   min-width: 0;
   overflow: hidden;
@@ -638,27 +668,71 @@
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.gsf-load-stats {
-  flex: none;
-  margin-left: auto;
-  font-size: 11.5px;
-  color: var(--fgColor-muted);
-  white-space: nowrap;
-}
-.gsf-load-stats a {
   color: inherit !important;
   text-decoration: none !important;
 }
-.gsf-load-stats a:hover {
-  color: var(--fgColor-default) !important;
+.gsf-load-name:hover {
+  text-decoration: underline !important;
 }
-.gsf-load-stats b {
+.gsf-load-tag {
+  flex: none;
+  padding: 0 8px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  color: var(--fgColor-muted);
+}
+.gsf-load-table {
+  width: 100%;
+  margin: 0 0 4px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.gsf-load-table th {
+  max-width: 100px;
+  overflow: hidden;
+  padding: 4px 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fgColor-muted);
+}
+.gsf-load-table td {
+  padding: 3px 6px;
+  border-top: 1px solid var(--borderColor-muted);
+  text-align: right;
+}
+.gsf-load-table td:first-child {
+  text-align: left;
+  color: var(--fgColor-muted);
+}
+.gsf-load-table a {
   font-weight: 600;
-  color: var(--fgColor-default);
+  color: var(--fgColor-default) !important;
+  text-decoration: none !important;
 }
-.gsf-load-stats a.gsf-load-none b {
-  color: var(--fgColor-attention);
+.gsf-load-table a:hover {
+  text-decoration: underline !important;
+}
+.gsf-load-table a.gsf-load-none {
+  font-weight: 400;
+  color: var(--fgColor-muted) !important;
+}
+.gsf-load-sub {
+  padding: 6px 7px 2px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--fgColor-muted);
+}
+.gsf-load-foot {
+  padding: 6px 7px 0;
+  font-size: 11.5px;
+  color: var(--fgColor-muted);
 }
 .gsf-load-refresh {
   display: grid;
@@ -683,7 +757,7 @@
   animation: gsf-load-spin 0.7s linear infinite;
 }
 .gsf-load-card[data-busy] .gsf-load-list,
-.gsf-load-card[data-busy] .gsf-load-stats {
+.gsf-load-card[data-busy] .gsf-load-table {
   opacity: 0.45;
 }
 @keyframes gsf-load-spin {

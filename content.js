@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadLimit: 1, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -311,6 +311,7 @@
     syncSidebar();
     scanPulls().catch((err) => console.warn("[github-issue-toolkit]", err));
     scanProgress().catch((err) => console.warn("[github-issue-toolkit]", err));
+    scanLoad().catch((err) => console.warn("[github-issue-toolkit]", err));
     const rows = collectRows();
     if (!rows.length) return;
 
@@ -740,32 +741,49 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Contributor load: what the person behind a username already holds
+  // Contributor load: who the person behind a username is to this repository, and what they hold
   // ---------------------------------------------------------------------------
 
-  const LOAD_TTL_MS = 10 * 60 * 1000;
   const LOAD_HOVER_MS = 200;
-  const LOAD_GRACE_MS = 160;
   const LOAD_CARD_ITEMS = 25;
   // Single segment paths that look like a login but are not one.
   const LOAD_RESERVED = new Set(["orgs", "issues", "pulls", "notifications", "settings", "apps", "marketplace", "search", "about", "sponsors", "topics", "collections", "explore"]);
-  const loadCache = new Map(); // "org/login" -> { at, data }
+  // The author and the assignees are who a decision is about, so they are the only ones the automatic read covers.
+  const LOAD_AUTO_SELECTOR = "[data-testid=\"issue-body-header-author\"], .gh-header-meta a.author, [data-testid=\"sidebar-assignees-section\"] a[data-hovercard-type=\"user\"], .js-issue-assignees a[data-hovercard-type=\"user\"]";
+  // Where a button is put without being asked: those two, and the authors of the comments.
+  const LOAD_NAME_SELECTOR = `${LOAD_AUTO_SELECTOR}, [data-testid="avatar-link"], .timeline-comment-header a.author`;
+  // Any other name, an @mention for example, gets its button when it is hovered.
+  const LOAD_HOVER_SELECTOR = "a[data-hovercard-type=\"user\"], a.author";
+  // The rows of the card: label, key of the answer, and the search terms behind the number.
+  const LOAD_ROWS = [
+    ["Merged PRs", "merged", (login) => `is:pr is:merged author:${login}`],
+    ["Open PRs", "open", (login) => `is:pr is:open author:${login}`],
+    ["Closed, not merged", "closed", (login) => `is:pr is:closed is:unmerged author:${login}`],
+    ["Assigned issues", "assigned", (login) => `is:issue is:open assignee:${login}`],
+    ["Assigned and done", "done", (login) => `is:issue is:closed reason:completed assignee:${login}`]
+  ];
+  // Kept for as long as the tab is open: GitHub moves between pages without reloading, so a person read
+  // on one issue is already known on the next, and the card says how old the answer is. The refresh
+  // button reads one person again.
+  const loadCache = new Map(); // "org/repo/login" -> { at, data }, data is null when the read failed
   const loadPending = new Map();
-  const loadPayloads = new WeakMap();
   let loadCard = null;
   let loadAnchor = null;
-  let loadHideTimer = null;
   let loadHoverTimer = null;
   let loadViewer = null;
 
-  // Only issue and pull request conversations. The badge answers "can this person take one more
-  // thing", and that question only comes up where someone is asking for work.
-  function loadOrg() {
+  // Only issue and pull request conversations. The question "who is this person to us" only comes up
+  // where someone is asking for work or offering it.
+  function loadRef() {
     const m = ISSUE_PATH.exec(location.pathname) || PULL_PATH.exec(location.pathname);
-    return m ? m[1] : null;
+    return m ? { org: m[1], repo: m[2] } : null;
   }
 
-  // Your own name needs no mark: you are not deciding whether to assign yourself.
+  function loadKey(ref, login) {
+    return `${ref.org}/${ref.repo}/${login.toLowerCase()}`;
+  }
+
+  // Your own name needs no button: you are not deciding whether to assign yourself.
   async function loadWhoami() {
     if (loadViewer !== null) return loadViewer;
     const meta = document.querySelector("meta[name=\"user-login\"]");
@@ -774,7 +792,7 @@
       const res = await api.runtime.sendMessage({ type: "viewerLogin" });
       loadViewer = res && res.login ? res.login.toLowerCase() : "";
     } catch {
-      // Asked again on the next hover rather than remembered as nobody.
+      // Asked again on the next scan rather than remembered as nobody.
       return "";
     }
     return loadViewer;
@@ -792,124 +810,167 @@
     return LOAD_RESERVED.has(parts[0].toLowerCase()) ? null : parts[0];
   }
 
-  function loadSearchUrl(org, login, kind) {
-    const query = kind === "pulls"
-      ? `is:pr is:open org:${org} author:${login}`
-      : `is:issue is:open org:${org} assignee:${login}`;
-    return `https://github.com/issues?q=${encodeURIComponent(query)}`;
+  function loadSearchUrl(scope, terms) {
+    return `https://github.com/issues?q=${encodeURIComponent(`${scope} ${terms}`)}`;
   }
 
-  // Everything read longer ago than the lifetime goes when a fresh answer is stored, so a long
-  // session does not keep every person ever hovered.
-  function loadStore(key, data) {
-    const now = Date.now();
-    for (const [other, entry] of loadCache) {
-      if (now - entry.at >= LOAD_TTL_MS) loadCache.delete(other);
+  // A read is complete when the counts the status is made of came back.
+  function loadComplete(data) {
+    return Boolean(data && data.merged && data.merged.repo !== null && data.merged.org !== null && data.open && data.assigned);
+  }
+
+  function loadStatus(data, org, repo) {
+    const here = data.merged.repo;
+    const all = data.merged.org;
+    if (!all) return { key: "new", label: "New contributor", hint: `No merged pull request in ${org} yet` };
+    if (!here) return { key: "first", label: "First PR here", hint: `No merged pull request in ${org}/${repo} yet, ${all} merged elsewhere in ${org}` };
+    if (here >= settings.loadRegular) return { key: "regular", label: "Regular", hint: `${here} merged pull requests in ${org}/${repo}` };
+    return { key: "returning", label: "Returning", hint: `${here} merged pull request${here === 1 ? "" : "s"} in ${org}/${repo}` };
+  }
+
+  function loadIcon() {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("width", "12");
+    svg.setAttribute("height", "12");
+    svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("fill", "currentColor");
+    path.setAttribute("d", "M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z");
+    svg.append(path);
+    return svg;
+  }
+
+  // The button is what the person reads: an icon until they are read, then their status, with a count
+  // beside it once they hold more than the limit.
+  function loadPaint(button) {
+    const { login, org, repo } = button.dataset;
+    const key = button.dataset.gsfKey;
+    const entry = loadCache.get(key);
+    button.textContent = "";
+    delete button.dataset.status;
+    delete button.dataset.idle;
+    if (!entry || !entry.data) {
+      button.dataset.state = loadPending.has(key) ? "busy" : (entry ? "err" : "idle");
+      button.append(loadIcon());
+      const text = button.dataset.state === "err"
+        ? `${login}: could not be read, click to try again`
+        : `Show who ${login} is to ${org}/${repo}`;
+      button.title = text;
+      button.setAttribute("aria-label", text);
+      return;
     }
-    loadCache.set(key, { at: now, data });
+    const data = entry.data;
+    const status = loadStatus(data, org, repo);
+    button.dataset.state = "ready";
+    button.dataset.status = status.key;
+    button.append(status.label);
+    const assigned = data.assigned.org || 0;
+    const pulls = data.open.org || 0;
+    if (assigned > settings.loadLimit) {
+      const over = document.createElement("span");
+      over.className = "gsf-load-over";
+      over.textContent = `${assigned}/${pulls}`;
+      if (!pulls) over.dataset.idle = "1";
+      button.append(over);
+    }
+    button.title = `${status.hint}. ${assigned} assigned, ${pulls} open pull request${pulls === 1 ? "" : "s"}.`;
+    button.setAttribute("aria-label", `${login}: ${status.label}, ${assigned} assigned, ${pulls} open`);
   }
 
-  async function loadFetch(org, login, force) {
-    const key = `${org}/${login.toLowerCase()}`;
-    if (force) loadCache.delete(key);
+  // Every button for the same person, not only the clicked one, since they all show the same answer.
+  function loadRepaint(key) {
+    document.querySelectorAll(".gsf-load").forEach((button) => {
+      if (button.dataset.gsfKey === key) loadPaint(button);
+    });
+  }
+
+  function loadRepaintAll() {
+    document.querySelectorAll(".gsf-load").forEach(loadPaint);
+  }
+
+  // One request per person and repository, however many times the name is on the page and however
+  // many pages are visited: a read that succeeded is never repeated unless the refresh button asks.
+  async function loadFetch(ref, login, force) {
+    const key = loadKey(ref, login);
     const hit = loadCache.get(key);
-    if (!force && hit && Date.now() - hit.at < LOAD_TTL_MS) return hit.data;
+    if (!force && hit && hit.data) return hit.data;
     if (!force && loadPending.has(key)) return loadPending.get(key);
 
     const request = (async () => {
+      let data = null;
       try {
-        const res = await api.runtime.sendMessage({ type: "fetchContributorLoad", contributor: { org, login } });
-        const data = res && !res.error ? res : null;
-        if (data) loadStore(key, data);
-        return data;
+        const res = await api.runtime.sendMessage({ type: "fetchContributorLoad", contributor: { org: ref.org, repo: ref.repo, login } });
+        data = res && !res.error && loadComplete(res) ? res : null;
       } catch {
         // The worker is gone, or the extension reloaded under this tab. There is nothing to show.
-        return null;
-      } finally {
-        // A forced read replaces the entry, so only the request that still owns it clears it.
-        if (loadPending.get(key) === request) loadPending.delete(key);
       }
+      loadCache.set(key, { at: Date.now(), data });
+      // A forced read replaces the entry, so only the request that still owns it clears it.
+      if (loadPending.get(key) === request) loadPending.delete(key);
+      loadRepaint(key);
+      return data;
     })();
 
     loadPending.set(key, request);
+    loadRepaint(key);
     return request;
   }
 
-  // Nothing assigned and one assigned are a dot, because the only thing worth reading there is
-  // "has room" or "has not". The count appears once it is over the limit and a decision is needed.
-  function loadBadge(org, login, data) {
-    const badge = document.createElement("a");
-    const assigned = data ? data.assigned : null;
-    const pulls = data ? data.pulls : 0;
-    let state = "err";
-    let label = "";
-
-    if (assigned !== null && assigned !== undefined) {
-      if (assigned === 0) state = "free";
-      else if (assigned <= settings.loadLimit) state = "at";
-      else {
-        state = "over";
-        label = `${assigned}/${pulls}`;
-      }
-    }
-
-    badge.className = label ? "gsf-load gsf-load-count" : "gsf-load gsf-load-dot";
-    badge.dataset.state = state;
-    badge.textContent = label;
-    if (state === "over" && !pulls) badge.dataset.idle = "1";
-    badge.href = loadSearchUrl(org, login, "issues");
-    badge.target = "_blank";
-    badge.rel = "noopener";
-    badge.setAttribute("aria-label", assigned === null || assigned === undefined
-      ? `${login}: load could not be read`
-      : `${login}: ${assigned} assigned, ${pulls} open`);
-    loadPayloads.set(badge, { org, login, data });
-    return badge;
+  // Puts the button after a name. Returns the button, or null when this name gets none.
+  function loadDecorate(anchor, ref, viewer) {
+    if (anchor.dataset.gsfLoad || !anchor.isConnected) return null;
+    // An avatar on its own is not a name; the sidebar's assignee link is an avatar with the login beside it.
+    if (anchor.querySelector("img") && !anchor.textContent.trim()) return null;
+    const login = loadLogin(anchor);
+    if (!login || login.toLowerCase() === viewer) return null;
+    const next = anchor.nextElementSibling;
+    if (next && next.classList.contains("gsf-load")) return null;
+    anchor.dataset.gsfLoad = "1";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "gsf-load";
+    button.dataset.gsfKey = loadKey(ref, login);
+    button.dataset.org = ref.org;
+    button.dataset.repo = ref.repo;
+    button.dataset.login = login;
+    loadPaint(button);
+    anchor.after(button);
+    return button;
   }
 
-  async function decorateLogin(anchor) {
-    if (anchor.dataset.gsfLoad) return;
-    if (!anchor.isConnected || anchor.querySelector("img")) return;
-    const org = loadOrg();
-    if (!org) return;
-    const login = loadLogin(anchor);
-    if (!login) return;
-    if (login.toLowerCase() === await loadWhoami()) return;
-    anchor.dataset.gsfLoad = "1";
-    const data = await loadFetch(org, login);
-    if (!anchor.isConnected) return;
-    // A read that failed is worth trying again the next time the name is hovered.
-    if (!data) delete anchor.dataset.gsfLoad;
-    const badge = loadBadge(org, login, data);
-    const existing = anchor.nextElementSibling;
-    if (existing && existing.classList.contains("gsf-load")) {
-      // Only a mark that could not be read gives way, so a retry that worked shows up.
-      if (existing.dataset.state === "err") existing.replaceWith(badge);
-      return;
+  // Buttons for the author, the assignees and the comment authors, and with the automatic read on, the
+  // reading of the first two. Nothing else is asked of GitHub until a button is pressed.
+  async function scanLoad() {
+    if (!settings.loadEnabled) return;
+    const ref = loadRef();
+    if (!ref) return;
+    const viewer = await loadWhoami();
+    for (const anchor of document.querySelectorAll(LOAD_NAME_SELECTOR)) {
+      loadDecorate(anchor, ref, viewer);
+      if (!settings.loadAuto || !anchor.matches(LOAD_AUTO_SELECTOR)) continue;
+      const login = loadLogin(anchor);
+      if (!login || login.toLowerCase() === viewer) continue;
+      const key = loadKey(ref, login);
+      // A person who could not be read is left alone here, so a bad token is not asked again on every scan.
+      if (!loadCache.has(key) && !loadPending.has(key)) loadFetch(ref, login, false);
     }
-    anchor.after(badge);
   }
 
   function loadCardElement() {
     if (loadCard) return loadCard;
     loadCard = document.createElement("div");
     loadCard.className = "gsf-load-card";
-    loadCard.addEventListener("mouseenter", () => clearTimeout(loadHideTimer));
-    loadCard.addEventListener("mouseleave", loadCardHide);
     document.body.append(loadCard);
     return loadCard;
   }
 
-  function loadStat(href, value, suffix, zero) {
-    const link = document.createElement("a");
-    link.href = href;
-    link.target = "_blank";
-    link.rel = "noopener";
-    if (zero) link.className = "gsf-load-none";
-    const strong = document.createElement("b");
-    strong.textContent = String(value);
-    link.append(strong, suffix);
-    return link;
+  function loadAgo(at) {
+    const minutes = Math.floor((Date.now() - at) / 60000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.floor(minutes / 60);
+    return hours < 24 ? `${hours} h ago` : `${Math.floor(hours / 24)} d ago`;
   }
 
   function loadRow(item) {
@@ -946,41 +1007,76 @@
     return row;
   }
 
-  function loadCardBuild(payload) {
+  function loadTable(ref, login, data) {
+    const table = document.createElement("table");
+    table.className = "gsf-load-table";
+    const head = table.createTHead().insertRow();
+    head.append(document.createElement("th"));
+    for (const name of [ref.repo, ref.org]) {
+      const th = document.createElement("th");
+      th.textContent = name;
+      th.title = name;
+      head.append(th);
+    }
+    const body = table.createTBody();
+    for (const [label, key, terms] of LOAD_ROWS) {
+      const row = body.insertRow();
+      row.insertCell().textContent = label;
+      [[`repo:${ref.org}/${ref.repo}`, data[key].repo], [`org:${ref.org}`, data[key].org]].forEach(([scope, value]) => {
+        const cell = row.insertCell();
+        if (value === null || value === undefined) {
+          cell.textContent = "-";
+          return;
+        }
+        const link = document.createElement("a");
+        link.href = loadSearchUrl(scope, terms(login));
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = String(value);
+        if (!value) link.className = "gsf-load-none";
+        cell.append(link);
+      });
+    }
+    return table;
+  }
+
+  function loadCardBuild(ref, login) {
     const card = loadCardElement();
     card.textContent = "";
-    const { org, login, data } = payload;
+    const entry = loadCache.get(loadKey(ref, login));
+    const data = entry && entry.data;
 
     const head = document.createElement("div");
     head.className = "gsf-load-head";
-    const name = document.createElement("span");
+    const name = document.createElement("a");
     name.className = "gsf-load-name";
+    name.href = `https://github.com/${login}`;
+    name.target = "_blank";
+    name.rel = "noopener";
     name.textContent = login;
     head.append(name);
-
     if (data) {
-      const stats = document.createElement("span");
-      stats.className = "gsf-load-stats";
-      stats.append(
-        loadStat(loadSearchUrl(org, login, "issues"), data.assigned, " assigned", false),
-        " · ",
-        loadStat(loadSearchUrl(org, login, "pulls"), data.pulls, data.pulls === 1 ? " open PR" : " open PRs", !data.pulls)
-      );
-      head.append(stats);
+      const status = loadStatus(data, ref.org, ref.repo);
+      const tag = document.createElement("span");
+      tag.className = "gsf-load-tag";
+      tag.dataset.status = status.key;
+      tag.textContent = status.label;
+      tag.title = status.hint;
+      head.append(tag);
     }
 
-    // The counts are ten minutes old at worst, which is long enough for someone to open the very
-    // pull request the card says is missing, so one person can be asked again without waiting.
+    // The counts are as old as the page, which is long enough for someone to open the very pull request
+    // the card says is missing, so one person can be read again without reloading.
     const refresh = document.createElement("button");
     refresh.type = "button";
     refresh.className = "gsf-load-refresh";
-    refresh.title = "Read this person again, ignoring the cache";
+    refresh.title = "Read this person again";
     refresh.setAttribute("aria-label", `Refresh ${login}`);
     refresh.append(loadRefreshIcon());
     refresh.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      loadReload(org, login).catch((err) => console.warn("[github-issue-toolkit]", err));
+      loadReload(ref, login).catch((err) => console.warn("[github-issue-toolkit]", err));
     });
     head.append(refresh);
     card.append(head);
@@ -988,34 +1084,39 @@
     if (!data) {
       const error = document.createElement("div");
       error.className = "gsf-load-empty";
-      error.textContent = "The load could not be read. Check the token in the extension settings.";
+      error.textContent = "This person could not be read. Check the token in the extension settings.";
       card.append(error);
       return card;
     }
 
-    if (!data.items.length) {
-      const empty = document.createElement("div");
-      empty.className = "gsf-load-empty";
-      empty.textContent = `Nothing assigned in ${org}.`;
-      card.append(empty);
-      return card;
+    card.append(loadTable(ref, login, data));
+
+    if (data.items.length) {
+      const title = document.createElement("div");
+      title.className = "gsf-load-sub";
+      title.textContent = "Assigned and open";
+      card.append(title);
+      const list = document.createElement("div");
+      list.className = "gsf-load-list";
+      data.items.slice(0, LOAD_CARD_ITEMS).forEach((item) => list.append(loadRow(item)));
+      card.append(list);
+
+      const rest = (data.assigned.org || 0) - data.items.length;
+      if (rest > 0) {
+        const more = document.createElement("a");
+        more.className = "gsf-load-more";
+        more.href = loadSearchUrl(`org:${ref.org}`, `is:issue is:open assignee:${login}`);
+        more.target = "_blank";
+        more.rel = "noopener";
+        more.textContent = `${rest} more, open the full list`;
+        card.append(more);
+      }
     }
 
-    const list = document.createElement("div");
-    list.className = "gsf-load-list";
-    data.items.slice(0, LOAD_CARD_ITEMS).forEach((item) => list.append(loadRow(item)));
-    card.append(list);
-
-    const rest = data.assigned - data.items.length;
-    if (rest > 0) {
-      const more = document.createElement("a");
-      more.className = "gsf-load-more";
-      more.href = loadSearchUrl(org, login, "issues");
-      more.target = "_blank";
-      more.rel = "noopener";
-      more.textContent = `${rest} more, open the full list`;
-      card.append(more);
-    }
+    const foot = document.createElement("div");
+    foot.className = "gsf-load-foot";
+    foot.textContent = `Read ${loadAgo(entry.at)}`;
+    card.append(foot);
     return card;
   }
 
@@ -1032,21 +1133,13 @@
     return svg;
   }
 
-  // Both the card and the mark it belongs to are replaced, so the number on the page agrees with
-  // the list under it.
-  async function loadReload(org, login) {
+  // The buttons and the card are both rebuilt from the new answer, so the status on the page agrees
+  // with the numbers under it.
+  async function loadReload(ref, login) {
     if (loadCard) loadCard.dataset.busy = "1";
-    const data = await loadFetch(org, login, true);
+    await loadFetch(ref, login, true);
     if (loadCard) delete loadCard.dataset.busy;
-    // Every mark for the same person, not only the hovered one, since the cache now holds the new answer.
-    document.querySelectorAll(".gsf-load").forEach((mark) => {
-      const payload = loadPayloads.get(mark);
-      if (!payload || payload.org !== org || payload.login.toLowerCase() !== login.toLowerCase()) return;
-      const fresh = loadBadge(org, payload.login, data);
-      mark.replaceWith(fresh);
-      if (mark === loadAnchor) loadAnchor = fresh;
-    });
-    loadCardBuild({ org, login, data });
+    loadCardBuild(ref, login);
     if (loadAnchor && loadAnchor.isConnected) loadCardPlace(loadAnchor);
   }
 
@@ -1067,55 +1160,77 @@
     card.style.visibility = "";
   }
 
-  function loadCardShow(badge) {
-    const payload = loadPayloads.get(badge);
-    if (!payload) return;
-    clearTimeout(loadHideTimer);
-    loadAnchor = badge;
-    loadCardBuild(payload);
-    loadCardPlace(badge);
-  }
-
-  function loadCardHide() {
-    clearTimeout(loadHideTimer);
-    loadHideTimer = setTimeout(() => {
-      if (loadCard) delete loadCard.dataset.open;
-    }, LOAD_GRACE_MS);
-  }
-
-  function clearLoad() {
-    loadCache.clear();
-    loadPending.clear();
-    loadAnchor = null;
-    loadViewer = null;
+  function loadCardClose() {
     if (loadCard) delete loadCard.dataset.open;
+    loadAnchor = null;
+  }
+
+  // A press reads the person if they are not read yet, then opens the card; pressing the same button
+  // again closes it.
+  async function loadToggle(button) {
+    if (loadCard && loadCard.dataset.open && loadAnchor === button) {
+      loadCardClose();
+      return;
+    }
+    const ref = { org: button.dataset.org, repo: button.dataset.repo };
+    const login = button.dataset.login;
+    const entry = loadCache.get(loadKey(ref, login));
+    loadAnchor = button;
+    if (!entry || !entry.data) await loadFetch(ref, login, Boolean(entry));
+    if (!button.isConnected || loadAnchor !== button) return;
+    loadCardBuild(ref, login);
+    loadCardPlace(button);
+  }
+
+  // `drop` also forgets what was read, which only a different token calls for.
+  function clearLoad(drop) {
+    if (drop) {
+      loadCache.clear();
+      loadPending.clear();
+      loadViewer = null;
+    }
+    loadCardClose();
     document.querySelectorAll(".gsf-load").forEach((el) => el.remove());
     document.querySelectorAll("[data-gsf-load]").forEach((el) => delete el.dataset.gsfLoad);
   }
 
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!target || !target.closest) return;
+    const button = target.closest(".gsf-load");
+    if (button) {
+      if (!settings.loadEnabled) return;
+      event.preventDefault();
+      event.stopPropagation();
+      loadToggle(button).catch((err) => console.warn("[github-issue-toolkit]", err));
+      return;
+    }
+    if (loadCard && loadCard.dataset.open && !target.closest(".gsf-load-card")) loadCardClose();
+  }, true);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && loadCard && loadCard.dataset.open) loadCardClose();
+  });
+
+  // Hovering a name that has no button yet, an @mention for example, gives it one. This asks GitHub for nothing.
   document.addEventListener("mouseover", (event) => {
     if (!settings.loadEnabled) return;
     const target = event.target;
     if (!target || !target.closest) return;
-
-    const badge = target.closest(".gsf-load");
-    if (badge) {
-      loadCardShow(badge);
-      return;
-    }
-
-    const anchor = target.closest("a[data-hovercard-type=\"user\"], a.author");
-    if (!anchor) return;
+    const anchor = target.closest(LOAD_HOVER_SELECTOR);
+    if (!anchor || anchor.dataset.gsfLoad) return;
     clearTimeout(loadHoverTimer);
-    loadHoverTimer = setTimeout(() => decorateLogin(anchor).catch((err) => console.warn("[github-issue-toolkit]", err)), LOAD_HOVER_MS);
+    loadHoverTimer = setTimeout(async () => {
+      const ref = loadRef();
+      if (ref) loadDecorate(anchor, ref, await loadWhoami());
+    }, LOAD_HOVER_MS);
   });
 
   document.addEventListener("mouseout", (event) => {
     const target = event.target;
     if (!target || !target.closest) return;
-    if (target.closest(".gsf-load")) loadCardHide();
-    // Passing over a name on the way somewhere else is not a hover, so nothing is read for it.
-    const anchor = target.closest("a[data-hovercard-type=\"user\"], a.author");
+    // Passing over a name on the way somewhere else is not a hover.
+    const anchor = target.closest(LOAD_HOVER_SELECTOR);
     if (anchor && !anchor.contains(event.relatedTarget)) clearTimeout(loadHoverTimer);
   });
 
@@ -1125,7 +1240,7 @@
     if (!loadCard || !loadCard.dataset.open) return;
     const target = event.target;
     if (target && target.nodeType === 1 && loadCard.contains(target)) return;
-    delete loadCard.dataset.open;
+    loadCardClose();
   }, true);
 
   // ---------------------------------------------------------------------------
@@ -2451,7 +2566,7 @@
       if (changes.ageEnabled) settings.ageEnabled = changes.ageEnabled.newValue === true;
       if (changes.ageUnit) settings.ageUnit = changes.ageUnit.newValue || "months";
       clearBadges();
-      clearLoad();
+      if (changes.token) clearLoad(true);
       schedule();
     }
     if (changes.progressEnabled || changes.progressScopeField || changes.progressDoneField || changes.progressDoneValue) {
@@ -2462,10 +2577,15 @@
       clearProgress();
       schedule();
     }
-    if (changes.loadEnabled || changes.loadLimit) {
+    if (changes.loadEnabled || changes.loadAuto || changes.loadLimit || changes.loadRegular) {
       if (changes.loadEnabled) settings.loadEnabled = changes.loadEnabled.newValue === true;
+      if (changes.loadAuto) settings.loadAuto = changes.loadAuto.newValue === true;
       if (changes.loadLimit) settings.loadLimit = Math.max(0, Number(changes.loadLimit.newValue) || 0);
-      clearLoad();
+      if (changes.loadRegular) settings.loadRegular = Math.max(1, Number(changes.loadRegular.newValue) || 5);
+      // Switching it off takes the buttons away but keeps what was read, so switching it on again costs nothing.
+      if (changes.loadEnabled && !settings.loadEnabled) clearLoad(false);
+      else loadRepaintAll();
+      schedule();
     }
     if (changes.sidebarToggle || changes.sidebarCollapsed) {
       if (changes.sidebarToggle) settings.sidebarToggle = changes.sidebarToggle.newValue !== false;
@@ -2499,7 +2619,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadLimit", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -2513,6 +2633,8 @@
     settings.kanbanDrag = stored.kanbanDrag !== false;
     settings.sidebarToggle = stored.sidebarToggle !== false;
     settings.loadEnabled = stored.loadEnabled === true;
+    settings.loadAuto = stored.loadAuto === true;
+    settings.loadRegular = Number.isFinite(Number(stored.loadRegular)) && stored.loadRegular !== undefined ? Math.max(1, Number(stored.loadRegular)) : 5;
     settings.loadLimit = Number.isFinite(Number(stored.loadLimit)) && stored.loadLimit !== undefined ? Math.max(0, Number(stored.loadLimit)) : 1;
     sidebarCollapsed = stored.sidebarCollapsed === true;
     settings.hideProjectsSection = stored.hideProjectsSection === true;
