@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- **Assignment requests**: a box above the conversation of an assigned issue, off by default, listing the comments of other people that contain one of your words, `assign`, `work on`, `can i` and so on, with the words highlighted in a preview, and apart from it a closed list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation, with an Undo. Only comments of up to 400 characters are offered, and your own, the assignee's and hidden ones are left out. It needs a token with write access to hide comments. Set on the Contributors tab.
 - Where the contributor button says Member, GitHub's own Member or Owner label at the right of the comment header is hidden, so it is not said twice. The Contributor and First-time contributor labels stay, and the label comes back when the button is switched off.
 - Organizations with a colour of their own, Kestra's violet for `kestra-io`, get it as an accent on the contributor card, the Member status and the profile panel: a thin outline in the colour, the headings, the counts and the status, on top of GitHub's own design. Other organizations keep GitHub's colours.
 - The merge percentage under the merged tile of the organization panel is gone, and the panel and the card use neutral wording, with no pronouns and no repeated name.

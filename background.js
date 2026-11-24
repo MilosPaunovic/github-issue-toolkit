@@ -55,7 +55,7 @@ function parseFields(raw) {
     .filter(Boolean);
 }
 
-async function graphql(token, query, { partial = false } = {}) {
+async function graphql(token, query, { partial = false, errors = null } = {}) {
   const res = await fetch(GRAPHQL_URL, {
     method: "POST",
     headers: {
@@ -72,6 +72,8 @@ async function graphql(token, query, { partial = false } = {}) {
     throw new Error(`GitHub API responded with HTTP ${res.status}`);
   }
   const json = await res.json();
+  // A caller that wants the reasons for the parts that failed passes a list to collect them in.
+  if (json.errors && errors) errors.push(...json.errors.map((e) => e.message));
   if (json.errors && (!json.data || !partial)) {
     throw new Error(json.errors.map((e) => e.message).join("; "));
   }
@@ -383,6 +385,87 @@ async function fetchOrgActivity(ref) {
   };
 }
 
+// Assignment requests: the comments of an issue, to find the ones asking to be assigned, and the action that
+// marks comments as outdated, which is GitHub's own Hide, Outdated.
+// ---------------------------------------------------------------------------
+
+const ASSIGN_PAGES = 3;
+const ASSIGN_BODY_KEPT = 1500;
+
+async function fetchIssueComments(ref) {
+  const { token } = await getSettings();
+  if (!token) return { error: "NO_TOKEN" };
+  const owner = String((ref && ref.owner) || "").trim();
+  const repo = String((ref && ref.repo) || "").trim();
+  const number = Number(ref && ref.number);
+  if (!owner || !repo || !Number.isInteger(number)) return { error: "An owner, a repository and an issue number are all needed." };
+
+  let after = null;
+  let assignees = [];
+  let author = "";
+  const comments = [];
+  let more = false;
+  for (let page = 0; page < ASSIGN_PAGES; page++) {
+    const cursor = after ? `, after: ${JSON.stringify(after)}` : "";
+    const data = await graphql(token, `{
+      repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repo)}) {
+        issue(number: ${number}) {
+          author { login }
+          assignees(first: 20) { nodes { login } }
+          comments(first: 100${cursor}) {
+            pageInfo { hasNextPage endCursor }
+            nodes { id url body createdAt isMinimized viewerCanMinimize author { login } }
+          }
+        }
+      }
+    }`);
+    const issue = data.repository && data.repository.issue;
+    if (!issue) return { error: "That issue could not be read." };
+    author = (issue.author && issue.author.login) || "";
+    assignees = ((issue.assignees && issue.assignees.nodes) || []).filter(Boolean).map((u) => u.login);
+    for (const node of issue.comments.nodes || []) {
+      if (!node) continue;
+      comments.push({
+        id: node.id,
+        url: node.url,
+        author: (node.author && node.author.login) || "",
+        // Only the start is kept, the length is kept whole: long comments are discussion, not requests.
+        body: String(node.body || "").slice(0, ASSIGN_BODY_KEPT),
+        length: String(node.body || "").length,
+        createdAt: node.createdAt,
+        hidden: Boolean(node.isMinimized),
+        canHide: Boolean(node.viewerCanMinimize)
+      });
+    }
+    more = issue.comments.pageInfo.hasNextPage;
+    if (!more) break;
+    after = issue.comments.pageInfo.endCursor;
+  }
+  return { author, assignees, comments, more };
+}
+
+// Marks comments as outdated, or brings them back. This writes to GitHub, and only ever for the ids it is given
+// after the person has confirmed them.
+async function setCommentsHidden(ids, hide) {
+  const { token } = await getSettings();
+  if (!token) return { error: "NO_TOKEN" };
+  const list = [...new Set((ids || []).map(String))].slice(0, 100);
+  if (!list.length) return { error: "No comments were chosen." };
+  const done = {};
+  const reasons = [];
+  for (let i = 0; i < list.length; i += 20) {
+    const chunk = list.slice(i, i + 20);
+    const mutations = chunk.map((id, n) => hide
+      ? `h${n}: minimizeComment(input: {subjectId: ${JSON.stringify(id)}, classifier: OUTDATED}) { minimizedComment { isMinimized } }`
+      : `h${n}: unminimizeComment(input: {subjectId: ${JSON.stringify(id)}}) { unminimizedComment { isMinimized } }`).join("\n");
+    const data = await graphql(token, `mutation { ${mutations} }`, { partial: true, errors: reasons });
+    chunk.forEach((id, n) => { done[id] = Boolean(data[`h${n}`]); });
+  }
+  const failed = list.filter((id) => !done[id]).length;
+  return { done, failed, reason: failed ? (reasons[0] || "GitHub refused.") : "" };
+}
+
+// ---------------------------------------------------------------------------
 // Whether each of a list of people belongs to an organization, for the mark that shows at once. One
 // lookup per person goes in a shared request, so a long thread costs a handful of requests rather than
 // one for every name. A person GitHub cannot find, a bot for example, comes back as null.
@@ -1133,6 +1216,12 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg.type === "fetchIssueMeta") {
     return reply(fetchIssueMeta(msg.issue), sendResponse);
+  }
+  if (msg.type === "fetchIssueComments") {
+    return reply(fetchIssueComments(msg.ref), sendResponse);
+  }
+  if (msg.type === "setCommentsHidden") {
+    return reply(setCommentsHidden(msg.ids, msg.hide !== false), sendResponse);
   }
   if (msg.type === "linkSubIssue") {
     return reply(linkSubIssue(msg.parent, msg.child, Boolean(msg.replaceParent)), sendResponse);

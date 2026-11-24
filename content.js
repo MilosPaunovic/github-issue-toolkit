@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, profileEnabled: false, profileOrgs: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, profileEnabled: false, profileOrgs: "", assignEnabled: false, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -313,6 +313,7 @@
     scanProgress().catch((err) => console.warn("[github-issue-toolkit]", err));
     scanLoad().catch((err) => console.warn("[github-issue-toolkit]", err));
     scanProfile();
+    scanAssign();
     const rows = collectRows();
     if (!rows.length) return;
 
@@ -1702,6 +1703,360 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Assignment requests: on an issue that has been assigned, the comments of other people asking to be, to hide
+  // as outdated
+  // ---------------------------------------------------------------------------
+
+  const ASSIGN_DEFAULT_WORDS = "assign, work on, working on, take this, pick this, pick up, can i, may i, i'd like to, i would like to, i want to, let me, contribute, claim, interested";
+  // A longer comment is discussion, not a request, so it is never offered.
+  const ASSIGN_MAX_CHARS = 400;
+  const ASSIGN_PREVIEW_CHARS = 240;
+  const assignCache = new Map(); // "org/repo#number" -> { at, data, error }
+  const assignPending = new Map();
+  // Chosen and hidden comments per issue, kept as long as the tab is open: key -> { chosen: Set, hidden: Set, last: [], note }
+  const assignState = new Map();
+
+  function assignWordList() {
+    const words = String(settings.assignWords || "").split(",").map((w) => w.trim()).filter(Boolean);
+    return words.length ? words : ASSIGN_DEFAULT_WORDS.split(",").map((w) => w.trim());
+  }
+
+  // A single word matches whatever it starts, so assign finds assigned and assigning; a phrase matches as written.
+  function assignRegex() {
+    const parts = assignWordList().map((w) => {
+      const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return /\s/.test(w) ? `\\b${escaped}\\b` : `\\b${escaped}\\w*`;
+    });
+    return new RegExp(parts.join("|"), "gi");
+  }
+
+  function assignKey() {
+    const m = ISSUE_PATH.exec(location.pathname);
+    return m ? { org: m[1], repo: m[2], number: Number(m[3]), key: `${m[1]}/${m[2]}#${m[3]}` } : null;
+  }
+
+  function assignWhen(iso) {
+    const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+    if (days < 1) return "today";
+    if (days < 31) return `${days} d ago`;
+    const months = Math.floor(days / 30.4);
+    return months < 12 ? `${months} mo ago` : `${Math.floor(months / 12)} y ago`;
+  }
+
+  // The start of a comment, or the stretch around its first match when that is further in, with the words marked.
+  function assignPreview(body, regex, max) {
+    const text = body.replace(/\s+/g, " ").trim();
+    regex.lastIndex = 0;
+    const first = regex.exec(text);
+    let start = 0;
+    if (first && first.index > max - 60) start = Math.max(0, first.index - 60);
+    const slice = text.slice(start, start + max);
+    const frag = document.createDocumentFragment();
+    if (start > 0) frag.append("...");
+    let last = 0;
+    const re = new RegExp(regex.source, "gi");
+    for (let m = re.exec(slice); m; m = re.exec(slice)) {
+      if (m[0] === "") { re.lastIndex++; continue; }
+      if (m.index > last) frag.append(slice.slice(last, m.index));
+      const mark = document.createElement("mark");
+      mark.className = "gsf-assign-mark";
+      mark.textContent = m[0];
+      frag.append(mark);
+      last = m.index + m[0].length;
+    }
+    if (last < slice.length) frag.append(slice.slice(last));
+    if (start + max < text.length) frag.append("...");
+    return frag;
+  }
+
+  async function assignFetch(info, force) {
+    const hit = assignCache.get(info.key);
+    if (!force && hit && hit.data) return hit;
+    if (!force && assignPending.has(info.key)) return assignPending.get(info.key);
+    const request = (async () => {
+      await null; // see loadFetch
+      let data = null;
+      let error = "";
+      try {
+        const res = await api.runtime.sendMessage({ type: "fetchIssueComments", ref: { owner: info.org, repo: info.repo, number: info.number } });
+        data = res && !res.error && Array.isArray(res.comments) ? res : null;
+        if (!data) error = loadReason(res && !res.error ? { error: "GitHub answered with something this extension could not read." } : res);
+      } catch {
+        error = loadReason(null);
+      }
+      const entry = { at: Date.now(), data, error };
+      assignCache.set(info.key, entry);
+      if (assignPending.get(info.key) === request) assignPending.delete(info.key);
+      return entry;
+    })();
+    assignPending.set(info.key, request);
+    return request;
+  }
+
+  // Who the comments are from: the assignees' own are shown apart, the viewer's own are left out, and a comment
+  // already hidden is not offered again.
+  async function assignSplit(data) {
+    const viewer = await loadWhoami();
+    const assignees = new Set(data.assignees.map((l) => l.toLowerCase()));
+    const regex = assignRegex();
+    const requests = [];
+    const fromAssignees = [];
+    for (const comment of data.comments) {
+      const who = comment.author.toLowerCase();
+      if (assignees.has(who)) {
+        if (!comment.hidden) fromAssignees.push(comment);
+        continue;
+      }
+      if (comment.hidden || who === viewer || comment.length > ASSIGN_MAX_CHARS) continue;
+      regex.lastIndex = 0;
+      if (regex.test(comment.body)) requests.push(comment);
+    }
+    return { requests, fromAssignees: fromAssignees.reverse(), regex };
+  }
+
+  function assignButton(text, handler, className) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = className || "gsf-assign-button";
+    button.textContent = text;
+    button.addEventListener("click", handler);
+    return button;
+  }
+
+  function assignAccordion(title, open) {
+    const box = document.createElement("details");
+    box.className = "gsf-profile-work";
+    if (open) box.open = true;
+    const summary = document.createElement("summary");
+    summary.textContent = title;
+    box.append(summary);
+    return box;
+  }
+
+  async function assignRender(panel, info, entry) {
+    panel.textContent = "";
+    const data = entry && entry.data;
+    if (!data || !data.assignees.length) {
+      panel.hidden = true;
+      return;
+    }
+    const { requests, fromAssignees, regex } = await assignSplit(data);
+    if (!panel.isConnected) return;
+    if (!requests.length && !fromAssignees.length) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+    const state = assignState.get(info.key) || { chosen: new Set(requests.map((c) => c.id)), hidden: new Set(), last: [], note: "" };
+    assignState.set(info.key, state);
+    const hideable = requests.filter((c) => c.canHide && !state.hidden.has(c.id));
+
+    const head = document.createElement("div");
+    head.className = "gsf-profile-head";
+    const title = document.createElement("span");
+    title.className = "gsf-profile-title";
+    title.textContent = "Assignment requests";
+    const sub = document.createElement("span");
+    sub.className = "gsf-profile-sub";
+    sub.textContent = `assigned to ${data.assignees.join(", ")}`;
+    const age = document.createElement("span");
+    age.className = "gsf-profile-age";
+    age.textContent = `Read ${loadAgo(entry.at)}`;
+    const refresh = profileRefreshIcon();
+    refresh.addEventListener("click", () => assignLoad(panel, info, true).catch((err) => console.warn("[github-issue-toolkit]", err)));
+    age.append(refresh);
+    head.append(title, sub, age);
+    panel.append(head);
+
+    if (requests.length) {
+      const box = assignAccordion(`Comments asking to be assigned (${requests.length})`, true);
+      const list = document.createElement("div");
+      list.className = "gsf-assign-list";
+      for (const comment of requests) {
+        const row = document.createElement("label");
+        row.className = "gsf-assign-row";
+        const hidden = state.hidden.has(comment.id);
+        if (hidden) row.dataset.hidden = "1";
+        const check = document.createElement("input");
+        check.type = "checkbox";
+        check.checked = !hidden && state.chosen.has(comment.id);
+        check.disabled = hidden || !comment.canHide;
+        check.addEventListener("change", () => {
+          if (check.checked) state.chosen.add(comment.id);
+          else state.chosen.delete(comment.id);
+          assignRender(panel, info, entry).catch((err) => console.warn("[github-issue-toolkit]", err));
+        });
+        const text = document.createElement("div");
+        text.className = "gsf-assign-text";
+        const meta = document.createElement("div");
+        meta.className = "gsf-assign-meta";
+        const who = document.createElement("b");
+        who.textContent = comment.author || "ghost";
+        const when = document.createElement("span");
+        when.textContent = assignWhen(comment.createdAt);
+        const open = document.createElement("a");
+        open.href = comment.url;
+        open.textContent = hidden ? "Hidden as outdated" : "Open";
+        open.addEventListener("click", (e) => e.stopPropagation());
+        meta.append(who, when, open);
+        const preview = document.createElement("div");
+        preview.className = "gsf-assign-preview";
+        preview.append(assignPreview(comment.body, regex, ASSIGN_PREVIEW_CHARS));
+        text.append(meta, preview);
+        row.append(check, text);
+        list.append(row);
+      }
+      box.append(list);
+
+      const bar = document.createElement("div");
+      bar.className = "gsf-assign-bar";
+      const chosen = hideable.filter((c) => state.chosen.has(c.id));
+      if (!hideable.length && !state.hidden.size) {
+        const note = document.createElement("span");
+        note.className = "gsf-assign-note";
+        note.textContent = "You cannot hide comments in this repository.";
+        bar.append(note);
+      } else if (state.confirming) {
+        const ask = document.createElement("span");
+        ask.className = "gsf-assign-note";
+        ask.textContent = `Mark ${chosen.length} comment${chosen.length === 1 ? "" : "s"} as outdated on GitHub?`;
+        bar.append(ask,
+          assignButton("Confirm", () => assignHide(panel, info, entry, state, chosen), "gsf-assign-button gsf-assign-danger"),
+          assignButton("Cancel", () => { state.confirming = false; assignRender(panel, info, entry); }));
+      } else {
+        if (hideable.length) {
+          bar.append(
+            assignButton(`Hide ${chosen.length} as outdated`, () => {
+              if (!chosen.length) { state.note = "Tick at least one comment."; assignRender(panel, info, entry); return; }
+              state.confirming = true;
+              state.note = "";
+              assignRender(panel, info, entry);
+            }),
+            assignButton("Select all", () => { hideable.forEach((c) => state.chosen.add(c.id)); assignRender(panel, info, entry); }, "gsf-assign-link"),
+            assignButton("None", () => { state.chosen.clear(); assignRender(panel, info, entry); }, "gsf-assign-link"));
+        }
+        if (state.last.length) {
+          bar.append(assignButton("Undo", () => assignUndo(panel, info, entry, state), "gsf-assign-link"));
+        }
+      }
+      if (state.note) {
+        const note = document.createElement("span");
+        note.className = "gsf-assign-note";
+        note.textContent = state.note;
+        bar.append(note);
+      }
+      box.append(bar);
+      panel.append(box);
+    }
+
+    if (fromAssignees.length) {
+      const box = assignAccordion(`Comments by the assignee (${fromAssignees.length})`, false);
+      const list = document.createElement("div");
+      list.className = "gsf-assign-list";
+      for (const comment of fromAssignees.slice(0, 20)) {
+        const row = document.createElement("a");
+        row.className = "gsf-assign-row gsf-assign-plain";
+        row.href = comment.url;
+        const text = document.createElement("div");
+        text.className = "gsf-assign-text";
+        const meta = document.createElement("div");
+        meta.className = "gsf-assign-meta";
+        const who = document.createElement("b");
+        who.textContent = comment.author;
+        const when = document.createElement("span");
+        when.textContent = assignWhen(comment.createdAt);
+        meta.append(who, when);
+        const preview = document.createElement("div");
+        preview.className = "gsf-assign-preview";
+        preview.append(assignPreview(comment.body, regex, ASSIGN_PREVIEW_CHARS));
+        text.append(meta, preview);
+        row.append(text);
+        list.append(row);
+      }
+      box.append(list);
+      panel.append(box);
+    }
+  }
+
+  // Marks the chosen comments as outdated, after the person confirmed. GitHub shows them collapsed on the next load.
+  async function assignHide(panel, info, entry, state, chosen) {
+    state.confirming = false;
+    state.note = "Hiding...";
+    await assignRender(panel, info, entry);
+    let res = null;
+    try {
+      res = await api.runtime.sendMessage({ type: "setCommentsHidden", ids: chosen.map((c) => c.id), hide: true });
+    } catch {
+      res = null;
+    }
+    const done = res && res.done ? chosen.filter((c) => res.done[c.id]).map((c) => c.id) : [];
+    done.forEach((id) => { state.hidden.add(id); state.chosen.delete(id); });
+    state.last = done;
+    const failed = chosen.length - done.length;
+    state.note = done.length
+      ? `Hidden ${done.length} as outdated.${failed ? ` ${failed} could not be hidden: ${res && res.reason ? res.reason : "GitHub refused."}` : ""} Reload the page to see them collapsed.`
+      : `Nothing was hidden: ${res && res.error ? loadReason(res) : (res && res.reason) || loadReason(null)}`;
+    await assignRender(panel, info, entry);
+  }
+
+  async function assignUndo(panel, info, entry, state) {
+    const ids = state.last.slice();
+    state.note = "Bringing them back...";
+    await assignRender(panel, info, entry);
+    let res = null;
+    try {
+      res = await api.runtime.sendMessage({ type: "setCommentsHidden", ids, hide: false });
+    } catch {
+      res = null;
+    }
+    const back = res && res.done ? ids.filter((id) => res.done[id]) : [];
+    back.forEach((id) => { state.hidden.delete(id); state.chosen.add(id); });
+    state.last = ids.filter((id) => !back.includes(id));
+    state.note = back.length ? `Brought back ${back.length}. Reload the page to see them again.` : `Nothing was brought back: ${(res && res.reason) || loadReason(res || null)}`;
+    await assignRender(panel, info, entry);
+  }
+
+  async function assignLoad(panel, info, force) {
+    const hit = assignCache.get(info.key);
+    if (!force && hit && hit.data) {
+      await assignRender(panel, info, hit);
+      return;
+    }
+    const entry = await assignFetch(info, force);
+    if (panel.isConnected) await assignRender(panel, info, entry);
+  }
+
+  // One panel at the top of the conversation of an issue, there only while the setting is on, and only shown when
+  // the issue has an assignee and something to show.
+  function scanAssign() {
+    const existing = document.querySelector(".gsf-assign");
+    const info = settings.assignEnabled ? assignKey() : null;
+    if (!info) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing && existing.dataset.key === info.key && existing.isConnected) return;
+    if (existing) existing.remove();
+    const anchor = document.querySelector("[data-testid=\"issue-viewer-comments-container\"]") || document.querySelector(".js-discussion");
+    if (!anchor) return;
+    const panel = document.createElement("section");
+    panel.className = "gsf-assign gsf-profile-org";
+    panel.dataset.key = info.key;
+    panel.hidden = true;
+    brandApply(panel, info.org);
+    anchor.before(panel);
+    assignLoad(panel, info, false).catch((err) => console.warn("[github-issue-toolkit]", err));
+  }
+
+  function clearAssign(drop) {
+    if (drop) {
+      assignCache.clear();
+      assignPending.clear();
+    }
+    document.querySelectorAll(".gsf-assign").forEach((el) => el.remove());
+  }
+
+  // ---------------------------------------------------------------------------
   // Epic kanban: the sub-issues of an issue shown as a board
   // ---------------------------------------------------------------------------
 
@@ -2990,7 +3345,7 @@
   }
 
   // Everything this extension adds to the page, so its own mutations never schedule another scan.
-  const OURS = ["gsf-badge", "gsf-badges", "gsf-notice", "gsf-pins", "gsf-pins-header-btn", "gsf-kanban", "gsf-kanban-bar", "gsf-sidebar-rail", "gsf-load", "gsf-load-card", "gsf-progress", "gsf-profile"];
+  const OURS = ["gsf-badge", "gsf-badges", "gsf-notice", "gsf-pins", "gsf-pins-header-btn", "gsf-kanban", "gsf-kanban-bar", "gsf-sidebar-rail", "gsf-load", "gsf-load-card", "gsf-progress", "gsf-profile", "gsf-assign"];
   const OURS_SELECTOR = OURS.map((name) => `.${name}`).join(", ");
 
   const observer = new MutationObserver((mutations) => {
@@ -3027,6 +3382,7 @@
       if (changes.token) {
         clearLoad(true);
         clearProfile(true);
+        clearAssign(true);
       }
       schedule();
     }
@@ -3053,6 +3409,12 @@
       if (changes.profileEnabled) settings.profileEnabled = changes.profileEnabled.newValue === true;
       if (changes.profileOrgs) settings.profileOrgs = String(changes.profileOrgs.newValue || "");
       clearProfile(false);
+      schedule();
+    }
+    if (changes.assignEnabled || changes.assignWords) {
+      if (changes.assignEnabled) settings.assignEnabled = changes.assignEnabled.newValue === true;
+      if (changes.assignWords) settings.assignWords = String(changes.assignWords.newValue || "");
+      clearAssign(false);
       schedule();
     }
     if (changes.sidebarToggle || changes.sidebarCollapsed) {
@@ -3087,7 +3449,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembers", "profileEnabled", "profileOrgs", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembers", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -3104,6 +3466,8 @@
     settings.loadAuto = stored.loadAuto === true;
     settings.profileEnabled = stored.profileEnabled === true;
     settings.profileOrgs = String(stored.profileOrgs || "");
+    settings.assignEnabled = stored.assignEnabled === true;
+    settings.assignWords = String(stored.assignWords || "");
     settings.loadMembers = stored.loadMembers !== false;
     settings.loadRegular = Number.isFinite(Number(stored.loadRegular)) && stored.loadRegular !== undefined ? Math.max(1, Number(stored.loadRegular)) : 5;
     settings.loadLimit = Number.isFinite(Number(stored.loadLimit)) && stored.loadLimit !== undefined ? Math.max(0, Number(stored.loadLimit)) : 1;

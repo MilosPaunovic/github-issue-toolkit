@@ -351,6 +351,15 @@
       </section>
 
       <section class="card">
+        <h2>Assignment requests</h2>
+        <p class="desc">On an issue that has been assigned, a box above the conversation lists the comments from other people asking to be assigned, with the words that gave them away highlighted in a preview, and a separate list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation; an Undo brings them back. Marking comments writes to GitHub, so the token needs write access to the repository, as it does for linking and dragging. Only comments of up to 400 characters are offered, and your own and the assignee's are left out.</p>
+        <label class="check"><input id="assign-enabled" type="checkbox"> Show the assignment requests box on assigned issues (off by default)</label>
+        <label for="assign-words">Words and phrases that mark a request</label>
+        <input id="assign-words" type="text" spellcheck="false" autocomplete="off" placeholder="assign, work on, can i, may i">
+        <p class="hint">Separated by commas, matched without regard to case. A single word also matches what it starts, so <code>assign</code> finds assigned and assigning, while a phrase such as <code>work on</code> must appear as written. Leave it empty for the defaults: assign, work on, working on, take this, pick this, pick up, can i, may i, i'd like to, i would like to, i want to, let me, contribute, claim, interested.</p>
+      </section>
+
+      <section class="card">
         <h2>Reading the button</h2>
         <p class="desc">What each state of the button means.</p>
         <div class="marks">
