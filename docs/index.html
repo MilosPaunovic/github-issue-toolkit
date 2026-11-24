@@ -385,13 +385,14 @@
     .mock-assign .ar i { width: 14px; height: 14px; margin-top: 4px; border: 1px solid var(--border-strong); border-radius: 3px; background: var(--b); flex: none; }
     .mock-assign .am { display: flex; gap: 8px; align-items: baseline; font-size: 12px; color: var(--fg-muted); }
     .mock-assign .am b { color: var(--fg); font-weight: 600; }
-    .mock-assign .am a { margin-left: auto; color: var(--accent); }
+    .mock-assign .am a { margin-left: auto; color: var(--ink); }
     .mock-assign .ap { font-size: 13px; }
     .mock-assign mark { padding: 0 2px; border-radius: 3px; background: rgba(212,167,44,.35); color: inherit; font-weight: 700; }
     .mock-assign .bar { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-top: 1px solid var(--border); font-size: 12px; }
-    .mock-assign .btn { padding: 3px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-muted); font-weight: 500; }
-    .mock-assign .bar a { color: var(--accent); }
-    .mock-omni { padding: 8px 0; overflow: hidden; }
+    .mock-assign .btn { padding: 4px 12px; border: 1px solid transparent; border-radius: 6px; background: var(--b); color: #fff; font-weight: 500; line-height: 20px; }
+    .mock-assign .ghost { padding: 4px 12px; border-radius: 6px; color: var(--fg-muted); font-weight: 500; line-height: 20px; }
+    .mock-assign .sp { flex: 1; }
+        .mock-omni { padding: 8px 0; overflow: hidden; }
     .mock-omni .bar { display: flex; align-items: center; gap: 10px; margin: 0 8px 6px; padding: 7px 12px; border-radius: 9999px; background: var(--bg-muted); font-size: 14px; }
     .mock-omni .kw { padding: 2px 10px; border-radius: 9999px; background: var(--info-bg); color: var(--accent); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
     .mock-omni .caret { width: 1px; height: 17px; margin-left: -8px; background: var(--fg); }
@@ -639,7 +640,7 @@
           <div class="wk"><div class="acc">Comments asking to be assigned (2)</div><div class="wl">
             <div class="ar"><i></i><div><div class="am"><b>sam-k</b><span>5 d ago</span><a>Open</a></div><div class="ap">Hi, <mark>can I</mark> <mark>work on</mark> this issue? <mark>I would like to</mark> take it.</div></div></div>
             <div class="ar"><i></i><div><div class="am"><b>lee-p</b><span>3 d ago</span><a>Open</a></div><div class="ap">Please <mark>assign</mark> this to me, I have experience with the scheduler.</div></div></div>
-          </div><div class="bar"><span class="btn">Hide 2 as outdated</span><a>Select all</a><a>None</a></div></div>
+          </div><div class="bar"><span class="btn">Hide 2 as outdated</span><span class="sp"></span><span class="ghost">Select all</span><span class="ghost">None</span></div></div>
           <div class="wk"><div class="acc shut">Comments by the assignee (1)</div></div>
           <div class="wk"><div class="acc shut">Words searched for (15)</div></div>
         </div>
