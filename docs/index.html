@@ -387,7 +387,7 @@
     .mock-assign .am b { color: var(--fg); font-weight: 600; }
     .mock-assign .am a { margin-left: auto; color: var(--accent); }
     .mock-assign .ap { font-size: 13px; }
-    .mock-assign mark { padding: 0 2px; border-radius: 3px; background: rgba(212,167,44,.35); color: inherit; }
+    .mock-assign mark { padding: 0 2px; border-radius: 3px; background: rgba(212,167,44,.35); color: inherit; font-weight: 700; }
     .mock-assign .bar { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-top: 1px solid var(--border); font-size: 12px; }
     .mock-assign .btn { padding: 3px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-muted); font-weight: 500; }
     .mock-assign .bar a { color: var(--accent); }
@@ -641,9 +641,10 @@
             <div class="ar"><i></i><div><div class="am"><b>lee-p</b><span>3 d ago</span><a>Open</a></div><div class="ap">Please <mark>assign</mark> this to me, I have experience with the scheduler.</div></div></div>
           </div><div class="bar"><span class="btn">Hide 2 as outdated</span><a>Select all</a><a>None</a></div></div>
           <div class="wk"><div class="acc shut">Comments by the assignee (1)</div></div>
+          <div class="wk"><div class="acc shut">Words searched for (15)</div></div>
         </div>
       </div>
-      <p class="example-caption">Highlighted words show why each comment was picked. Nothing is hidden until you confirm.</p>
+      <p class="example-caption">Only the words that were found are bold, on a soft highlight. A closed list says which words are searched for and links to the settings where they can be changed. Nothing is hidden until you confirm.</p>
 
       <h3 style="margin-top:28px">Address bar search</h3>
       <p class="muted" style="font-size:14px">Type <code>@gh</code> and a space in the address bar, then a shortcut and a few words. The first row searches GitHub with them, the others open a match directly. Each issue and pull request carries its state, author and last update, each repository its description and last push.</p>

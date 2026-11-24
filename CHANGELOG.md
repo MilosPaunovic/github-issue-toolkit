@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- In the assignment requests box only the words that were found are bold, a closed **Words searched for** list shows the words in use with a link to the extension's settings, and the box follows the style of the profile panel and the contributor card.
 - The words that mark an assignment request are a list of tags, starting from a default list: type a word or phrase and press Enter to add it, press the cross on a tag to remove it, or reset to the defaults. The token guidance now names `Pull requests: Read-only` for the pull request counts, and write access for hiding comments.
 - **Assignment requests**: a box above the conversation of an assigned issue, off by default, listing the comments of other people that contain one of your words, `assign`, `work on`, `can i` and so on, with the words highlighted in a preview, and apart from it a closed list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation, with an Undo. Only comments of up to 400 characters are offered, and your own, the assignee's and hidden ones are left out. It needs a token with write access to hide comments. Set on the Contributors tab.
 - Where the contributor button says Member, GitHub's own Member or Owner label at the right of the comment header is hidden, so it is not said twice. The Contributor and First-time contributor labels stay, and the label comes back when the button is switched off.

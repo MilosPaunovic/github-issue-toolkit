@@ -1251,6 +1251,7 @@ div:has(> .gsf-progress) {
   align-items: flex-start;
   gap: 10px;
   padding: 8px 16px;
+  font-weight: 400;
   color: inherit !important;
   text-decoration: none !important;
   cursor: pointer;
@@ -1267,6 +1268,7 @@ div:has(> .gsf-progress) {
 .gsf-assign-row input {
   flex: none;
   margin: 4px 0 0;
+  accent-color: var(--gsf-brand, var(--fgColor-accent));
 }
 .gsf-assign-text {
   min-width: 0;
@@ -1293,13 +1295,16 @@ div:has(> .gsf-progress) {
 }
 .gsf-assign-preview {
   font-size: 13px;
+  font-weight: 400;
   overflow-wrap: anywhere;
 }
+/* Only the word that was found is bold, on a soft highlight. */
 .gsf-assign-mark {
   padding: 0 2px;
   border-radius: 3px;
   background: var(--bgColor-attention-muted, rgba(212, 167, 44, 0.3));
   color: inherit;
+  font-weight: 700;
 }
 .gsf-assign-bar {
   display: flex;
@@ -1342,5 +1347,30 @@ div:has(> .gsf-progress) {
 }
 .gsf-assign-note {
   font-size: 12px;
+  color: var(--fgColor-muted);
+}
+.gsf-assign[data-brand] .gsf-assign-meta a,
+.gsf-assign[data-brand] .gsf-assign-link {
+  color: var(--gsf-ink) !important;
+}
+.gsf-assign[data-brand] .gsf-profile-title {
+  color: var(--fgColor-default) !important;
+}
+.gsf-assign-words {
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--borderColor-muted);
+}
+.gsf-assign-wordlist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.gsf-assign-word {
+  padding: 0 8px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 9999px;
+  font-size: 12px;
+  line-height: 20px;
   color: var(--fgColor-muted);
 }

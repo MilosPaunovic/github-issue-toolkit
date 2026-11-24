@@ -1976,6 +1976,33 @@
       box.append(list);
       panel.append(box);
     }
+
+    panel.append(assignWordsBox());
+  }
+
+  // Which words are being looked for, read-only, with the way to change them: the extension's settings page.
+  function assignWordsBox() {
+    const words = assignWordList();
+    const box = assignAccordion(`Words searched for (${words.length})`, false);
+    const body = document.createElement("div");
+    body.className = "gsf-assign-words";
+    const list = document.createElement("div");
+    list.className = "gsf-assign-wordlist";
+    for (const word of words) {
+      const tag = document.createElement("span");
+      tag.className = "gsf-assign-word";
+      tag.textContent = word;
+      list.append(tag);
+    }
+    const note = document.createElement("div");
+    note.className = "gsf-assign-note";
+    note.append("A comment is offered when it contains one of these. A single word also matches what it starts. ",
+      assignButton("Edit the list in the extension settings", () => {
+        api.runtime.sendMessage({ type: "openOptions" }).catch(() => {});
+      }, "gsf-assign-link"));
+    body.append(list, note);
+    box.append(body);
+    return box;
   }
 
   // Marks the chosen comments as outdated, after the person confirmed. GitHub shows them collapsed on the next load.
