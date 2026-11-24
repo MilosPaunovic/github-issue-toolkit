@@ -1096,7 +1096,7 @@ div:has(> .gsf-progress) {
 .gsf-profile-work > summary {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
   padding: 8px 16px;
   list-style: none;
   font-size: 13px;

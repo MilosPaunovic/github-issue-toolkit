@@ -1380,7 +1380,7 @@
     ]],
     ["Issues", [
       ["Opened", "issues", "Issues opened by this person", (l) => `is:issue author:${l}`],
-      ["Assigned", "assignedOpen", "Issues assigned to this person that are still open", (l) => `is:issue is:open assignee:${l}`, () => "still open"]
+      ["Assigned", "assignedOpen", "Issues assigned to this person that are still open", (l) => `is:issue is:open assignee:${l}`]
     ]],
     ["Community", [
       ["PRs reviewed", "reviewed", "Pull requests by other people that this person reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`],
