@@ -1366,15 +1366,23 @@
   // Kept for as long as the tab is open, like the contributor reads: "org/login" -> { at, data, error }.
   const profileCache = new Map();
   const profilePending = new Map();
-  // The tiles: label, key of the answer, the terms behind the number, and the note under it.
-  const PROFILE_TILES = [
-    ["Merged PRs", "merged", (l) => `is:pr is:merged author:${l}`],
-    ["Open PRs", "open", (l) => `is:pr is:open author:${l}`],
-    ["Closed, not merged", "closed", (l) => `is:pr is:closed is:unmerged author:${l}`],
-    ["Issues opened", "issues", (l) => `is:issue author:${l}`],
-    ["PRs reviewed", "reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`],
-    ["Assigned, open", "assignedOpen", (l) => `is:issue is:open assignee:${l}`],
-    ["Assigned, done", "assignedDone", (l) => `is:issue is:closed reason:completed assignee:${l}`]
+  // The numbers come in three groups, so each reads as part of one question: what they did with pull
+  // requests, what they did with issues, and what they reviewed. A tile is label, key of the answer, what
+  // it counts for the tooltip, and the terms behind the number.
+  const PROFILE_GROUPS = [
+    ["Pull requests", [
+      ["Merged", "merged", "Pull requests they opened that were merged", (l) => `is:pr is:merged author:${l}`],
+      ["Open", "open", "Pull requests they opened that are still open", (l) => `is:pr is:open author:${l}`],
+      ["Closed unmerged", "closed", "Pull requests they opened that were closed without being merged", (l) => `is:pr is:closed is:unmerged author:${l}`]
+    ]],
+    ["Issues", [
+      ["Opened", "issues", "Issues they opened", (l) => `is:issue author:${l}`],
+      ["Assigned, open", "assignedOpen", "Issues assigned to them that are still open", (l) => `is:issue is:open assignee:${l}`],
+      ["Assigned, done", "assignedDone", "Issues assigned to them that were closed as completed", (l) => `is:issue is:closed reason:completed assignee:${l}`]
+    ]],
+    ["Reviews", [
+      ["PRs reviewed", "reviewed", "Pull requests by other people that they reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`]
+    ]]
   ];
 
   function profileOrgs() {
@@ -1493,33 +1501,46 @@
       return;
     }
 
-    const grid = document.createElement("div");
-    grid.className = "gsf-profile-stats";
-    for (const [label, key, terms] of PROFILE_TILES) {
-      const value = entry.data[key];
-      const tile = document.createElement("a");
-      tile.className = "gsf-profile-tile";
-      tile.href = profileUrl(org, terms(login));
-      tile.target = "_blank";
-      tile.rel = "noopener";
-      if (!value) tile.dataset.zero = "1";
-      const number = document.createElement("span");
-      number.className = "gsf-profile-num";
-      number.textContent = value === null || value === undefined ? "-" : value.toLocaleString();
-      const name = document.createElement("span");
-      name.className = "gsf-profile-label";
-      name.textContent = label;
-      tile.append(number, name);
-      // Of the issues opened, how many are still open.
-      if (key === "issues" && entry.data.issuesOpen !== null && entry.data.issuesOpen !== undefined) {
-        const note = document.createElement("span");
-        note.className = "gsf-profile-label";
-        note.textContent = `${entry.data.issuesOpen.toLocaleString()} open`;
-        tile.append(note);
+    const stats = document.createElement("div");
+    stats.className = "gsf-profile-stats";
+    for (const [title, tiles] of PROFILE_GROUPS) {
+      const group = document.createElement("div");
+      group.className = "gsf-profile-group";
+      group.style.setProperty("--n", String(tiles.length));
+      const heading = document.createElement("div");
+      heading.className = "gsf-profile-grouphead";
+      heading.textContent = title;
+      const row = document.createElement("div");
+      row.className = "gsf-profile-tiles";
+      for (const [label, key, what, terms] of tiles) {
+        const value = entry.data[key];
+        const tile = document.createElement("a");
+        tile.className = "gsf-profile-tile";
+        tile.href = profileUrl(org, terms(login));
+        tile.target = "_blank";
+        tile.rel = "noopener";
+        tile.title = what;
+        if (!value) tile.dataset.zero = "1";
+        const number = document.createElement("span");
+        number.className = "gsf-profile-num";
+        number.textContent = value === null || value === undefined ? "-" : value.toLocaleString();
+        const name = document.createElement("span");
+        name.className = "gsf-profile-label";
+        name.textContent = label;
+        tile.append(number, name);
+        // Of the issues opened, how many are still open.
+        if (key === "issues" && entry.data.issuesOpen !== null && entry.data.issuesOpen !== undefined) {
+          const note = document.createElement("span");
+          note.className = "gsf-profile-label";
+          note.textContent = `${entry.data.issuesOpen.toLocaleString()} still open`;
+          tile.append(note);
+        }
+        row.append(tile);
       }
-      grid.append(tile);
+      group.append(heading, row);
+      stats.append(group);
     }
-    block.append(grid);
+    block.append(stats);
   }
 
   async function profileLoad(block, org, login, force) {
