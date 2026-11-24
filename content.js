@@ -760,8 +760,8 @@
   // The rows of the card: label, key of the answer, and the search terms behind the number.
   const LOAD_GROUPS = [
     ["Pull requests", [
-      ["Merged", "merged", (login) => `is:pr is:merged author:${login}`],
       ["Open", "open", (login) => `is:pr is:open author:${login}`],
+      ["Merged", "merged", (login) => `is:pr is:merged author:${login}`],
       ["Closed, not merged", "closed", (login) => `is:pr is:closed is:unmerged author:${login}`]
     ]],
     ["Issues", [
@@ -1371,8 +1371,8 @@
   // it counts for the tooltip, and the terms behind the number.
   const PROFILE_GROUPS = [
     ["Pull requests", [
-      ["Merged", "merged", "Pull requests they opened that were merged", (l) => `is:pr is:merged author:${l}`],
       ["Open", "open", "Pull requests they opened that are still open", (l) => `is:pr is:open author:${l}`],
+      ["Merged", "merged", "Pull requests they opened that were merged", (l) => `is:pr is:merged author:${l}`],
       ["Closed unmerged", "closed", "Pull requests they opened that were closed without being merged", (l) => `is:pr is:closed is:unmerged author:${l}`]
     ]],
     ["Issues", [
