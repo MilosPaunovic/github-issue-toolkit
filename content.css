@@ -1189,6 +1189,13 @@ div:has(> .gsf-progress) {
 .gsf-load-card[data-brand] .gsf-load-head + .gsf-load-section {
   border-top-color: var(--gsf-rule);
 }
+/* The card's header takes the colour too, filling the card from edge to edge. */
+.gsf-load-card[data-brand] .gsf-load-head {
+  margin: -10px -10px 0;
+  padding: 12px 14px 10px;
+  border-radius: 9px 9px 0 0;
+  background: color-mix(in srgb, var(--gsf-brand) 10%, var(--bgColor-muted));
+}
 .gsf-load-card[data-brand] .gsf-load-sectionhead > span:first-child {
   color: var(--gsf-ink);
 }
@@ -1207,6 +1214,7 @@ div:has(> .gsf-progress) {
 }
 .gsf-profile-org[data-brand] .gsf-profile-head {
   border-bottom-color: var(--gsf-rule);
+  background: color-mix(in srgb, var(--gsf-brand) 10%, var(--bgColor-muted));
 }
 .gsf-profile-org[data-brand] .gsf-profile-grouphead,
 .gsf-profile-org[data-brand] .gsf-profile-num {
