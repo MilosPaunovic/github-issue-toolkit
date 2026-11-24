@@ -170,7 +170,7 @@ Minimum version: Firefox 140, required by the `data_collection_permissions` mani
 
 ### Settings tabs
 
-The toolbar icon opens the settings page, which is split into tabs: Home, Access, Badges, Epics, Issue pages and Search. Home is a short welcome with the state of your token and of the site access, and a map of the other tabs. It opens by itself the first time and not again once you pick another tab; after that the page opens on the tab you used last, and Home stays one click away. A Save button sits at the bottom of every tab and saves all of them at once, so what you typed on one tab is kept while you look at another.
+The toolbar icon opens the settings page, which is split into tabs: Home, Access, Badges, Epics, Issue pages and Search. Home is a short welcome with the state of your token and of the site access, and a map of the other tabs. It opens by itself the first time and not again once you pick another tab; after that the page opens on the tab you used last, and Home stays one click away. While there is no token, Home has an Add your token button that goes straight to the Access tab. A Save button sits at the bottom of every tab and saves all of them at once, so what you typed on one tab is kept while you look at another.
 
 ### Epic kanban
 
