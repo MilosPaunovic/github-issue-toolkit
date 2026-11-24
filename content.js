@@ -1208,7 +1208,7 @@
     );
 
     if (data.items.length) {
-      const section = loadSection(`Open issues assigned to them (${data.assigned.org || data.items.length})`);
+      const section = loadSection(`Open issues assigned to ${login} (${data.assigned.org || data.items.length})`);
       // Two are shown and the rest scroll, so a person with many open issues does not push the card off the screen.
       const list = document.createElement("div");
       list.className = "gsf-load-list";
@@ -1371,22 +1371,30 @@
   // The numbers come in three groups, so each reads as part of one question: what they did with pull
   // requests, what they did with issues, and how they take part. A tile is label, key of the answer, what
   // it counts for the tooltip, the terms behind the number, and an optional note for under it.
-  const PROFILE_GROUPS = [
-    ["Pull requests they opened", [
-      ["Open", "open", "Pull requests they opened that are still open", (l) => `is:pr is:open author:${l}`],
-      ["Merged", "merged", "Pull requests they opened that were merged", (l) => `is:pr is:merged author:${l}`,
-        (d) => (d.merged + (d.closed || 0) ? `${Math.round((d.merged / (d.merged + (d.closed || 0))) * 100)}% of closed PRs merged` : ""),
-        (d) => `${d.merged.toLocaleString()} merged and ${(d.closed || 0).toLocaleString()} closed without being merged. Open pull requests are not counted.`]
-    ]],
-    ["Issues", [
-      ["Opened", "issues", "Issues they opened", (l) => `is:issue author:${l}`],
-      ["Assigned to them", "assignedOpen", "Issues assigned to them that are still open", (l) => `is:issue is:open assignee:${l}`, () => "still open"]
-    ]],
-    ["Community", [
-      ["PRs reviewed", "reviewed", "Pull requests by other people that they reviewed", (l) => `is:pr reviewed-by:${l} -author:${l}`, () => "written by others"],
-      ["Commented on", "commented", "Issues and pull requests by other people that they commented on", (l) => `commenter:${l} -author:${l}`, () => "on others' work"]
-    ]]
-  ];
+  // The panel speaks of the person by name, not as "they": the first name on the profile, or the login when
+  // the profile has none.
+  function profileName(login) {
+    const full = document.querySelector(".vcard-fullname, [itemprop=\"name\"]");
+    const first = full ? full.textContent.trim().split(/\s+/)[0] : "";
+    return first || login;
+  }
+
+  function profileGroups(name) {
+    return [
+      [`Pull requests ${name} opened`, [
+        ["Open", "open", `Pull requests ${name} opened that are still open`, (l) => `is:pr is:open author:${l}`],
+        ["Merged", "merged", `Pull requests ${name} opened that were merged`, (l) => `is:pr is:merged author:${l}`]
+      ]],
+      ["Issues", [
+        ["Opened", "issues", `Issues ${name} opened`, (l) => `is:issue author:${l}`],
+        [`Assigned to ${name}`, "assignedOpen", `Issues assigned to ${name} that are still open`, (l) => `is:issue is:open assignee:${l}`, () => "still open"]
+      ]],
+      ["Community", [
+        ["PRs reviewed", "reviewed", `Pull requests by other people that ${name} reviewed`, (l) => `is:pr reviewed-by:${l} -author:${l}`, () => "written by others"],
+        ["Commented on", "commented", `Issues and pull requests by other people that ${name} commented on`, (l) => `commenter:${l} -author:${l}`, () => "on others' work"]
+      ]]
+    ];
+  }
 
   function profileOrgs() {
     return settings.profileOrgs.split(",").map((s) => s.trim().replace(/^@/, "")).filter(Boolean).slice(0, PROFILE_MAX_ORGS);
@@ -1506,7 +1514,8 @@
 
     const stats = document.createElement("div");
     stats.className = "gsf-profile-stats";
-    for (const [title, tiles] of PROFILE_GROUPS) {
+    const name = profileName(login);
+    for (const [title, tiles] of profileGroups(name)) {
       const group = document.createElement("div");
       group.className = "gsf-profile-group";
       group.style.setProperty("--n", String(tiles.length));
@@ -1531,7 +1540,7 @@
         name.className = "gsf-profile-label";
         name.textContent = label;
         tile.append(number, name);
-        // What goes under the number: how many issues are still open, the merge rate.
+        // What goes under the number, when it needs saying.
         const text = note ? note(entry.data) : "";
         if (text) {
           const line = document.createElement("span");
@@ -1546,19 +1555,21 @@
       stats.append(group);
     }
     block.append(stats);
-    profileExtras(block, org, entry.data);
+    profileExtras(block, org, entry.data, name);
   }
 
   // Under the numbers: where they work, and what they have open right now.
-  function profileExtras(block, org, data) {
+  function profileExtras(block, org, data, name) {
     if (data.topRepos && data.topRepos.length) {
       const row = document.createElement("div");
       row.className = "gsf-profile-where";
       // Counted over their latest merged pull requests, not over all of them, and the line says so.
       const sample = data.mergedSample || 0;
-      row.title = `Where their latest ${sample} merged pull requests went`;
+      // Up to a hundred are looked at; a person with fewer has all of theirs counted, and the line says which.
+      const all = typeof data.merged === "number" && data.merged <= sample;
+      row.title = all ? `Where ${name}'s ${sample} merged pull requests went` : `Where ${name}'s latest ${sample} merged pull requests went`;
       const label = document.createElement("span");
-      label.textContent = `Their latest ${sample} merged PRs went to`;
+      label.textContent = all ? `${name}'s ${sample} merged PRs went to` : `${name}'s latest ${sample} merged PRs went to`;
       row.append(label);
       data.topRepos.forEach((repo) => {
         const link = document.createElement("a");
@@ -1574,10 +1585,10 @@
       block.append(row);
     }
     if (data.openWork && data.openWork.length) {
-      block.append(profileAccordion(`Their open pull requests (${(data.open || data.openWork.length).toLocaleString()})`, data.openWork));
+      block.append(profileAccordion(`${name}'s open pull requests (${(data.open || data.openWork.length).toLocaleString()})`, data.openWork));
     }
     if (data.openIssues && data.openIssues.length) {
-      block.append(profileAccordion(`Open issues assigned to them (${(data.assignedOpen || data.openIssues.length).toLocaleString()})`, data.openIssues));
+      block.append(profileAccordion(`Open issues assigned to ${name} (${(data.assignedOpen || data.openIssues.length).toLocaleString()})`, data.openIssues));
     }
   }
 
