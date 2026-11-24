@@ -1207,6 +1207,7 @@ div:has(> .gsf-progress) {
 }
 .gsf-profile-org[data-brand] .gsf-profile-head {
   border-bottom-color: var(--gsf-rule);
+  background: color-mix(in srgb, var(--gsf-brand) 10%, var(--bgColor-muted));
 }
 .gsf-profile-org[data-brand] .gsf-profile-grouphead,
 .gsf-profile-org[data-brand] .gsf-profile-num {
