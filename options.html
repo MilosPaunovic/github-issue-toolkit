@@ -55,7 +55,8 @@
     .only-dark { display: none; }
     @media (prefers-color-scheme: dark) { .only-dark { display: block; } .only-light { display: none; } }
     body { margin: 0; min-height: 100vh; background: var(--bg-base); color: var(--text-primary); font: 14px/1.55 var(--font-sans); }
-    .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 24px; }
+    .page { max-width: 720px; margin: 0 auto; padding: 40px 24px 88px; }
+    .preview .page { padding-bottom: 24px; }
     header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
     header img { width: 44px; height: 44px; border-radius: 10px; }
     header h1 { font-size: 20px; font-weight: 600; margin: 0; line-height: 1.2; }
@@ -156,8 +157,8 @@
     .tour button:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
     .tour b { font-weight: 600; font-size: 14px; }
     .tour span { color: var(--text-secondary); font-size: 13px; }
-    .savebar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 12px 0; margin-top: 8px; background: var(--bg-base); border-top: 1px solid var(--border-default); }
-    .preview .savebar { position: static; }
+    .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; align-items: center; gap: 10px; padding: 12px max(24px, calc(50% - 336px)); background: var(--bg-base); border-top: 1px solid var(--border-default); }
+    .preview .savebar { position: static; padding: 12px 0; margin-top: 8px; }
     kbd { font: 11px var(--font-mono); padding: 1px 5px; border: 1px solid var(--border-default); border-bottom-width: 2px; border-radius: 4px; background: var(--code-bg); }
     footer { color: var(--text-secondary); font-size: 12px; margin-top: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
     .mono:empty { display: none; }
