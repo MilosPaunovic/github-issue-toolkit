@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.12.2] - 2026-11-25
+
 ### Changed
 
 - The settings page has a **Pull requests** tab, holding the pull request badges, which moved there from Badges, and **Related work on pull requests**, which moved there from Epics, so what concerns pull requests is in one place. Badges now holds the issue fields and the issue age, and Epics the kanban board, the sub-issue progress and the sidebar.
@@ -287,7 +291,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.1...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.2...HEAD
+[2.12.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.1...v2.12.2
 [2.12.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.0...v2.12.1
 [2.12.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.4...v2.12.0
 [2.11.4]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.3...v2.11.4
