@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- A name written in the text of a comment, an @mention, no longer gets a **Contributor** button or a Member mark. Only the author of the page and the authors of the comments, and names in the timeline events you hover, do.
 
 ## [2.12.2] - 2026-11-25
 

@@ -801,10 +801,11 @@
   // The author is who an issue or pull request is about, so they are the only one the automatic read covers.
   const LOAD_AUTO_SELECTOR = "[data-testid=\"issue-body-header-author\"], .gh-header-meta a.author";
   // The sidebar is left alone: its assignees, reviewers and participants get no button, only names in the conversation do.
-  const LOAD_EXCLUDE = "[data-testid=\"sidebar-section\"], [data-testid=\"sidebar-assignees-section\"], [data-testid=\"issue-assignees\"], #partial-discussion-sidebar, .discussion-sidebar-item, aside";
+  // So is the text of a comment: a name written in it is a mention, not who wrote the comment.
+  const LOAD_EXCLUDE = ".markdown-body, .comment-body, .js-comment-body, [data-testid=\"markdown-body\"], [data-testid=\"sidebar-section\"], [data-testid=\"sidebar-assignees-section\"], [data-testid=\"issue-assignees\"], #partial-discussion-sidebar, .discussion-sidebar-item, aside";
   // Where a button is put without being asked: the author, and the authors of the comments.
   const LOAD_NAME_SELECTOR = `${LOAD_AUTO_SELECTOR}, [data-testid="avatar-link"], .timeline-comment-header a.author`;
-  // Any other name, an @mention for example, gets its button when it is hovered.
+  // Any other name in the header of the conversation, a reviewer in a timeline event for example, gets its button when it is hovered.
   const LOAD_HOVER_SELECTOR = "a[data-hovercard-type=\"user\"], a.author";
   // The rows of the card: label, key of the answer, and the search terms behind the number.
   const LOAD_GROUPS = [
