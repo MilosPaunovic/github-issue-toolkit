@@ -377,9 +377,11 @@
 
       <section class="card">
         <h2>Assignment requests</h2>
-        <p class="desc">On an issue that has been assigned, a full-width box at the very top of the issue, above its title, lists the comments from other people asking to be assigned, with the words that gave them away highlighted in a preview, and a separate list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation; an Undo brings them back. Marking comments writes to GitHub, so the token needs write access to the repository, as it does for linking and dragging. Only comments of up to 400 characters are offered, and your own and the assignee's are left out.</p>
+        <p class="desc">On an issue that has been assigned, a full-width box at the very top of the issue, above its title, lists the comments from other people asking to be assigned, with the words that gave them away highlighted in a preview, and a separate list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation; an Undo brings them back. Marking comments writes to GitHub, so the token needs write access to the repository, as it does for linking and dragging. Only comments of up to 400 characters are offered, and your own and the assignee's are left out. Issues in private repositories are skipped unless you tick the box below, since only people with access can comment there.</p>
         <label class="check"><input id="assign-enabled" type="checkbox"> Show the assignment requests box on assigned issues</label>
         <label class="check"><input id="assign-folded" type="checkbox"> Collapse the box when an issue opens, so only its header line shows</label>
+        <label class="check"><input id="assign-private" type="checkbox"> Also show it on issues in private repositories</label>
+        <p class="hint">Left off, the box stays away from private repositories, where only people with access can comment, so nobody there is asking to be let in.</p>
         <label for="assign-words">Words and phrases that mark a request</label>
         <input id="assign-words" type="text" spellcheck="false" autocomplete="off" placeholder="Add a word or phrase and press Enter">
         <div id="assign-chips" class="chips-list" role="list" aria-label="Words and phrases"></div>

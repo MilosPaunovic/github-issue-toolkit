@@ -403,12 +403,14 @@ async function fetchIssueComments(ref) {
   let after = null;
   let assignees = [];
   let author = "";
+  let isPrivate = false;
   const comments = [];
   let more = false;
   for (let page = 0; page < ASSIGN_PAGES; page++) {
     const cursor = after ? `, after: ${JSON.stringify(after)}` : "";
     const data = await graphql(token, `{
       repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repo)}) {
+        isPrivate
         issue(number: ${number}) {
           author { login }
           assignees(first: 20) { nodes { login } }
@@ -421,6 +423,7 @@ async function fetchIssueComments(ref) {
     }`);
     const issue = data.repository && data.repository.issue;
     if (!issue) return { error: "That issue could not be read." };
+    isPrivate = Boolean(data.repository.isPrivate);
     author = (issue.author && issue.author.login) || "";
     assignees = ((issue.assignees && issue.assignees.nodes) || []).filter(Boolean).map((u) => u.login);
     for (const node of issue.comments.nodes || []) {
@@ -441,7 +444,7 @@ async function fetchIssueComments(ref) {
     if (!more) break;
     after = issue.comments.pageInfo.endCursor;
   }
-  return { author, assignees, comments, more };
+  return { author, assignees, comments, more, isPrivate };
 }
 
 // Marks comments as outdated, or brings them back. This writes to GitHub, and only ever for the ids it is given
