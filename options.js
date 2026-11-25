@@ -30,6 +30,7 @@ const profileFoldedInput = document.getElementById("profile-folded");
 const relatedEnabledInput = document.getElementById("related-enabled");
 const relatedFoldedInput = document.getElementById("related-folded");
 const assignFoldedInput = document.getElementById("assign-folded");
+const assignPrivateInput = document.getElementById("assign-private");
 const profileOrgsInput = document.getElementById("profile-orgs");
 const assignEnabledInput = document.getElementById("assign-enabled");
 const assignWordsInput = document.getElementById("assign-words");
@@ -347,7 +348,7 @@ if (hasChrome) {
     refreshAccess();
   });
   // What is saved, put back on the page: at the start, and again when changes are discarded.
-  const STORED_KEYS = ["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignFolded", "profileFolded", "relatedEnabled", "relatedFolded", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "searchShortcuts", "searchDefault", "pins", "welcomeSeen"];
+  const STORED_KEYS = ["token", "fields", "ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "kanbanEnabled", "kanbanDrag", "sidebarToggle", "hideProjectsSection", "prAssociation", "prFork", "prSize", "prMergeState", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignFolded", "assignPrivate", "profileFolded", "relatedEnabled", "relatedFolded", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "searchShortcuts", "searchDefault", "pins", "welcomeSeen"];
   function applyStored(stored, first) {
     tokenInput.value = stored.token || "";
     renderHomeToken(String(stored.token || "").trim());
@@ -368,6 +369,7 @@ if (hasChrome) {
     relatedEnabledInput.checked = stored.relatedEnabled !== false;
     relatedFoldedInput.checked = stored.relatedFolded !== false;
     assignFoldedInput.checked = stored.assignFolded !== false;
+    assignPrivateInput.checked = stored.assignPrivate === true;
     profileOrgsInput.value = stored.profileOrgs || "";
     assignEnabledInput.checked = stored.assignEnabled === true;
     const savedWords = String(stored.assignWords || "").split(",").map((w) => w.trim()).filter(Boolean);
@@ -438,7 +440,7 @@ document.getElementById("save").addEventListener("click", async () => {
   if (assignWordsInput.value.trim()) addAssignWords(assignWordsInput.value);
   if (!assignWords.length) return setStatus("Keep at least one word that marks an assignment request, or reset the list.", false);
   if (!hasChrome) return setStatus("Preview mode: nothing saved.", false);
-  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadAuto: loadAutoInput.checked, loadMembersMode: membersSkip.checked ? "skip" : (membersPlain.checked ? "plain" : "show"), assignEnabled: assignEnabledInput.checked, assignFolded: assignFoldedInput.checked, relatedEnabled: relatedEnabledInput.checked, relatedFolded: relatedFoldedInput.checked, profileFolded: profileFoldedInput.checked, assignWords: assignWords.join(", "), profileEnabled: profileEnabledInput.checked, profileOrgs: profileOrgsInput.value.split(",").map((x) => x.trim().replace(/^@/, "")).filter(Boolean).slice(0, 3).join(", "), loadRegular: Math.max(1, parseInt(loadRegular.value, 10) || 5), loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, progressEnabled: progressEnabledInput.checked, progressScopeField: progressScope.value.trim(), progressDoneField: progressDoneField.value.trim(), progressDoneValue: progressDoneValue.value.trim(), searchShortcuts: search.list, searchDefault: search.defaultName });
+  await api.storage.local.set({ token, fields: fieldList, ageEnabled: ageEnabled.checked, ageUnit: ageUnit.value, ageWarnDays: Math.max(0, parseInt(ageWarn.value, 10) || 0), pinsEnabled: pinsEnabledInput.checked, skipShownFields: skipShownInput.checked, kanbanEnabled: kanbanEnabledInput.checked, kanbanDrag: kanbanDragInput.checked, sidebarToggle: sidebarToggleInput.checked, hideProjectsSection: hideProjectsInput.checked, prAssociation: prInputs.prAssociation.checked, prFork: prInputs.prFork.checked, prSize: prInputs.prSize.checked, prMergeState: prInputs.prMergeState.checked, loadEnabled: loadEnabledInput.checked, loadAuto: loadAutoInput.checked, loadMembersMode: membersSkip.checked ? "skip" : (membersPlain.checked ? "plain" : "show"), assignEnabled: assignEnabledInput.checked, assignFolded: assignFoldedInput.checked, assignPrivate: assignPrivateInput.checked, relatedEnabled: relatedEnabledInput.checked, relatedFolded: relatedFoldedInput.checked, profileFolded: profileFoldedInput.checked, assignWords: assignWords.join(", "), profileEnabled: profileEnabledInput.checked, profileOrgs: profileOrgsInput.value.split(",").map((x) => x.trim().replace(/^@/, "")).filter(Boolean).slice(0, 3).join(", "), loadRegular: Math.max(1, parseInt(loadRegular.value, 10) || 5), loadLimit: Number.isFinite(parseInt(loadLimit.value, 10)) ? Math.max(0, parseInt(loadLimit.value, 10)) : 1, progressEnabled: progressEnabledInput.checked, progressScopeField: progressScope.value.trim(), progressDoneField: progressDoneField.value.trim(), progressDoneValue: progressDoneValue.value.trim(), searchShortcuts: search.list, searchDefault: search.defaultName });
   renderHomeToken(token);
   clearDirty();
   if (!token) setStatus("Saved without a token. Badges need one.", false);

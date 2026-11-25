@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadSkipMembers: false, profileEnabled: false, profileOrgs: "", profileFolded: true, assignEnabled: false, assignFolded: true, relatedEnabled: true, relatedFolded: true, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadSkipMembers: false, profileEnabled: false, profileOrgs: "", profileFolded: true, assignEnabled: false, assignFolded: true, assignPrivate: false, relatedEnabled: true, relatedFolded: true, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -1914,6 +1914,11 @@
       panel.hidden = true;
       return;
     }
+    // Only people with access can comment in a private repository, so nobody there is asking to be let in.
+    if (data.isPrivate && !settings.assignPrivate) {
+      panel.hidden = true;
+      return;
+    }
     const { requests, fromAssignees, regex } = await assignSplit(data);
     if (!panel.isConnected) return;
     if (!requests.length && !fromAssignees.length) {
@@ -3759,7 +3764,8 @@
       clearProfile(false);
       schedule();
     }
-    if (changes.assignEnabled || changes.assignWords) {
+    if (changes.assignEnabled || changes.assignWords || changes.assignPrivate) {
+      if (changes.assignPrivate) settings.assignPrivate = changes.assignPrivate.newValue === true;
       if (changes.assignEnabled) settings.assignEnabled = changes.assignEnabled.newValue === true;
       if (changes.assignWords) settings.assignWords = String(changes.assignWords.newValue || "");
       clearAssign(false);
@@ -3814,7 +3820,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "profileFolded", "assignFolded", "relatedEnabled", "relatedFolded"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "profileFolded", "assignFolded", "assignPrivate", "relatedEnabled", "relatedFolded"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -3846,6 +3852,7 @@
     kanban = { ...kanban, ...(stored.kanban || {}) };
     settings.profileFolded = stored.profileFolded !== false;
     settings.assignFolded = stored.assignFolded !== false;
+    settings.assignPrivate = stored.assignPrivate === true;
     settings.relatedEnabled = stored.relatedEnabled !== false;
     settings.relatedFolded = stored.relatedFolded !== false;
     panelsCollapsed.profile = settings.profileFolded;
