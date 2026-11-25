@@ -363,7 +363,7 @@
         <h2>Organization panel</h2>
         <p class="desc">At the top of a person's profile, a panel for each organization you name, in that organization's colours where it has some. It shows their open and merged pull requests, the issues they opened and are assigned, the pull requests they reviewed and the issues and pull requests they commented on, each number linking to the matching GitHub search, then two accordions, their open pull requests and the open issues assigned to them, closed until you open them. It is read once per person and organization when the profile opens, in one request, and kept until you close the tab.</p>
         <label class="check"><input id="profile-enabled" type="checkbox"> Show the organization panel on profiles (off by default)</label>
-        <label class="check"><input id="profile-folded" type="checkbox"> Start the panel folded to its header line (on by default)</label>
+        <label class="check"><input id="profile-folded" type="checkbox"> Collapse the panel when a profile opens, so only its header line shows (on by default)</label>
         <label for="profile-orgs">Organizations</label>
         <input id="profile-orgs" type="text" spellcheck="false" autocomplete="off" placeholder="kestra-io">
         <p class="hint">One or more organization names, separated by commas, up to three. Nothing is shown until at least one is named. The status beside the name, Member, Regular contributor or Contributor, uses the same regular limit as the contributor button.</p>
@@ -373,7 +373,7 @@
         <h2>Assignment requests</h2>
         <p class="desc">On an issue that has been assigned, a full-width box at the very top of the issue, above its title, lists the comments from other people asking to be assigned, with the words that gave them away highlighted in a preview, and a separate list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation; an Undo brings them back. Marking comments writes to GitHub, so the token needs write access to the repository, as it does for linking and dragging. Only comments of up to 400 characters are offered, and your own and the assignee's are left out.</p>
         <label class="check"><input id="assign-enabled" type="checkbox"> Show the assignment requests box on assigned issues (off by default)</label>
-        <label class="check"><input id="assign-folded" type="checkbox"> Start the box folded to its header line (on by default)</label>
+        <label class="check"><input id="assign-folded" type="checkbox"> Collapse the box when an issue opens, so only its header line shows (on by default)</label>
         <label for="assign-words">Words and phrases that mark a request</label>
         <input id="assign-words" type="text" spellcheck="false" autocomplete="off" placeholder="Add a word or phrase and press Enter">
         <div id="assign-chips" class="chips-list" role="list" aria-label="Words and phrases"></div>
