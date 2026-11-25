@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The settings page has a **Pull requests** tab, holding the pull request badges, which moved there from Badges, and **Related work on pull requests**, which moved there from Epics, so what concerns pull requests is in one place. Badges now holds the issue fields and the issue age, and Epics the kanban board, the sub-issue progress and the sidebar.
 
 ## [2.12.1] - 2026-11-25
 
