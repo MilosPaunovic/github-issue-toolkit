@@ -282,7 +282,7 @@
       <section class="card">
         <h2>Issue age</h2>
         <p class="desc">Adds a badge with the time elapsed since the issue was created, next to the field badges, on sub-issue lists and on project table and board views.</p>
-        <label class="check"><input id="age-enabled" type="checkbox"> Show the age of each issue (off by default)</label>
+        <label class="check"><input id="age-enabled" type="checkbox"> Show the age of each issue</label>
         <label for="age-unit">Unit</label>
         <select id="age-unit">
           <option value="months">Months (default), e.g. 3 mo</option>
@@ -315,7 +315,7 @@
       <section class="card">
         <h2>Sub-issue progress</h2>
         <p class="desc">On a Projects table grouped by parent issue, GitHub's bar in each group header counts every sub-issue of an issue, including the ones the view hides with a filter or a slice. This replaces it with one that counts only the sub-issues inside the scope the view is narrowed to and shows the scope as tags, for example <code>14 / 18 done</code> followed by <code>release:2.1</code>. The Sub-issues progress column keeps GitHub's own bar.</p>
-        <label class="check"><input id="progress-enabled" type="checkbox"> Replace GitHub's sub-issue progress (off by default)</label>
+        <label class="check"><input id="progress-enabled" type="checkbox"> Replace GitHub's sub-issue progress</label>
         <label for="progress-scope">Scope field (optional)</label>
         <input id="progress-scope" type="text" spellcheck="false" autocomplete="off" placeholder="Release">
         <p class="hint">The field whose value narrows the count, or several separated by commas, <code>Release, Owner</code> for example, matched case-insensitively. Each value is read from what the view is sliced by, or from a <code>release:2.1</code> term in its filter, and a sub-issue must have all of them. When the view is narrowed to none of them, GitHub's own bar stays. Leave it empty to count every sub-issue.</p>
@@ -330,7 +330,7 @@
         <h2>Issue sidebar</h2>
         <p class="desc">A small button between the issue and its sidebar hides the whole metadata column, assignees, labels, type, fields, projects and the rest, giving the issue body and the kanban board the full width. The button stays in the same place either way, and what you choose holds on every issue until you press it again.</p>
         <label class="check"><input id="sidebar-toggle" type="checkbox"> Show the button that hides the issue sidebar</label>
-        <label class="check"><input id="hide-projects" type="checkbox"> Hide the Projects section of the issue sidebar (off by default)</label>
+        <label class="check"><input id="hide-projects" type="checkbox"> Hide the Projects section of the issue sidebar</label>
         <p class="hint">Takes GitHub's own Projects box, with its status and fields, out of the sidebar on every issue, while the rest of the sidebar stays. The issue remains in its projects; only the box is hidden.</p>
       </section>
     </div>
@@ -340,7 +340,7 @@
         <h2>Contributor button</h2>
         <p class="desc">Adds a small button after a person's name on an issue or pull request. Press it to see who they are to this repository, new, returning or a regular, and what they already hold: pull requests open, merged or closed without merging, and issues assigned to them. Handy before you reply to a stranger or hand someone one more thing. Nothing is looked up until you press the button, each person is looked up once, and the answer stays until you close the tab.</p>
         <p class="hint sample">It looks like this next to a name: <i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i> and, once pressed, <i class="mk-pill mk-g">First PR here</i></p>
-        <label class="check"><input id="load-enabled" type="checkbox"> Show the button after usernames (off by default)</label>
+        <label class="check"><input id="load-enabled" type="checkbox"> Show the button after usernames</label>
         <fieldset class="choice">
           <legend>Members of the organization</legend>
           <label class="check"><input id="members-skip" name="members-mode" type="radio"> Leave them out: no button next to their names</label>
@@ -348,7 +348,7 @@
           <label class="check"><input id="members-plain" name="members-mode" type="radio"> Give them a button like anyone else</label>
           <p class="hint">Which names on the page belong to the organization is asked once, in a shared request, and a button or a Member mark is shown for a name only after that answer. A member's Member mark is not a button, so nothing else about them is read.</p>
         </fieldset>
-        <label class="check"><input id="load-auto" type="checkbox"> Look up the author on their own, without pressing (off by default)</label>
+        <label class="check"><input id="load-auto" type="checkbox"> Look up the author on their own, without pressing</label>
         <p class="hint">Costs one request when an issue opens, and shows the author's status on sight. Everyone else is still looked up when you press their button. The sidebar gets no buttons, only names in the conversation do.</p>
       </section>
       <section class="card">
@@ -362,8 +362,8 @@
       <section class="card">
         <h2>Organization panel</h2>
         <p class="desc">At the top of a person's profile, a panel for each organization you name, in that organization's colours where it has some. It shows their open and merged pull requests, the issues they opened and are assigned, the pull requests they reviewed and the issues and pull requests they commented on, each number linking to the matching GitHub search, then two accordions, their open pull requests and the open issues assigned to them, closed until you open them. It is read once per person and organization when the profile opens, in one request, and kept until you close the tab.</p>
-        <label class="check"><input id="profile-enabled" type="checkbox"> Show the organization panel on profiles (off by default)</label>
-        <label class="check"><input id="profile-folded" type="checkbox"> Collapse the panel when a profile opens, so only its header line shows (on by default)</label>
+        <label class="check"><input id="profile-enabled" type="checkbox"> Show the organization panel on profiles</label>
+        <label class="check"><input id="profile-folded" type="checkbox"> Collapse the panel when a profile opens, so only its header line shows</label>
         <label for="profile-orgs">Organizations</label>
         <input id="profile-orgs" type="text" spellcheck="false" autocomplete="off" placeholder="kestra-io">
         <p class="hint">One or more organization names, separated by commas, up to three. Nothing is shown until at least one is named. The status beside the name, Member, Regular contributor or Contributor, uses the same regular limit as the contributor button.</p>
@@ -372,8 +372,8 @@
       <section class="card">
         <h2>Assignment requests</h2>
         <p class="desc">On an issue that has been assigned, a full-width box at the very top of the issue, above its title, lists the comments from other people asking to be assigned, with the words that gave them away highlighted in a preview, and a separate list of what the assignee wrote. Tick the ones that are no longer wanted and mark them as outdated on GitHub, after a confirmation; an Undo brings them back. Marking comments writes to GitHub, so the token needs write access to the repository, as it does for linking and dragging. Only comments of up to 400 characters are offered, and your own and the assignee's are left out.</p>
-        <label class="check"><input id="assign-enabled" type="checkbox"> Show the assignment requests box on assigned issues (off by default)</label>
-        <label class="check"><input id="assign-folded" type="checkbox"> Collapse the box when an issue opens, so only its header line shows (on by default)</label>
+        <label class="check"><input id="assign-enabled" type="checkbox"> Show the assignment requests box on assigned issues</label>
+        <label class="check"><input id="assign-folded" type="checkbox"> Collapse the box when an issue opens, so only its header line shows</label>
         <label for="assign-words">Words and phrases that mark a request</label>
         <input id="assign-words" type="text" spellcheck="false" autocomplete="off" placeholder="Add a word or phrase and press Enter">
         <div id="assign-chips" class="chips-list" role="list" aria-label="Words and phrases"></div>
