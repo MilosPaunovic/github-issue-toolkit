@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.12.1] - 2026-11-25
+
 ### Changed
 
 - The **Reading the button** list on the Contributors tab has evenly spaced rows: every state sits on one line of the same height, with the Member note shortened to fit.
@@ -281,7 +285,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.1...HEAD
+[2.12.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.0...v2.12.1
 [2.12.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.4...v2.12.0
 [2.11.4]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.3...v2.11.4
 [2.11.3]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.2...v2.11.3
