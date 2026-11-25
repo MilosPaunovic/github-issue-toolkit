@@ -956,7 +956,7 @@ div:has(> .gsf-progress) {
   flex-direction: column;
   gap: 16px;
   max-width: 1280px;
-  margin: 16px auto 0;
+  margin: 16px auto -10px;
   padding: 0 16px;
 }
 @media (min-width: 768px) {
@@ -1300,7 +1300,7 @@ div:has(> .gsf-progress) {
 .gsf-assign {
   box-sizing: border-box;
   width: min(1232px, calc(100% - 32px));
-  margin: 16px auto;
+  margin: 0 auto 16px;
 }
 .gsf-assign[hidden] {
   display: none;
