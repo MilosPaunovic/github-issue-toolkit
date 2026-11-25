@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- The settings page no longer adds "(on by default)" or "(off by default)" to its checkboxes; a checkbox shows its own state.
 - The assignment requests box sits full width at the very top of the issue, above its title, like the panel on a profile, instead of inside the conversation column.
 - The profile panel and the assignment requests box keep the same space around them: 16 pixels below the page tabs and the same distance to the first line under them.
 
