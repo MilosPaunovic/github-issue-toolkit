@@ -987,6 +987,50 @@ div:has(> .gsf-progress) {
   border-bottom: 1px solid var(--borderColor-default);
   background: var(--bgColor-muted);
 }
+/* The arrow that folds a panel down to this header; the header folds it too, anywhere that is not a link or button. */
+.gsf-profile-head {
+  cursor: pointer;
+  user-select: none;
+}
+.gsf-profile-arrow {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-left: -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+.gsf-profile-arrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-right: 1.5px solid var(--fgColor-muted);
+  border-bottom: 1.5px solid var(--fgColor-muted);
+  transform: rotate(45deg);
+  transition: transform 0.12s ease;
+}
+.gsf-profile-arrow:hover {
+  background: var(--bgColor-neutral-muted);
+}
+.gsf-profile-org[data-collapsed] .gsf-profile-arrow::before {
+  margin: 0 0 0 -3px;
+  transform: rotate(-45deg);
+}
+.gsf-profile-org[data-brand] .gsf-profile-arrow::before {
+  border-color: var(--gsf-ink);
+}
+.gsf-profile-org[data-collapsed] > :not(.gsf-profile-head) {
+  display: none;
+}
+.gsf-profile-org[data-collapsed] .gsf-profile-head {
+  border-bottom: 0;
+}
 .gsf-profile-logo {
   display: block;
   flex: none;
@@ -1254,7 +1298,9 @@ div:has(> .gsf-progress) {
 
 /* Assignment requests: a box above the conversation of an assigned issue, in the same flat style as the profile panel */
 .gsf-assign {
-  margin: 16px 0;
+  box-sizing: border-box;
+  width: min(1232px, calc(100% - 32px));
+  margin: 16px auto;
 }
 .gsf-assign[hidden] {
   display: none;
