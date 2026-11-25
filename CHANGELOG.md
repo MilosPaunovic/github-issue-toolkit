@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The **Reading the button** list on the Contributors tab has evenly spaced rows: every state sits on one line of the same height, with the Member note shortened to fit.
 
 ## [2.12.0] - 2026-11-25
 
