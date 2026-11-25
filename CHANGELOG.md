@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.12.0] - 2026-11-25
+
 ### Added
 
 - **Related work on pull requests.** A full-width box above the header of a pull request names the issue it closes and lists everything connected to it: the issues it closes, what its description says it is related to, the other pull requests on the same issues and what mentions it. The description is read for the closing words GitHub links with and for words such as `related to`, `part of`, `counterpart of`, `follow-up to`, `backport of` and `depends on`, so a counterpart in another repository is found. It opens folded like the other panels and can be turned off, or made to start open, on the Epics tab.
@@ -275,7 +279,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.4...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.0...HEAD
+[2.12.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.4...v2.12.0
 [2.11.4]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.3...v2.11.4
 [2.11.3]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.2...v2.11.3
 [2.11.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.11.1...v2.11.2
