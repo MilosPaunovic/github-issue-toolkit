@@ -62,7 +62,7 @@ const DEFAULT_SHORTCUTS = [
 ];
 const SHORTCUT_KINDS = { repo: "Repositories", issue: "Issues", pr: "Pull requests" };
 
-const TABS = ["home", "access", "badges", "epics", "contributors", "shortcuts"];
+const TABS = ["home", "access", "badges", "pulls", "epics", "contributors", "shortcuts"];
 const savebar = document.getElementById("savebar");
 const dirtyNote = document.getElementById("dirty");
 const discardButton = document.getElementById("discard");
