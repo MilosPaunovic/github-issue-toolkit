@@ -6,7 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
-- The profile panel and the assignment requests box fold down to their header line: the arrow at the left of the header, or a click on the header, folds and unfolds them, and the choice is remembered for the next page.
+- The profile panel and the assignment requests box fold down to their header line, with an arrow at the left of the header (or a click on the header) to unfold and fold them again. Both open folded; a checkbox under each, on the Contributors tab, makes it start open instead.
 
 ### Changed
 

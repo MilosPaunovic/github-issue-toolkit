@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadSkipMembers: false, profileEnabled: false, profileOrgs: "", assignEnabled: false, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadSkipMembers: false, profileEnabled: false, profileOrgs: "", profileFolded: true, assignEnabled: false, assignFolded: true, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -1528,9 +1528,9 @@
     return request;
   }
 
-  // The two panels (profile and assignment requests) fold down to their header line. One choice for each kind, kept
-  // for the next page; the header's arrow or any empty part of it flips it.
-  const panelsCollapsed = { profile: false, assign: false };
+  // The two panels (profile and assignment requests) fold down to their header line. Each kind starts the way the
+  // settings say, folded unless told otherwise; the header's arrow or any empty part of it flips it for as long as the tab stays open.
+  const panelsCollapsed = { profile: true, assign: true };
 
   function panelFoldApply(block) {
     const on = !!panelsCollapsed[block.dataset.kind];
@@ -1546,7 +1546,6 @@
   function panelFold(kind, on) {
     panelsCollapsed[kind] = on;
     document.querySelectorAll(`.gsf-profile-org[data-kind="${kind}"]`).forEach(panelFoldApply);
-    api.storage.local.set({ panelsCollapsed: { ...panelsCollapsed } });
   }
 
   // Puts the arrow first in a panel's header and makes the header itself fold it, apart from its links and buttons.
@@ -3562,9 +3561,13 @@
       boardSignature = null;
       schedule();
     }
-    if (changes.panelsCollapsed) {
-      Object.assign(panelsCollapsed, changes.panelsCollapsed.newValue || {});
-      document.querySelectorAll(".gsf-profile-org[data-kind]").forEach(panelFoldApply);
+    if (changes.profileFolded) {
+      settings.profileFolded = changes.profileFolded.newValue !== false;
+      panelFold("profile", settings.profileFolded);
+    }
+    if (changes.assignFolded) {
+      settings.assignFolded = changes.assignFolded.newValue !== false;
+      panelFold("assign", settings.assignFolded);
     }
     if (changes.kanban) {
       kanban = { ...kanban, ...(changes.kanban.newValue || {}) };
@@ -3583,7 +3586,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "panelsCollapsed"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "profileFolded", "assignFolded"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -3613,7 +3616,10 @@
     settings.progressDoneValue = String(stored.progressDoneValue || "").trim();
     syncProjectsSection();
     kanban = { ...kanban, ...(stored.kanban || {}) };
-    Object.assign(panelsCollapsed, stored.panelsCollapsed || {});
+    settings.profileFolded = stored.profileFolded !== false;
+    settings.assignFolded = stored.assignFolded !== false;
+    panelsCollapsed.profile = settings.profileFolded;
+    panelsCollapsed.assign = settings.assignFolded;
     pins = Array.isArray(stored.pins) ? stored.pins : [];
     lastHref = null;
     schedule();
