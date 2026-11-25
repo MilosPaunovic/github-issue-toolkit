@@ -4,7 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- The profile panel and the assignment requests box fold down to their header line: the arrow at the left of the header, or a click on the header, folds and unfolds them, and the choice is remembered for the next page.
+
+### Changed
+
+- The assignment requests box sits full width at the very top of the issue, above its title, like the panel on a profile, instead of inside the conversation column.
 
 ## [2.11.4] - 2026-11-24
 

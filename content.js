@@ -1528,6 +1528,41 @@
     return request;
   }
 
+  // The two panels (profile and assignment requests) fold down to their header line. One choice for each kind, kept
+  // for the next page; the header's arrow or any empty part of it flips it.
+  const panelsCollapsed = { profile: false, assign: false };
+
+  function panelFoldApply(block) {
+    const on = !!panelsCollapsed[block.dataset.kind];
+    if (on) block.dataset.collapsed = "1";
+    else delete block.dataset.collapsed;
+    const arrow = block.querySelector(".gsf-profile-arrow");
+    if (!arrow) return;
+    arrow.setAttribute("aria-expanded", String(!on));
+    arrow.title = on ? "Show this panel" : "Fold this panel";
+    arrow.setAttribute("aria-label", arrow.title);
+  }
+
+  function panelFold(kind, on) {
+    panelsCollapsed[kind] = on;
+    document.querySelectorAll(`.gsf-profile-org[data-kind="${kind}"]`).forEach(panelFoldApply);
+    api.storage.local.set({ panelsCollapsed: { ...panelsCollapsed } });
+  }
+
+  // Puts the arrow first in a panel's header and makes the header itself fold it, apart from its links and buttons.
+  function panelHead(head, block) {
+    const arrow = document.createElement("button");
+    arrow.type = "button";
+    arrow.className = "gsf-profile-arrow";
+    head.prepend(arrow);
+    head.addEventListener("click", (event) => {
+      const hit = event.target.closest("a, button");
+      if (hit && hit !== arrow) return;
+      panelFold(block.dataset.kind, !panelsCollapsed[block.dataset.kind]);
+    });
+    panelFoldApply(block);
+  }
+
   function profileRefreshIcon() {
     const button = document.createElement("button");
     button.type = "button";
@@ -1585,6 +1620,7 @@
     }
     line.append(age);
     block.append(head);
+    panelHead(head, block);
 
     if (!entry) {
       const wait = document.createElement("div");
@@ -1724,6 +1760,7 @@
     for (const org of orgs) {
       const block = document.createElement("div");
       block.className = "gsf-profile-org";
+      block.dataset.kind = "profile";
       brandApply(block, org);
       host.append(block);
       profileLoad(block, org, login, false).catch((err) => console.warn("[github-issue-toolkit]", err));
@@ -1914,6 +1951,7 @@
     line.append(title, sub, age);
     head.append(logo, line);
     panel.append(head);
+    panelHead(head, panel);
 
     if (requests.length) {
       const box = assignAccordion(`Comments asking to be assigned (${requests.length})`, true);
@@ -2107,6 +2145,12 @@
 
   // One panel at the top of an issue, above its description, there only while the setting is on, and only shown when
   // the issue has an assignee and something to show.
+  function assignAnchor() {
+    const header = document.querySelector("[data-testid=\"issue-header\"]");
+    if (header && header.parentElement) return header.parentElement;
+    return document.querySelector("[data-testid=\"issue-viewer-issue-container\"]") || document.querySelector("[data-testid=\"issue-viewer-comments-container\"]") || document.querySelector(".js-discussion");
+  }
+
   function scanAssign() {
     const existing = document.querySelector(".gsf-assign");
     const info = settings.assignEnabled ? assignKey() : null;
@@ -2114,14 +2158,20 @@
       if (existing) existing.remove();
       return;
     }
-    if (existing && existing.dataset.key === info.key && existing.isConnected) return;
+    if (existing && existing.dataset.key === info.key && existing.isConnected) {
+      // The header can arrive after the panel did; move the panel to it then.
+      const anchor = assignAnchor();
+      if (anchor && existing.nextElementSibling !== anchor && !existing.contains(anchor)) anchor.before(existing);
+      return;
+    }
     if (existing) existing.remove();
-    // At the very top of the issue, above its description; the conversation below is the fallback for a page laid out differently.
-    const anchor = document.querySelector("[data-testid=\"issue-viewer-issue-container\"]") || document.querySelector("[data-testid=\"issue-viewer-comments-container\"]") || document.querySelector(".js-discussion");
+    // Full width at the very top of the issue, above its title; the conversation is the fallback for a page laid out differently.
+    const anchor = assignAnchor();
     if (!anchor) return;
     const panel = document.createElement("section");
     panel.className = "gsf-assign gsf-profile-org";
     panel.dataset.key = info.key;
+    panel.dataset.kind = "assign";
     panel.hidden = true;
     brandApply(panel, info.org);
     anchor.before(panel);
@@ -3512,6 +3562,10 @@
       boardSignature = null;
       schedule();
     }
+    if (changes.panelsCollapsed) {
+      Object.assign(panelsCollapsed, changes.panelsCollapsed.newValue || {});
+      document.querySelectorAll(".gsf-profile-org[data-kind]").forEach(panelFoldApply);
+    }
     if (changes.kanban) {
       kanban = { ...kanban, ...(changes.kanban.newValue || {}) };
       boardSignature = null;
@@ -3529,7 +3583,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "panelsCollapsed"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -3559,6 +3613,7 @@
     settings.progressDoneValue = String(stored.progressDoneValue || "").trim();
     syncProjectsSection();
     kanban = { ...kanban, ...(stored.kanban || {}) };
+    Object.assign(panelsCollapsed, stored.panelsCollapsed || {});
     pins = Array.isArray(stored.pins) ? stored.pins : [];
     lastHref = null;
     schedule();
