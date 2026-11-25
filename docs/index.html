@@ -379,6 +379,21 @@
     .mock-profile .pr + .pr { border-top: 1px solid var(--border); }
     .mock-profile .pr code { font-size: 12px; color: var(--fg-muted); background: none; padding: 0; }
     .mock-profile .pr em { font-style: normal; padding: 0 6px; border: 1px solid var(--border); border-radius: 9999px; font-size: 11px; color: var(--fg-muted); }
+    /* Related work on a pull request: the same flat box, with a row for each issue or pull request */
+    .mock-related .org { font-size: 14px; }
+    .mock-related .hd .ti, .mock-related .hd .sb, .mock-related .hd .ag { white-space: nowrap; }
+    .mock-related .lk { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; }
+    .mock-related .rw { display: flex; align-items: center; gap: 8px; padding: 6px 16px; font-size: 13px; }
+    .mock-related .rw + .rw { border-top: 1px solid var(--border); }
+    .mock-related .stt { flex: none; min-width: 52px; padding: 0 8px 1px; border: 1px solid; border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 18px; text-align: center; }
+    .mock-related .s-open { color: var(--success); }
+    .mock-related .s-merged { color: var(--done); }
+    .mock-related .s-closed { color: var(--danger); }
+    .mock-related .s-draft { color: var(--fg-muted); }
+    .mock-related .kd { flex: none; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; color: var(--fg-muted); }
+    .mock-related .rf { flex: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--fg-muted); }
+    .mock-related .tt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mock-related .wd { flex: none; padding: 0 8px 1px; border: 1px solid var(--border); border-radius: 9999px; font-size: 12px; line-height: 18px; color: var(--fg-muted); }
     /* Assignment requests: the same flat box, with rows of comments and their preview */
     .mock-assign .org { font-size: 14px; }
     .mock-assign .ar { display: flex; gap: 10px; padding: 8px 16px; }
@@ -483,6 +498,7 @@
         <div class="card"><h3>Who they are to you</h3><p>A button after a username on an issue or pull request says whether that person is a member of the organization, or else new to it, on a first pull request here, returning or a regular, and a count appears when they already hold more than your limit. Pressing it opens the open, merged and closed pull requests and the assigned issues for the repository and for the organization. A member of the organization shows <em>Member</em> in place of the button by default, with GitHub's own Member label beside it hidden so it is not said twice, and a choice in the settings can leave members out altogether or give them a button like anyone else. Everything else waits until you press the button. Off by default.</p></div>
         <div class="card"><h3>What they have done for you</h3><p>On a person's profile, a panel for each organization you name, in its colours, with the pull requests they have open and merged, what they reviewed, the issues they opened and are assigned, and whether they are a member. Read once when the profile opens. Off by default.</p></div>
         <div class="card"><h3>Tidy up the requests</h3><p>On an assigned issue, the comments asking to be assigned are listed with the giveaway words highlighted, apart from the assignee's own, so you can mark the stale ones as outdated in one go, with an Undo. Off by default.</p></div>
+        <div class="card"><h3>Everything a pull request touches</h3><p>On a pull request, a box above its header names the issue it closes and lists the issues and pull requests connected to it: what its description says it closes, is related to or is a counterpart of, the other pull requests on the same issues, and what mentions it. Off in the settings if you do not want it.</p></div>
         <div class="card"><h3>Epics as a board</h3><p>An issue with sub-issues gets a List and Kanban toggle. The board groups the sub-issues by any field they carry, orders each column by another, filters everything down to one value of a third, and hides the closed ones on request. Drag a card to another column and the field value, or the issue state, is written back to GitHub.</p></div>
         <div class="card"><h3>Sidebar out of the way</h3><p>A chevron in the gutter hides an issue's whole metadata column, and the issue body and the board take the width. It holds on every issue until you press it again, and a setting can hide just the Projects section instead.</p></div>
         <div class="card"><h3>Search from the address bar</h3><p>Type <code>@gh</code>, a space, a shortcut and a few words: <code>@gh repo web</code> lists the repositories, issues or pull requests that match as you type. Each shortcut adds its own GitHub qualifiers, such as <code>org:acme</code>, and repository names match on any part of the name.</p></div>
@@ -649,6 +665,25 @@
       </div>
       <p class="example-caption">Only the words that were found are bold, on a soft highlight. A closed list says which words are searched for and links to the settings where they can be changed. Nothing is hidden until you confirm.</p>
 
+      <h3 style="margin-top:28px">Related work on pull requests</h3>
+      <p class="muted" style="font-size:14px">On a pull request, a full-width box above its header lists everything connected to it: the issues it closes, what its description says it is related to, the other pull requests on the same issues and what mentions it. The issue it closes is named in the header, so it shows while the box is folded. The description is read for the words GitHub links with, <em>closes</em>, <em>fixes</em> and <em>resolves</em> in all their forms, and for the ones people use to tie changes together, <em>related to</em>, <em>part of</em>, <em>counterpart of</em>, <em>follow-up to</em>, <em>backport of</em>, <em>depends on</em>, <em>see</em> and more, next to <code>#123</code>, <code>owner/repo#123</code> and links, so a counterpart in another repository is found too. Like the other panels it opens folded to its header line, with an arrow to unfold it, and a setting makes it start open. It can be turned off on the Epics tab of the settings.</p>
+      <div class="panel gh-card mock-profile mock-related" id="ex-related" style="max-width:820px;padding:14px 16px">
+        <div class="org">
+          <div class="hd"><span class="fo"></span><span class="lg"><i></i></span><div class="bl"><span class="ti">Related work</span><span class="sb">closes</span><span class="lk">acme/webapp-ee#12798 Round the numbers in the charts</span><span class="sb">(3 pull requests)</span><span class="ag">Read just now</span></div></div>
+          <div class="wk"><div class="acc">Closes (1)</div><div class="wl">
+            <div class="rw"><span class="stt s-open">Open</span><span class="kd">Issue</span><span class="rf">acme/webapp-ee#12798</span><span class="tt">Round the numbers in the charts</span></div>
+          </div></div>
+          <div class="wk"><div class="acc">Related, from the description (1)</div><div class="wl">
+            <div class="rw"><span class="stt s-draft">Draft</span><span class="kd">PR</span><span class="rf">acme/webapp-ee#12700</span><span class="tt">Show the same tooltips in the EE dashboards</span><span class="wd">counterpart of</span></div>
+          </div></div>
+          <div class="wk"><div class="acc">Other pull requests on the same issues (1)</div><div class="wl">
+            <div class="rw"><span class="stt s-merged">Merged</span><span class="kd">PR</span><span class="rf">#23013</span><span class="tt">Round the numbers displayed in the charts</span><span class="wd">on acme/webapp-ee#12798</span></div>
+          </div></div>
+          <div class="wk"><div class="acc shut">Mentioned in (1)</div></div>
+        </div>
+      </div>
+      <p class="example-caption">The issue it closes in the header, then the groups. A word in the description, here <em>counterpart of</em>, is shown beside the item it points at, and an item in another repository carries its owner and name.</p>
+
       <h3 style="margin-top:28px">Address bar search</h3>
       <p class="muted" style="font-size:14px">Type <code>@gh</code> and a space in the address bar, then a shortcut and a few words. The first row searches GitHub with them, the others open a match directly. Each issue and pull request carries its state, author and last update, each repository its description and last push.</p>
       <div class="panel gh-card mock-omni" id="ex-search" style="max-width:720px">
@@ -772,7 +807,7 @@
   <section id="settings">
     <div class="wrap">
       <h2>Settings</h2>
-      <p class="muted">The token is the one essential; the fields to show, the age badge, the pull request badges, the contributor load button, the organization panel on profiles, the assignment requests box, the epic kanban toggle, the sub-issue progress, the sidebar button, hiding the sidebar's Projects section, the pinned issues button and the address bar search shortcuts are optional extras, each in the tab of its kind. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Leave the fields empty and no field badges are shown, while the rest of the extension keeps working.</p>
+      <p class="muted">The token is the one essential; the fields to show, the age badge, the pull request badges, the contributor load button, the organization panel on profiles, the assignment requests box, related work on pull requests, the epic kanban toggle, the sub-issue progress, the sidebar button, hiding the sidebar's Projects section, the pinned issues button and the address bar search shortcuts are optional extras, each in the tab of its kind. Each field is a chip. Press <kbd>Enter</kbd> or <kbd>,</kbd> to add one, <kbd>Backspace</kbd> or the × button to remove one. Names are matched case-insensitively against the fields your organization defines, and badges appear in the order of the chips. Leave the fields empty and no field badges are shown, while the rest of the extension keeps working.</p>
       <figure>
         <img class="only-light" src="settings-light.png" alt="The settings page on its Badges tab: the field names chip box, the issue age and the pull request badges">
         <img class="only-dark" src="settings-dark.png" alt="The settings page in dark mode on its Badges tab: the field names chip box, the issue age and the pull request badges">
@@ -801,7 +836,7 @@
       <h2>Privacy</h2>
       <div class="grid">
         <div class="card"><h3>What is stored</h3><p>Your token, your field list, your preferences and your pinned issues, in <code>chrome.storage.local</code>, on your device. Uninstalling removes all of it.</p></div>
-        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. With the contributor button on, the logins of the people named on the page, to tell which belong to the organization, the login of a profile you open, with the organizations you named, when the organization panel is on, the login you press the button for, or the author if you let them be read on their own, with the repository and organization of the page. After the <code>@gh</code> keyword in the address bar, the words you type and the shortcut's qualifiers. The only writes are the sub-issue link you click, the card you drag on the board, and the comments you tick and confirm to mark as outdated. Nothing else, to no one else.</p></div>
+        <div class="card"><h3>What is sent</h3><p>Repository owner, name and issue number of the issues on the page you are viewing, to <code>api.github.com</code>, with your token in the header. With the contributor button on, the logins of the people named on the page, to tell which belong to the organization, the login of a profile you open, with the organizations you named, when the organization panel is on, the login you press the button for, or the author if you let them be read on their own, with the repository and organization of the page. After the <code>@gh</code> keyword in the address bar, the words you type and the shortcut's qualifiers. On a pull request with related work on, its owner, repository and number, and the references its description names. The only writes are the sub-issue link you click, the card you drag on the board, and the comments you tick and confirm to mark as outdated. Nothing else, to no one else.</p></div>
         <div class="card"><h3>What is not</h3><p>No analytics, telemetry, crash reports, cookies or third-party services. The full policy is in <a href="https://github.com/MilosPaunovic/github-issue-toolkit/blob/main/PRIVACY.md">PRIVACY.md</a>.</p></div>
       </div>
     </div>
@@ -825,6 +860,7 @@
       <details><summary>Can I hide only the Projects box in the sidebar?</summary><p>Yes. Tick <em>Hide the Projects section of the issue sidebar</em> on the settings page and GitHub's Projects section, with its status and project fields, disappears from every issue while assignees, labels, fields and the rest stay. The issue is not removed from any project, and unticking it brings the section back. Off by default.</p></details>
       <details><summary>Why does the profile panel not show on the other tabs of a profile?</summary><p>It sits on the first page of a person's profile, the overview, and not on Repositories, Stars, Followers and the rest, which are lists of their own. It also never shows on an organization's page. Turn it on and name the organizations on the Contributors tab of the settings.</p></details>
       <details><summary>Why does hiding a comment need write access?</summary><p>Marking a comment as outdated is GitHub's own Hide, Outdated, and GitHub only lets people with write or triage access to the repository do it. The token needs the <code>repo</code> scope on a classic token, or <code>Issues: Read and write</code> on a fine-grained one. Without it the assignment requests box says so and hides nothing, and nothing is hidden before you tick comments and confirm.</p></details>
+      <details><summary>Which words does related work look for in a pull request?</summary><p>The closing words GitHub itself links with, close, closes, closed, fix, fixes, fixed, resolve, resolves and resolved, and the ones people use to tie changes together: related to, part of, counterpart of, follow-up to, backport of, port of, continues, depends on, blocked by, supersedes, replaces, duplicate of, see, ref and a few more. They count when they stand just before a reference, <code>#123</code>, <code>owner/repo#123</code> or a link to an issue or pull request, and a reference with no word before it is listed as a mention. Text in code and in comments is ignored. The issues GitHub itself has linked to the pull request in its Development list are included too.</p></details>
       <details><summary>Which comments does the assignment requests box offer?</summary><p>Comments of up to 400 characters, by people other than the assignees and you, that are not already hidden and contain one of the words on the list, which you can edit in the settings. A longer comment is discussion rather than a request. Every offered comment starts ticked and is highlighted where it matched, so you can untick a false match before hiding.</p></details>
       <details><summary>Does linking need extra permissions?</summary><p>Yes. Making an issue a sub-issue of a pinned epic writes to GitHub, so the token needs write access to the issue's repository: the <code>repo</code> scope on a classic token, or <code>Issues: Read and write</code> on a fine-grained one. Badges alone work with read-only access.</p></details>
       <details><summary>Sub-issues live in several repositories. Does that work?</summary><p>Yes. Rows are grouped by repository and fetched in one query. Each badge links to the search in its own repository.</p></details>

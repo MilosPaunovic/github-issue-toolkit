@@ -240,7 +240,7 @@
         <div class="tour">
           <button type="button" data-tab="access"><b>Access</b><span>Your personal access token and the site access Firefox asks for.</span></button>
           <button type="button" data-tab="badges"><b>Badges</b><span>Issue fields, issue age and pull request badges.</span></button>
-          <button type="button" data-tab="epics"><b>Epics</b><span>The kanban board, sub-issue progress and the button that hides the issue sidebar.</span></button>
+          <button type="button" data-tab="epics"><b>Epics</b><span>The kanban board, sub-issue progress, related work on a pull request and the button that hides the issue sidebar.</span></button>
           <button type="button" data-tab="contributors"><b>Contributors</b><span>Who a person is to the repository, their record in an organization on profiles, and the requests to be assigned on an issue.</span></button>
           <button type="button" data-tab="shortcuts"><b>Shortcuts</b><span>The pinned issues button in GitHub's top bar and search from the address bar with <code>@gh</code>.</span></button>
         </div>
@@ -325,6 +325,12 @@
           <input id="progress-done-value" type="text" spellcheck="false" autocomplete="off" placeholder="Done" aria-label="Value of that field that marks a sub-issue as done">
         </div>
         <p class="hint">A sub-issue counts as done when this field has this value, <code>Stage</code> and <code>Done</code> for example. Leave both empty and a closed sub-issue is a done one. Needs a token that can read issue fields, like the badges.</p>
+      </section>
+      <section class="card">
+        <h2>Related work on pull requests</h2>
+        <p class="desc">On a pull request, a full-width box above its header lists everything connected to it: the issues it closes, what its description says it is related to, the other pull requests on the same issues and what mentions it. The issue it closes is named in the header, so it shows while the box is folded. The description is read for the words GitHub links with, <em>closes</em>, <em>fixes</em> and <em>resolves</em> in all their forms, and for the ones people use to tie changes together, <em>related to</em>, <em>part of</em>, <em>counterpart of</em>, <em>follow-up to</em>, <em>backport of</em>, <em>depends on</em>, <em>see</em> and so on, with <code>#123</code>, <code>owner/repo#123</code> and links to issues and pull requests. It is read once per pull request, in two requests, and kept until you close the tab.</p>
+        <label class="check"><input id="related-enabled" type="checkbox"> Show related work on pull requests</label>
+        <label class="check"><input id="related-folded" type="checkbox"> Collapse the box when a pull request opens, so only its header line shows</label>
       </section>
       <section class="card">
         <h2>Issue sidebar</h2>
