@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- **Related work on pull requests.** A full-width box above the header of a pull request names the issue it closes and lists everything connected to it: the issues it closes, what its description says it is related to, the other pull requests on the same issues and what mentions it. The description is read for the closing words GitHub links with and for words such as `related to`, `part of`, `counterpart of`, `follow-up to`, `backport of` and `depends on`, so a counterpart in another repository is found. It opens folded like the other panels and can be turned off, or made to start open, on the Epics tab.
 - The profile panel and the assignment requests box fold down to their header line, with an arrow at the left of the header (or a click on the header) to unfold and fold them again. Both open folded; a checkbox under each, on the Contributors tab, makes it start open instead.
 
 ### Changed

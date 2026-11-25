@@ -1477,3 +1477,118 @@ div:has(> .gsf-progress) {
   line-height: 20px;
   color: var(--fgColor-muted);
 }
+
+/* Related work: a box above the header of a pull request, in the same flat style, with the width of the page's content */
+.gsf-related {
+  box-sizing: border-box;
+  width: calc(min(1280px, 100%) - 32px);
+  margin: 16px auto 0;
+}
+@media (min-width: 768px) {
+  .gsf-related {
+    width: calc(min(1280px, 100%) - 48px);
+  }
+}
+@media (min-width: 1280px) {
+  .gsf-related {
+    width: calc(min(1280px, 100%) - 64px);
+  }
+}
+.gsf-related[hidden] {
+  display: none;
+}
+.gsf-related-lead {
+  min-width: 0;
+  max-width: 46ch;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fgColor-default) !important;
+  text-decoration: none !important;
+}
+.gsf-related-lead:hover {
+  color: var(--gsf-brand, var(--fgColor-accent)) !important;
+  text-decoration: underline !important;
+}
+.gsf-related-list {
+  border-top: 1px solid var(--borderColor-muted);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.gsf-related-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: var(--fgColor-default) !important;
+  text-decoration: none !important;
+}
+.gsf-related-row + .gsf-related-row {
+  border-top: 1px solid var(--borderColor-muted);
+}
+.gsf-related-row:hover {
+  background: var(--bgColor-muted);
+}
+.gsf-related-state {
+  flex: none;
+  min-width: 52px;
+  padding: 0 8px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  text-align: center;
+  color: var(--fgColor-muted);
+}
+.gsf-related-state[data-state="open"] {
+  border-color: var(--fgColor-success, #1a7f37);
+  color: var(--fgColor-success, #1a7f37);
+}
+.gsf-related-state[data-state="merged"] {
+  border-color: var(--fgColor-done, #8250df);
+  color: var(--fgColor-done, #8250df);
+}
+.gsf-related-state[data-state="closed"] {
+  border-color: var(--fgColor-danger, #cf222e);
+  color: var(--fgColor-danger, #cf222e);
+}
+.gsf-related-kind {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--fgColor-muted);
+}
+.gsf-related-ref {
+  flex: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--fgColor-muted);
+}
+.gsf-related-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gsf-related-word {
+  flex: none;
+  padding: 0 8px;
+  border: 1px solid var(--borderColor-default);
+  border-radius: 9999px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fgColor-muted);
+}
+.gsf-related[data-brand] .gsf-profile-title {
+  color: var(--fgColor-default) !important;
+}
+.gsf-related[data-brand] .gsf-related-row:hover {
+  background: color-mix(in srgb, var(--gsf-brand) 7%, var(--bgColor-default));
+}

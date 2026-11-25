@@ -466,6 +466,180 @@ async function setCommentsHidden(ids, hide) {
 }
 
 // ---------------------------------------------------------------------------
+// Related work on a pull request: the issues it closes, what its description says it is related to, the other
+// pull requests on the same issues, and what mentions it. One request for the pull request and one that
+// resolves what its description names.
+// ---------------------------------------------------------------------------
+
+// The words GitHub itself links with, and the ones people use to say a change belongs with another: the closing
+// keywords, then the rest. A reference with none of them is still listed, as a mention.
+const RELATION_CLOSING = ["closes", "closed", "close", "fixes", "fixed", "fix", "resolves", "resolved", "resolve"];
+const RELATION_OTHER = [
+  "counterpart of", "counterpart to", "counterpart in", "counterpart for", "counterpart",
+  "related to", "relates to", "relating to", "related", "part of", "follow-up to", "follow-up of", "follow up to", "follow up of", "followup to", "followup of", "follow-up", "follow up", "followup",
+  "backport of", "backports", "backported from", "backport", "port of", "ported from", "forward port of", "cherry-pick of", "cherry-picked from", "cherry pick of", "mirror of", "mirrors", "mirrored from",
+  "continuation of", "continues", "continue", "depends on", "depended on", "blocked by", "blocks", "supersedes", "superseded by", "replaces", "replaced by", "duplicate of", "duplicates", "split from", "split out of", "extracted from",
+  "reverts", "revert of", "see also", "see", "refs", "ref", "references", "reference", "towards", "toward", "addresses", "address", "companion of", "companion to", "companion", "sibling of", "sibling", "paired with", "pairs with", "other half of", "same as", "similar to", "alternative to", "instead of", "in favor of", "in favour of", "upstream", "downstream", "tracked in", "tracked by", "tracking", "epic", "parent", "child of", "sub-task of", "subtask of"
+];
+const RELATION_MAX_REFS = 40;
+const RELATION_SIBLINGS_KEPT = 12;
+
+function relationEscape(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "[\\s-]+");
+}
+
+// What the description of a pull request names: each reference once, with the relation word just before it.
+function parseRelations(text, home) {
+  const clean = String(text || "")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`\n]*`/g, " ");
+  const refs = [];
+  const seen = new Set();
+  const refPattern = /https?:\/\/github\.com\/([\w.-]+)\/([\w.-]+)\/(?:issues|pull)\/(\d+)(?![\w/])|(?<![\w/&])([\w.-]+)\/([\w.-]+)#(\d+)\b|(?<![\w/&#])#(\d{1,7})\b/g;
+  const words = [...RELATION_CLOSING.map((w) => [w, "closes"]), ...RELATION_OTHER.map((w) => [w, "related"])];
+  words.sort((a, b) => b[0].length - a[0].length);
+  const wordPattern = new RegExp(`(?:^|[^\\w])(${words.map((w) => relationEscape(w[0])).join("|")})\\b((?:[\\s:,&()\\-*_>]|\\band\\b|\\bor\\b|\\bthe\\b|\\bissues?\\b|\\bprs?\\b|\\bpull requests?\\b|\\bof\\b|\\bto\\b|\\bin\\b|\\bwith\\b|\\bfor\\b|#|\\d+|[\\w.-]+\\/[\\w.-]+#\\d+|https?:\\/\\/\\S+)*)$`, "i");
+  let m;
+  while ((m = refPattern.exec(clean))) {
+    let owner = home.owner;
+    let repo = home.repo;
+    let number;
+    if (m[1]) { owner = m[1]; repo = m[2]; number = Number(m[3]); }
+    else if (m[4]) { owner = m[4]; repo = m[5]; number = Number(m[6]); }
+    else number = Number(m[7]);
+    const key = `${owner}/${repo}#${number}`.toLowerCase();
+    if (seen.has(key) || (owner.toLowerCase() === home.owner.toLowerCase() && repo.toLowerCase() === home.repo.toLowerCase() && number === home.number)) continue;
+    seen.add(key);
+    // The words in front of it on the same line.
+    const lineStart = clean.lastIndexOf("\n", m.index) + 1;
+    const before = clean.slice(lineStart, m.index).slice(-160);
+    const found = wordPattern.exec(before);
+    let kind = "mention";
+    let word = "";
+    if (found) {
+      const lower = found[1].toLowerCase().replace(/[\s-]+/g, " ");
+      const hit = words.find((w) => w[0].replace(/[\s-]+/g, " ") === lower);
+      kind = hit ? hit[1] : "related";
+      word = lower;
+    }
+    refs.push({ owner, repo, number, kind, word });
+    if (refs.length >= RELATION_MAX_REFS) break;
+  }
+  return refs;
+}
+
+function relationNode(node, extra) {
+  if (!node || !node.number) return null;
+  const repo = node.repository && node.repository.nameWithOwner ? node.repository.nameWithOwner : "";
+  const [owner, name] = repo.split("/");
+  return {
+    type: node.__typename === "PullRequest" || node.merged !== undefined ? "pull" : "issue",
+    owner: owner || "",
+    repo: name || "",
+    number: node.number,
+    title: node.title || "",
+    state: node.state || "",
+    merged: Boolean(node.merged),
+    draft: Boolean(node.isDraft),
+    url: node.url || "",
+    ...extra
+  };
+}
+
+const RELATION_ITEM_FIELDS = "number title state url repository { nameWithOwner }";
+const RELATION_PULL_FIELDS = `${RELATION_ITEM_FIELDS} merged isDraft`;
+const RELATION_ISSUE_EXTRAS = `
+  closedByPullRequestsReferences(first: 10, includeClosedPrs: true) { nodes { __typename ${RELATION_PULL_FIELDS} } }
+  timelineItems(first: 20, itemTypes: [CROSS_REFERENCED_EVENT]) { nodes { ... on CrossReferencedEvent { source { __typename ... on PullRequest { ${RELATION_PULL_FIELDS} } } } } }`;
+
+async function fetchPullRelations(ref) {
+  const { token } = await getSettings();
+  if (!token) return { error: "NO_TOKEN" };
+  const owner = String((ref && ref.owner) || "").trim();
+  const repo = String((ref && ref.repo) || "").trim();
+  const number = Number(ref && ref.number);
+  if (!owner || !repo || !Number.isInteger(number)) return { error: "An owner, a repository and a pull request number are all needed." };
+
+  const data = await graphql(token, `{
+    repository(owner: ${JSON.stringify(owner)}, name: ${JSON.stringify(repo)}) {
+      pullRequest(number: ${number}) {
+        title body state merged isDraft author { login }
+        closingIssuesReferences(first: 30) { nodes { __typename ${RELATION_ITEM_FIELDS} ${RELATION_ISSUE_EXTRAS} } }
+        timelineItems(first: 60, itemTypes: [CROSS_REFERENCED_EVENT]) { nodes { ... on CrossReferencedEvent { source { __typename ... on PullRequest { ${RELATION_PULL_FIELDS} } ... on Issue { ${RELATION_ITEM_FIELDS} } } } } }
+      }
+    }
+  }`);
+  const pull = data.repository && data.repository.pullRequest;
+  if (!pull) return { error: "That pull request could not be read." };
+
+  const items = new Map();
+  const home = `${owner}/${repo}#${number}`.toLowerCase();
+  const keyOf = (item) => `${item.owner}/${item.repo}#${item.number}`.toLowerCase();
+  const add = (item) => {
+    if (!item || keyOf(item) === home) return false;
+    if (items.has(keyOf(item))) return false;
+    items.set(keyOf(item), item);
+    return true;
+  };
+  const sources = []; // the issues whose other pull requests are worth listing
+
+  for (const node of (pull.closingIssuesReferences && pull.closingIssuesReferences.nodes) || []) {
+    const item = relationNode(node, { type: "issue", group: "closes", word: "closes" });
+    if (add(item)) sources.push({ item, node });
+  }
+
+  // What the description and the title name, resolved in one request.
+  const named = parseRelations(`${pull.title}\n${pull.body || ""}`, { owner, repo, number }).filter((r) => !items.has(`${r.owner}/${r.repo}#${r.number}`.toLowerCase()));
+  if (named.length) {
+    const query = `{
+      ${named.map((r, i) => `r${i}: repository(owner: ${JSON.stringify(r.owner)}, name: ${JSON.stringify(r.repo)}) { issueOrPullRequest(number: ${r.number}) { __typename ... on Issue { ${RELATION_ITEM_FIELDS} ${RELATION_ISSUE_EXTRAS} } ... on PullRequest { ${RELATION_PULL_FIELDS} } } }`).join("\n")}
+    }`;
+    const resolved = await graphql(token, query, { partial: true });
+    named.forEach((r, i) => {
+      const node = resolved[`r${i}`] && resolved[`r${i}`].issueOrPullRequest;
+      if (!node) return;
+      const group = r.kind === "closes" ? "closes" : (r.kind === "related" ? "related" : "mentions");
+      const item = relationNode(node, { type: node.__typename === "PullRequest" ? "pull" : "issue", group, word: r.word });
+      if (add(item) && item.type === "issue") sources.push({ item, node });
+    });
+  }
+
+  // The other pull requests on those issues: the ones that close them, and the ones that mention them.
+  for (const { item, node } of sources) {
+    const pulls = [];
+    for (const p of (node.closedByPullRequestsReferences && node.closedByPullRequestsReferences.nodes) || []) pulls.push(relationNode(p, { type: "pull", via: item }));
+    for (const event of (node.timelineItems && node.timelineItems.nodes) || []) {
+      if (event && event.source && event.source.__typename === "PullRequest") pulls.push(relationNode(event.source, { type: "pull", via: item }));
+    }
+    let kept = 0;
+    for (const p of pulls) {
+      if (!p || kept >= RELATION_SIBLINGS_KEPT) continue;
+      if (add({ ...p, group: "siblings", via: `${item.owner}/${item.repo}#${item.number}`, viaNumber: item.number, viaRepo: `${item.owner}/${item.repo}` })) kept++;
+    }
+  }
+
+  // What mentions this pull request.
+  let mentioned = 0;
+  for (const event of (pull.timelineItems && pull.timelineItems.nodes) || []) {
+    if (!event || !event.source || mentioned >= 20) continue;
+    const item = relationNode(event.source, { type: event.source.__typename === "PullRequest" ? "pull" : "issue", group: "mentioned" });
+    if (add(item)) mentioned++;
+  }
+
+  return {
+    title: pull.title,
+    state: pull.state,
+    merged: Boolean(pull.merged),
+    draft: Boolean(pull.isDraft),
+    items: [...items.values()].map((item) => {
+      const { via, ...rest } = item;
+      return typeof via === "string" ? { ...rest, via } : rest;
+    })
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Whether each of a list of people belongs to an organization, for the mark that shows at once. One
 // lookup per person goes in a shared request, so a long thread costs a handful of requests rather than
 // one for every name. A person GitHub cannot find, a bot for example, comes back as null.
@@ -1219,6 +1393,9 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg.type === "fetchIssueComments") {
     return reply(fetchIssueComments(msg.ref), sendResponse);
+  }
+  if (msg.type === "fetchPullRelations") {
+    return reply(fetchPullRelations(msg.ref), sendResponse);
   }
   if (msg.type === "setCommentsHidden") {
     return reply(setCommentsHidden(msg.ids, msg.hide !== false), sendResponse);

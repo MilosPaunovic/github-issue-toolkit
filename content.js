@@ -10,7 +10,7 @@
   const pending = new Set();
   let scheduled = null;
   let noticeShown = false;
-  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadSkipMembers: false, profileEnabled: false, profileOrgs: "", profileFolded: true, assignEnabled: false, assignFolded: true, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
+  let settings = { ageEnabled: false, ageUnit: "months", ageWarnDays: 90, pinsEnabled: true, skipShownFields: true, prAssociation: true, prFork: false, prSize: false, prMergeState: false, kanbanEnabled: true, kanbanDrag: true, sidebarToggle: true, hideProjectsSection: false, loadEnabled: false, loadAuto: false, loadMembers: true, loadSkipMembers: false, profileEnabled: false, profileOrgs: "", profileFolded: true, assignEnabled: false, assignFolded: true, relatedEnabled: true, relatedFolded: true, assignWords: "", loadLimit: 1, loadRegular: 5, progressEnabled: false, progressScopeField: "", progressDoneField: "", progressDoneValue: "" };
   const prCache = new Map(); // "owner/repo!n" -> { at, info }
   const prPending = new Set();
   let pins = [];
@@ -314,6 +314,7 @@
     scanLoad().catch((err) => console.warn("[github-issue-toolkit]", err));
     scanProfile();
     scanAssign();
+    scanRelated();
     const rows = collectRows();
     if (!rows.length) return;
 
@@ -1530,7 +1531,7 @@
 
   // The two panels (profile and assignment requests) fold down to their header line. Each kind starts the way the
   // settings say, folded unless told otherwise; the header's arrow or any empty part of it flips it for as long as the tab stays open.
-  const panelsCollapsed = { profile: true, assign: true };
+  const panelsCollapsed = { profile: true, assign: true, related: true };
 
   function panelFoldApply(block) {
     const on = !!panelsCollapsed[block.dataset.kind];
@@ -2183,6 +2184,223 @@
       assignPending.clear();
     }
     document.querySelectorAll(".gsf-assign").forEach((el) => el.remove());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Related work: on a pull request, the issues it closes, what its description says it is related to, the other
+  // pull requests on the same issues and what mentions it. One panel at the top of the page, like the others.
+  // ---------------------------------------------------------------------------
+
+  const relatedCache = new Map(); // "org/repo#number" -> { at, data, error }
+  const relatedPending = new Map();
+  const RELATED_GROUPS = [
+    ["closes", "Closes", true],
+    ["related", "Related, from the description", true],
+    ["siblings", "Other pull requests on the same issues", true],
+    ["mentions", "Named in the description", false],
+    ["mentioned", "Mentioned in", false]
+  ];
+
+  function relatedKey() {
+    const m = PULL_PATH.exec(location.pathname);
+    return m ? { org: m[1], repo: m[2], number: Number(m[3]), key: `${m[1]}/${m[2]}#${m[3]}` } : null;
+  }
+
+  async function relatedFetch(info, force) {
+    const hit = relatedCache.get(info.key);
+    if (!force && hit && hit.data) return hit;
+    if (!force && relatedPending.has(info.key)) return relatedPending.get(info.key);
+    const request = (async () => {
+      await null; // see loadFetch
+      let data = null;
+      let error = "";
+      try {
+        const res = await api.runtime.sendMessage({ type: "fetchPullRelations", ref: { owner: info.org, repo: info.repo, number: info.number } });
+        data = res && !res.error && Array.isArray(res.items) ? res : null;
+        if (!data) error = loadReason(res && !res.error ? { error: "GitHub answered with something this extension could not read." } : res);
+      } catch {
+        error = loadReason(null);
+      }
+      const entry = { at: Date.now(), data, error };
+      relatedCache.set(info.key, entry);
+      if (relatedPending.get(info.key) === request) relatedPending.delete(info.key);
+      return entry;
+    })();
+    relatedPending.set(info.key, request);
+    return request;
+  }
+
+  // "#12" on this repository, "owner/repo#12" on another.
+  function relatedRef(item, info) {
+    const same = item.owner.toLowerCase() === info.org.toLowerCase() && item.repo.toLowerCase() === info.repo.toLowerCase();
+    return same ? `#${item.number}` : `${item.owner}/${item.repo}#${item.number}`;
+  }
+
+  function relatedStateOf(item) {
+    if (item.type === "pull") {
+      if (item.merged) return ["merged", "Merged"];
+      if (item.state === "CLOSED") return ["closed", "Closed"];
+      return item.draft ? ["draft", "Draft"] : ["open", "Open"];
+    }
+    return item.state === "CLOSED" ? ["closed", "Closed"] : ["open", "Open"];
+  }
+
+  function relatedRow(item, info) {
+    const row = document.createElement("a");
+    row.className = "gsf-related-row";
+    row.href = item.url;
+    row.title = item.title;
+    const [state, label] = relatedStateOf(item);
+    const chip = document.createElement("span");
+    chip.className = "gsf-related-state";
+    chip.dataset.state = state;
+    chip.textContent = label;
+    const kind = document.createElement("span");
+    kind.className = "gsf-related-kind";
+    kind.textContent = item.type === "pull" ? "PR" : "Issue";
+    const ref = document.createElement("span");
+    ref.className = "gsf-related-ref";
+    ref.textContent = relatedRef(item, info);
+    const title = document.createElement("span");
+    title.className = "gsf-related-title";
+    title.textContent = item.title;
+    row.append(chip, kind, ref, title);
+    const note = item.group === "siblings" && item.viaNumber ? `on ${item.viaRepo.toLowerCase() === `${info.org}/${info.repo}`.toLowerCase() ? "#" : `${item.viaRepo}#`}${item.viaNumber}` : (item.group === "closes" ? "" : item.word);
+    if (note) {
+      const word = document.createElement("span");
+      word.className = "gsf-related-word";
+      word.textContent = note;
+      row.append(word);
+    }
+    return row;
+  }
+
+  // What the header says while the panel is folded: the issue it closes, and how much else there is.
+  function relatedSummary(items, info) {
+    const frag = document.createDocumentFragment();
+    const closes = items.filter((i) => i.group === "closes");
+    const lead = closes[0] || items.find((i) => i.type === "issue" && i.group !== "siblings" && i.group !== "mentioned");
+    if (lead) {
+      const word = document.createElement("span");
+      word.className = "gsf-profile-sub";
+      word.textContent = closes[0] ? "closes" : "relates to";
+      const link = document.createElement("a");
+      link.className = "gsf-related-lead";
+      link.href = lead.url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.title = lead.title;
+      link.textContent = `${relatedRef(lead, info)} ${lead.title}`;
+      frag.append(word, link);
+    }
+    const parts = [];
+    const more = closes.length - (closes[0] ? 1 : 0);
+    if (more > 0) parts.push(`${more} more to close`);
+    const pulls = items.filter((i) => i.type === "pull").length;
+    const issues = items.filter((i) => i.type === "issue").length;
+    if (issues > (lead && lead.type === "issue" ? 1 : 0) + Math.max(0, more)) parts.push(`${issues} issue${issues === 1 ? "" : "s"}`);
+    if (pulls) parts.push(`${pulls} pull request${pulls === 1 ? "" : "s"}`);
+    if (parts.length) {
+      const sub = document.createElement("span");
+      sub.className = "gsf-profile-sub";
+      sub.textContent = lead ? `(${parts.join(", ")})` : parts.join(", ");
+      frag.append(sub);
+    }
+    return frag;
+  }
+
+  async function relatedRender(panel, info, entry) {
+    panel.textContent = "";
+    panel.dataset.state = entry && entry.data ? "ready" : (entry ? "err" : "busy");
+    const data = entry && entry.data;
+    if (!data || !data.items.length) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+
+    const head = document.createElement("div");
+    head.className = "gsf-profile-head";
+    const logo = document.createElement("img");
+    logo.className = "gsf-profile-logo";
+    logo.src = `https://github.com/${encodeURIComponent(info.org)}.png?size=48`;
+    logo.alt = "";
+    logo.width = 24;
+    logo.height = 24;
+    const title = document.createElement("span");
+    title.className = "gsf-profile-title";
+    title.textContent = "Related work";
+    const age = document.createElement("span");
+    age.className = "gsf-profile-age";
+    age.textContent = `Read ${loadAgo(entry.at)}`;
+    const refresh = profileRefreshIcon();
+    refresh.addEventListener("click", () => relatedLoad(panel, info, true).catch((err) => console.warn("[github-issue-toolkit]", err)));
+    age.append(refresh);
+    const line = document.createElement("div");
+    line.className = "gsf-profile-line";
+    line.append(title, relatedSummary(data.items, info), age);
+    head.append(logo, line);
+    panel.append(head);
+    panelHead(head, panel);
+
+    for (const [group, label, open] of RELATED_GROUPS) {
+      const items = data.items.filter((i) => i.group === group);
+      if (!items.length) continue;
+      const box = assignAccordion(`${label} (${items.length})`, open);
+      const list = document.createElement("div");
+      list.className = "gsf-related-list";
+      for (const item of items) list.append(relatedRow(item, info));
+      box.append(list);
+      panel.append(box);
+    }
+  }
+
+  async function relatedLoad(panel, info, force) {
+    const hit = relatedCache.get(info.key);
+    if (!force && hit && hit.data) {
+      await relatedRender(panel, info, hit);
+      return;
+    }
+    const entry = await relatedFetch(info, force);
+    if (panel.isConnected) await relatedRender(panel, info, entry);
+  }
+
+  // Full width above the pull request's header, the way the issue's box sits above its title.
+  function relatedAnchor() {
+    return document.querySelector("#diff-comparison-viewer-container") || document.querySelector("#partial-discussion-header");
+  }
+
+  function scanRelated() {
+    const existing = document.querySelector(".gsf-related");
+    const info = settings.relatedEnabled ? relatedKey() : null;
+    if (!info) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing && existing.dataset.key === info.key && existing.isConnected) {
+      const anchor = relatedAnchor();
+      if (anchor && existing.nextElementSibling !== anchor && !existing.contains(anchor)) anchor.before(existing);
+      return;
+    }
+    if (existing) existing.remove();
+    const anchor = relatedAnchor();
+    if (!anchor) return;
+    const panel = document.createElement("section");
+    panel.className = "gsf-related gsf-profile-org";
+    panel.dataset.key = info.key;
+    panel.dataset.kind = "related";
+    panel.hidden = true;
+    brandApply(panel, info.org);
+    anchor.before(panel);
+    relatedLoad(panel, info, false).catch((err) => console.warn("[github-issue-toolkit]", err));
+  }
+
+  function clearRelated(drop) {
+    if (drop) {
+      relatedCache.clear();
+      relatedPending.clear();
+    }
+    document.querySelectorAll(".gsf-related").forEach((el) => el.remove());
   }
 
   // ---------------------------------------------------------------------------
@@ -3474,7 +3692,7 @@
   }
 
   // Everything this extension adds to the page, so its own mutations never schedule another scan.
-  const OURS = ["gsf-badge", "gsf-badges", "gsf-notice", "gsf-pins", "gsf-pins-header-btn", "gsf-kanban", "gsf-kanban-bar", "gsf-sidebar-rail", "gsf-load", "gsf-load-card", "gsf-progress", "gsf-profile", "gsf-assign"];
+  const OURS = ["gsf-badge", "gsf-badges", "gsf-notice", "gsf-pins", "gsf-pins-header-btn", "gsf-kanban", "gsf-kanban-bar", "gsf-sidebar-rail", "gsf-load", "gsf-load-card", "gsf-progress", "gsf-profile", "gsf-assign", "gsf-related"];
   const OURS_SELECTOR = OURS.map((name) => `.${name}`).join(", ");
 
   const observer = new MutationObserver((mutations) => {
@@ -3512,6 +3730,7 @@
         clearLoad(true);
         clearProfile(true);
         clearAssign(true);
+        clearRelated(true);
       }
       schedule();
     }
@@ -3545,6 +3764,15 @@
       if (changes.assignWords) settings.assignWords = String(changes.assignWords.newValue || "");
       clearAssign(false);
       schedule();
+    }
+    if (changes.relatedEnabled) {
+      settings.relatedEnabled = changes.relatedEnabled.newValue !== false;
+      clearRelated(false);
+      schedule();
+    }
+    if (changes.relatedFolded) {
+      settings.relatedFolded = changes.relatedFolded.newValue !== false;
+      panelFold("related", settings.relatedFolded);
     }
     if (changes.sidebarToggle || changes.sidebarCollapsed) {
       if (changes.sidebarToggle) settings.sidebarToggle = changes.sidebarToggle.newValue !== false;
@@ -3586,7 +3814,7 @@
     }
   });
 
-  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "profileFolded", "assignFolded"]).then((stored) => {
+  api.storage.local.get(["ageEnabled", "ageUnit", "ageWarnDays", "pinsEnabled", "skipShownFields", "prAssociation", "prFork", "prSize", "prMergeState", "pins", "kanbanEnabled", "kanbanDrag", "kanban", "sidebarToggle", "sidebarCollapsed", "hideProjectsSection", "loadEnabled", "loadAuto", "loadMembersMode", "profileEnabled", "profileOrgs", "assignEnabled", "assignWords", "loadLimit", "loadRegular", "progressEnabled", "progressScopeField", "progressDoneField", "progressDoneValue", "profileFolded", "assignFolded", "relatedEnabled", "relatedFolded"]).then((stored) => {
     settings.ageWarnDays = Number.isFinite(Number(stored.ageWarnDays)) && stored.ageWarnDays !== undefined ? Number(stored.ageWarnDays) : 90;
     settings.skipShownFields = stored.skipShownFields !== false;
     settings.prAssociation = stored.prAssociation !== false;
@@ -3618,8 +3846,11 @@
     kanban = { ...kanban, ...(stored.kanban || {}) };
     settings.profileFolded = stored.profileFolded !== false;
     settings.assignFolded = stored.assignFolded !== false;
+    settings.relatedEnabled = stored.relatedEnabled !== false;
+    settings.relatedFolded = stored.relatedFolded !== false;
     panelsCollapsed.profile = settings.profileFolded;
     panelsCollapsed.assign = settings.assignFolded;
+    panelsCollapsed.related = settings.relatedFolded;
     pins = Array.isArray(stored.pins) ? stored.pins : [];
     lastHref = null;
     schedule();
