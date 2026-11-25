@@ -482,7 +482,10 @@ const RELATION_OTHER = [
   "reverts", "revert of", "see also", "see", "refs", "ref", "references", "reference", "towards", "toward", "addresses", "address", "companion of", "companion to", "companion", "sibling of", "sibling", "paired with", "pairs with", "other half of", "same as", "similar to", "alternative to", "instead of", "in favor of", "in favour of", "upstream", "downstream", "tracked in", "tracked by", "tracking", "epic", "parent", "child of", "sub-task of", "subtask of"
 ];
 const RELATION_MAX_REFS = 40;
-const RELATION_SIBLINGS_KEPT = 12;
+const RELATION_SIBLINGS_KEPT = 8;
+// A bare #12 with no relation word before it is as likely to be step 12 or iteration 12 as an issue, so a number
+// this small only counts when a word says it is a reference.
+const RELATION_BARE_MIN = 100;
 
 function relationEscape(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "[\\s-]+");
@@ -523,6 +526,7 @@ function parseRelations(text, home) {
       kind = hit ? hit[1] : "related";
       word = lower;
     }
+    if (kind === "mention" && m[7] && number < RELATION_BARE_MIN) continue;
     refs.push({ owner, repo, number, kind, word });
     if (refs.length >= RELATION_MAX_REFS) break;
   }
@@ -601,7 +605,8 @@ async function fetchPullRelations(ref) {
       if (!node) return;
       const group = r.kind === "closes" ? "closes" : (r.kind === "related" ? "related" : "mentions");
       const item = relationNode(node, { type: node.__typename === "PullRequest" ? "pull" : "issue", group, word: r.word });
-      if (add(item) && item.type === "issue") sources.push({ item, node });
+      // Only what the description closes or is related to leads to other pull requests; a passing mention does not.
+      if (add(item) && item.type === "issue" && group !== "mentions") sources.push({ item, node });
     });
   }
 
@@ -612,6 +617,8 @@ async function fetchPullRelations(ref) {
     for (const event of (node.timelineItems && node.timelineItems.nodes) || []) {
       if (event && event.source && event.source.__typename === "PullRequest") pulls.push(relationNode(event.source, { type: "pull", via: item }));
     }
+    // The ones still going first, then the most recent.
+    pulls.sort((a, b) => (b ? Number(b.state === "OPEN") : 0) - (a ? Number(a.state === "OPEN") : 0) || (b ? b.number : 0) - (a ? a.number : 0));
     let kept = 0;
     for (const p of pulls) {
       if (!p || kept >= RELATION_SIBLINGS_KEPT) continue;

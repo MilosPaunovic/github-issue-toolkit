@@ -282,10 +282,10 @@ On a pull request, a full-width box above its header, in the same flat style as 
 
 - **Closes** lists the issues the pull request will close: the ones GitHub has linked to it in its Development list, and the ones its description closes with `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` or `resolved`.
 - **Related, from the description** lists what the description ties the pull request to with words such as `related to`, `relates to`, `part of`, `counterpart of`, `follow-up to`, `backport of`, `port of`, `continues`, `depends on`, `blocked by`, `supersedes`, `replaces`, `duplicate of`, `see`, `ref` and a few more, each shown with the word that was used. This is how a counterpart in another repository, a `kestra-ee` pull request for a `kestra` one, shows up.
-- **Other pull requests on the same issues** lists the pull requests that close or mention the issues above, so competing or follow-up work is visible at once.
+- **Other pull requests on the same issues** lists the pull requests that close or mention the issues above it, up to eight for each issue, the open ones first and then the most recent, so competing or follow-up work is visible at once. Only the issues the pull request closes or is related to lead here, not a passing mention.
 - **Named in the description** lists the references with no word before them, and **Mentioned in** lists the issues and pull requests that mention this one.
 
-A reference is `#123`, `owner/repo#123` or a link to an issue or a pull request. Text in code blocks, code spans and HTML comments is ignored, so the template's own instructions do not count. Each pull request costs two requests, one for the pull request and one that looks up what its description names, held until the tab is closed.
+A reference is `#123`, `owner/repo#123` or a link to an issue or a pull request. A bare number below 100 with no relation word before it is ignored, since it is as likely to be step 3 or iteration 2 as an issue. Text in code blocks, code spans and HTML comments is ignored, so the template's own instructions do not count. Each pull request costs two requests, one for the pull request and one that looks up what its description names, held until the tab is closed.
 
 ### Address bar search
 
