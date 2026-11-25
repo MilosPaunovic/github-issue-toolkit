@@ -64,10 +64,10 @@
     .card { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
     .card.access { border-color: var(--accent); }
     .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
-    .marks { display: grid; grid-template-columns: 152px 1fr; gap: 16px 24px; align-items: center; margin-top: 20px; }
+    .marks { display: grid; grid-template-columns: 152px 1fr; gap: 14px 24px; align-items: center; margin-top: 20px; }
     .marks > span:nth-child(odd) { display: flex; align-items: center; min-height: 28px; }
     .hint i { font-style: normal; }
-    .marks .t { color: var(--text-secondary); font-size: 13px; }
+    .marks .t { box-sizing: border-box; min-height: 28px; padding: 5px 0; color: var(--text-secondary); font-size: 13px; line-height: 18px; }
     .marks .t b { color: var(--text-primary); font-weight: 600; }
     .marks i { font-style: normal; }
     .marks + .hint { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-default); }
@@ -394,7 +394,7 @@
         <div class="marks">
           <span><i class="mk-pill"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="currentColor"><path d="M1.5 8.5h3v6h-3Zm5-7h3v13h-3Zm5 4h3v9h-3Z"/></svg> Contributor</i></span><span class="t"><b>Not looked up yet.</b> Press it to look the person up.</span>
           <span><i class="mk-pill mk-b"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="26 12"/></svg> Looking up</i></span><span class="t">The ring turns while the answer is on its way.</span>
-          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> Shown in place of the button by default, as a plain mark with nothing to press; with the button like anyone else it appears after a press.</span>
+          <span><i class="mk-pill mk-m">Member</i></span><span class="t"><b>A member of the organization.</b> A plain mark with nothing to press.</span>
           <span><i class="mk-pill mk-g">New contributor</i></span><span class="t">No merged pull request in the organization yet.</span>
           <span><i class="mk-pill mk-g">First PR here</i></span><span class="t">Merged elsewhere in the organization, not in this repository yet.</span>
           <span><i class="mk-pill">Returning</i></span><span class="t">Merged here, fewer than the regular limit.</span>
