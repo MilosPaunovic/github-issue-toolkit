@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- A name in a timeline event, such as who assigned an issue, no longer gets a **Contributor** button or a Member mark when hovered. Only the author of the page and the authors of the comments do, and the hover button is gone.
 
 ## [2.12.3] - 2026-11-25
 

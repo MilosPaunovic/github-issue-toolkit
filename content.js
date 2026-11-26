@@ -794,19 +794,16 @@
     });
   }
 
-  const LOAD_HOVER_MS = 200;
   const LOAD_CARD_ITEMS = 25;
   // Single segment paths that look like a login but are not one.
   const LOAD_RESERVED = new Set(["orgs", "issues", "pulls", "notifications", "settings", "apps", "marketplace", "search", "about", "sponsors", "topics", "collections", "explore"]);
   // The author is who an issue or pull request is about, so they are the only one the automatic read covers.
   const LOAD_AUTO_SELECTOR = "[data-testid=\"issue-body-header-author\"], .gh-header-meta a.author";
-  // The sidebar is left alone: its assignees, reviewers and participants get no button, only names in the conversation do.
+  // The sidebar is left alone: its assignees, reviewers and participants get no button, and neither does a name in a timeline event, only the headers of the page and of the comments do.
   // So is the text of a comment: a name written in it is a mention, not who wrote the comment.
   const LOAD_EXCLUDE = ".markdown-body, .comment-body, .js-comment-body, [data-testid=\"markdown-body\"], [data-testid=\"sidebar-section\"], [data-testid=\"sidebar-assignees-section\"], [data-testid=\"issue-assignees\"], #partial-discussion-sidebar, .discussion-sidebar-item, aside";
   // Where a button is put without being asked: the author, and the authors of the comments.
   const LOAD_NAME_SELECTOR = `${LOAD_AUTO_SELECTOR}, [data-testid="avatar-link"], .timeline-comment-header a.author`;
-  // Any other name in the header of the conversation, a reviewer in a timeline event for example, gets its button when it is hovered.
-  const LOAD_HOVER_SELECTOR = "a[data-hovercard-type=\"user\"], a.author";
   // The rows of the card: label, key of the answer, and the search terms behind the number.
   const LOAD_GROUPS = [
     ["Pull requests", [
@@ -826,7 +823,6 @@
   const loadPending = new Map();
   let loadCard = null;
   let loadAnchor = null;
-  let loadHoverTimer = null;
   let loadViewer = null;
   // Who belongs to the organization, known before anyone presses a button: "org/login" -> true, false or null when it could not be told.
   const loadMembership = new Map();
@@ -1418,28 +1414,6 @@
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && loadCard && loadCard.dataset.open) loadCardClose();
-  });
-
-  // Hovering a name that has no button yet, an @mention for example, gives it one. This asks GitHub for nothing.
-  document.addEventListener("mouseover", (event) => {
-    if (!settings.loadEnabled) return;
-    const target = event.target;
-    if (!target || !target.closest) return;
-    const anchor = target.closest(LOAD_HOVER_SELECTOR);
-    if (!anchor || loadHasButton(anchor)) return;
-    clearTimeout(loadHoverTimer);
-    loadHoverTimer = setTimeout(async () => {
-      const ref = loadRef();
-      if (ref) loadDecorate(anchor, ref, await loadWhoami());
-    }, LOAD_HOVER_MS);
-  });
-
-  document.addEventListener("mouseout", (event) => {
-    const target = event.target;
-    if (!target || !target.closest) return;
-    // Passing over a name on the way somewhere else is not a hover.
-    const anchor = target.closest(LOAD_HOVER_SELECTOR);
-    if (anchor && !anchor.contains(event.relatedTarget)) clearTimeout(loadHoverTimer);
   });
 
   // The page moving under the card leaves it pointing at nothing, so it closes. Its own list
