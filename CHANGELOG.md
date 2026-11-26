@@ -4,7 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- A read that fails is no longer sent again on every change of the page: for a minute the same rows are left alone, so a rejected token or a rate limit does not turn into a stream of identical requests.
+- A batch that fails no longer takes the others with it. On a big project table, the rows of the batches that were read get their badges, progress and pull request details, and only the rows of the failed one wait.
+- No more than three requests to GitHub are out at once, however many batches and tabs ask.
+- When GitHub says to wait (a `429`, a `403` with `Retry-After` or an empty allowance, or the hourly GraphQL allowance running out), the extension stops asking with that token until then and says how long, in place of a bare `HTTP 403`.
+- What was read about a person, the contributor button, the organization panel and who belongs to an organization, is shared by the tabs for a while: a person for ten minutes, membership for six hours. It is kept in the extension's session storage, memory only, and dropped when the browser closes or the token changes. The refresh button still reads again. A card says how old its answer really is.
+- A comment author whose header already says Member or Owner is no longer looked up to tell whether they belong to the organization.
 
 ## [2.12.4] - 2026-11-26
 

@@ -16,6 +16,43 @@
   let pins = [];
   let pinsCollapsed = true;
 
+  // A read that failed is not asked again at once. Every change on the page runs a scan, so a rejected token or
+  // a rate limit would otherwise send the same request again with each one.
+  const FAIL_TTL_MS = 60 * 1000;
+  const failures = new Map(); // "kind|key" -> when it may be asked again
+
+  function failedRecently(kind, key) {
+    const until = failures.get(`${kind}|${key}`);
+    if (until === undefined) return false;
+    if (Date.now() < until) return true;
+    failures.delete(`${kind}|${key}`);
+    return false;
+  }
+
+  function noteFailure(kind, keys) {
+    const until = Date.now() + FAIL_TTL_MS;
+    for (const key of keys) failures.set(`${kind}|${key}`, until);
+  }
+
+  // Sends the items to the worker in chunks, all at once (the worker lets only a few through together), and
+  // answers one result per chunk: the keys it covered with `part`, or with `error`. A chunk that failed does not
+  // take the others with it. `entries` is a list of [key, { owner, repo, number }].
+  function sendChunks(type, field, entries, size, extra) {
+    const chunks = [];
+    for (let i = 0; i < entries.length; i += size) chunks.push(entries.slice(i, i + size));
+    return Promise.all(chunks.map(async (chunk) => {
+      const keys = chunk.map(([key]) => key);
+      const items = chunk.map(([, ref]) => ({ owner: ref.owner, repo: ref.repo, number: ref.number }));
+      try {
+        const part = await api.runtime.sendMessage({ type, [field]: items, ...extra });
+        if (part && !part.error) return { keys, part };
+        return { keys, error: part && part.error ? part.error : "unknown error" };
+      } catch (err) {
+        return { keys, error: err && err.message ? err.message : String(err) };
+      }
+    }));
+  }
+
   // ---------------------------------------------------------------------------
   // Issue references
   // ---------------------------------------------------------------------------
@@ -326,48 +363,38 @@
         if (!hasBadges(row) && row.li.dataset.gsfState !== "empty") render(row, hit);
         continue;
       }
-      if (!pending.has(row.ref.key)) toFetch.set(row.ref.key, row.ref);
+      if (!pending.has(row.ref.key) && !failedRecently("fields", row.ref.key)) toFetch.set(row.ref.key, row.ref);
     }
     if (!toFetch.size) return;
 
     for (const key of toFetch.keys()) pending.add(key);
-    const issues = [...toFetch.values()].map(({ owner, repo, number }) => ({ owner, repo, number }));
-
     // Project tables can hold hundreds of rows: keep each GraphQL request small enough for GitHub's limits.
-    const chunks = [];
-    for (let i = 0; i < issues.length; i += FETCH_CHUNK) chunks.push(issues.slice(i, i + FETCH_CHUNK));
-
-    let response;
-    try {
-      const parts = await Promise.all(chunks.map((chunk) => api.runtime.sendMessage({ type: "fetchFieldValues", issues: chunk })));
-      const failed = parts.find((part) => !part || part.error);
-      response = failed || parts.reduce((acc, part) => {
-        Object.assign(acc.values, part.values || {});
-        Object.assign(acc.created, part.created || {});
-        return acc;
-      }, { values: {}, created: {} });
-    } catch (err) {
-      response = { error: err && err.message ? err.message : String(err) };
-    } finally {
-      for (const key of toFetch.keys()) pending.delete(key);
-    }
-
-    if (!response || response.error) {
-      if (response && response.error === "NO_TOKEN") {
-        showNotice("GitHub Issue Toolkit: add a GitHub token in the extension settings to show field values here.", true);
-      } else {
-        showNotice(`GitHub Issue Toolkit: ${response ? response.error : "unknown error"}`, true);
-      }
-      return;
-    }
+    const results = await sendChunks("fetchFieldValues", "issues", [...toFetch], FETCH_CHUNK);
+    for (const key of toFetch.keys()) pending.delete(key);
 
     const at = Date.now();
-    for (const key of toFetch.keys()) {
-      cache.set(key, {
-        at,
-        values: (response.values && response.values[key]) || [],
-        createdAt: (response.created && response.created[key]) || null
-      });
+    let error = null;
+    for (const result of results) {
+      if (result.error) {
+        error = error || result.error;
+        noteFailure("fields", result.keys);
+        continue;
+      }
+      for (const key of result.keys) {
+        cache.set(key, {
+          at,
+          values: (result.part.values && result.part.values[key]) || [],
+          createdAt: (result.part.created && result.part.created[key]) || null
+        });
+      }
+    }
+
+    if (error) {
+      if (error === "NO_TOKEN") {
+        showNotice("GitHub Issue Toolkit: add a GitHub token in the extension settings to show field values here.", true);
+      } else {
+        showNotice(`GitHub Issue Toolkit: ${error}`, true);
+      }
     }
     for (const row of collectRows()) {
       const hit = cache.get(row.ref.key);
@@ -510,31 +537,27 @@
         if (!row.li.querySelector(`.gsf-badge[data-gsf-for="${row.ref.key}"]`) && row.li.dataset.gsfPr !== "done") renderPull(row, hit.info);
         continue;
       }
-      if (!prPending.has(row.ref.key)) toFetch.set(row.ref.key, row.ref);
+      if (!prPending.has(row.ref.key) && !failedRecently("pulls", row.ref.key)) toFetch.set(row.ref.key, row.ref);
     }
     if (!toFetch.size) return;
     for (const key of toFetch.keys()) prPending.add(key);
-    const pulls = [...toFetch.values()].map(({ owner, repo, number }) => ({ owner, repo, number }));
-    const chunks = [];
-    for (let i = 0; i < pulls.length; i += FETCH_CHUNK) chunks.push(pulls.slice(i, i + FETCH_CHUNK));
-    let response;
-    try {
-      const parts = await Promise.all(chunks.map((chunk) => api.runtime.sendMessage({ type: "fetchPullRequests", pulls: chunk })));
-      const failed = parts.find((part) => !part || part.error);
-      response = failed || parts.reduce((acc, part) => Object.assign(acc, part.pulls || {}), {});
-      if (!failed) response = { pulls: response };
-    } catch (err) {
-      response = { error: err && err.message ? err.message : String(err) };
-    } finally {
-      for (const key of toFetch.keys()) prPending.delete(key);
-    }
-    if (!response || response.error) {
-      if (response && response.error === "NO_TOKEN") flagHeaderButton("GitHub Issue Toolkit: add a GitHub token in the extension settings to show pull request badges.");
-      else flagHeaderButton(`GitHub Issue Toolkit: ${response ? response.error : "unknown error"}`);
-      return;
-    }
+    const results = await sendChunks("fetchPullRequests", "pulls", [...toFetch], FETCH_CHUNK);
+    for (const key of toFetch.keys()) prPending.delete(key);
+
     const at = Date.now();
-    for (const key of toFetch.keys()) prCache.set(key, { at, info: response.pulls[key] || null });
+    let error = null;
+    for (const result of results) {
+      if (result.error) {
+        error = error || result.error;
+        noteFailure("pulls", result.keys);
+        continue;
+      }
+      for (const key of result.keys) prCache.set(key, { at, info: (result.part.pulls && result.part.pulls[key]) || null });
+    }
+    if (error) {
+      if (error === "NO_TOKEN") flagHeaderButton("GitHub Issue Toolkit: add a GitHub token in the extension settings to show pull request badges.");
+      else flagHeaderButton(`GitHub Issue Toolkit: ${error}`);
+    }
     for (const row of collectPullRows()) {
       const hit = prCache.get(row.ref.key);
       if (hit && hit.info && toFetch.has(row.ref.key)) renderPull(row, hit.info);
@@ -545,6 +568,7 @@
     cache.clear();
     prCache.clear();
     epicCache.clear();
+    failures.clear();
     boardSignature = null;
     document.querySelectorAll("[data-gsf-pr]").forEach((el) => delete el.dataset.gsfPr);
     noticeShown = false;
@@ -710,29 +734,23 @@
     if (!toFetch.size) return;
 
     for (const key of toFetch.keys()) progressPending.add(key);
-    const issues = [...toFetch.values()].map(({ owner, repo, number }) => ({ owner, repo, number }));
-    const chunks = [];
-    for (let i = 0; i < issues.length; i += PROGRESS_CHUNK) chunks.push(issues.slice(i, i + PROGRESS_CHUNK));
-    let response;
-    try {
-      const parts = await Promise.all(chunks.map((chunk) => api.runtime.sendMessage({ type: "fetchProgress", issues: chunk, scope, done })));
-      const failed = parts.find((part) => !part || part.error);
-      response = failed || { progress: Object.assign({}, ...parts.map((part) => part.progress || {})) };
-    } catch (err) {
-      response = { error: err && err.message ? err.message : String(err) };
-    } finally {
-      for (const key of toFetch.keys()) progressPending.delete(key);
-    }
+    const results = await sendChunks("fetchProgress", "issues", [...toFetch], PROGRESS_CHUNK, { scope, done });
+    for (const key of toFetch.keys()) progressPending.delete(key);
 
-    const failed = !response || response.error;
-    if (failed) {
-      showNotice(response && response.error === "NO_TOKEN"
-        ? "GitHub Issue Toolkit: add a GitHub token in the extension settings to show the sub-issue progress here."
-        : `GitHub Issue Toolkit: ${response ? response.error : "unknown error"}`, true);
-    }
+    // A chunk that failed leaves GitHub's own bar in place for its rows, and does not take the others with it.
     const at = Date.now();
-    for (const [key, ref] of toFetch) {
-      progressCache.set(key, { at, counts: failed ? null : (response.progress[`${ref.owner}/${ref.repo}#${ref.number}`] || null) });
+    let error = null;
+    for (const result of results) {
+      if (result.error) error = error || result.error;
+      for (const key of result.keys) {
+        const ref = toFetch.get(key);
+        progressCache.set(key, { at, counts: result.error ? null : (result.part.progress[`${ref.owner}/${ref.repo}#${ref.number}`] || null) });
+      }
+    }
+    if (error) {
+      showNotice(error === "NO_TOKEN"
+        ? "GitHub Issue Toolkit: add a GitHub token in the extension settings to show the sub-issue progress here."
+        : `GitHub Issue Toolkit: ${error}`, true);
     }
     for (const { native, ref } of collectProgress()) {
       const key = `${scopeKey}|${ref.key}`;
@@ -1035,14 +1053,15 @@
       let data = null;
       let error = "";
       try {
-        const res = await api.runtime.sendMessage({ type: "fetchContributorLoad", contributor: { org: ref.org, repo: ref.repo, login } });
+        const res = await api.runtime.sendMessage({ type: "fetchContributorLoad", contributor: { org: ref.org, repo: ref.repo, login }, force: Boolean(force) });
         data = res && !res.error && loadComplete(res) ? res : null;
         if (!data) error = loadReason(res && !res.error ? { error: "GitHub answered with something this extension could not read." } : res);
       } catch {
         // The worker is gone, or the extension reloaded under this tab.
         error = loadReason(null);
       }
-      loadCache.set(key, { at: Date.now(), data, error });
+      // The worker may answer from what another tab read a little while ago, and says when it was read.
+      loadCache.set(key, { at: (data && data.at) || Date.now(), data, error });
       // A forced read replaces the entry, so only the request that still owns it clears it.
       if (loadPending.get(key) === request) loadPending.delete(key);
       loadRepaint(key);
@@ -1110,7 +1129,28 @@
 
   // One request for every name on the page that is not yet known to belong or not to the organization.
   // Names that appear while it is out wait for the next scan, and a failed lookup is not asked again.
+  // GitHub already says in the header of a comment that its author is a member or an owner, so such a name is
+  // known without asking. Only that answer is read from the page: a header with another label, or none, says
+  // nothing sure about who does not belong. Returns whether something was learned.
+  function loadReadAssociation(ref) {
+    let learned = false;
+    for (const button of document.querySelectorAll(".gsf-load")) {
+      const key = `${ref.org}/${button.dataset.login.toLowerCase()}`;
+      if (button.dataset.org !== ref.org || loadMembership.has(key)) continue;
+      const header = button.closest(LOAD_HEADER);
+      if (!header) continue;
+      // A header that names two people is not read, so the label cannot be taken for the wrong one.
+      const names = new Set([...header.querySelectorAll(".gsf-load")].map((b) => b.dataset.login.toLowerCase()));
+      if (names.size !== 1) continue;
+      if (![...header.querySelectorAll(LOAD_ASSOCIATION)].some((label) => LOAD_HIDE_WORDS.test(label.textContent.trim()))) continue;
+      loadMembership.set(key, true);
+      learned = true;
+    }
+    return learned;
+  }
+
   async function loadMarkMembers(ref) {
+    if (loadReadAssociation(ref)) loadRepaintAll();
     if (loadMembersBusy) return;
     const asked = [...new Set([...document.querySelectorAll(".gsf-load")]
       .filter((button) => button.dataset.org === ref.org && !loadMembership.has(`${ref.org}/${button.dataset.login.toLowerCase()}`))
@@ -1489,13 +1529,13 @@
       let data = null;
       let error = "";
       try {
-        const res = await api.runtime.sendMessage({ type: "fetchOrgActivity", ref: { org, login } });
+        const res = await api.runtime.sendMessage({ type: "fetchOrgActivity", ref: { org, login }, force: Boolean(force) });
         data = res && !res.error && typeof res.merged !== "undefined" ? res : null;
         if (!data) error = loadReason(res && !res.error ? { error: "GitHub answered with something this extension could not read." } : res);
       } catch {
         error = loadReason(null);
       }
-      const entry = { at: Date.now(), data, error };
+      const entry = { at: (data && data.at) || Date.now(), data, error };
       profileCache.set(key, entry);
       if (profilePending.get(key) === request) profilePending.delete(key);
       return entry;

@@ -1,6 +1,8 @@
 const api = typeof browser !== "undefined" && browser.runtime ? browser : chrome;
 
 const GRAPHQL_URL = "https://api.github.com/graphql";
+// Session storage lives in memory only and is not offered everywhere, so it is used when it is there.
+const sessionStore = api.storage.session || null;
 
 async function getSettings() {
   const stored = await api.storage.local.get(["token", "fields", "ageEnabled", "ageUnit"]);
@@ -55,23 +57,93 @@ function parseFields(raw) {
     .filter(Boolean);
 }
 
-async function graphql(token, query, { partial = false, errors = null } = {}) {
-  const res = await fetch(GRAPHQL_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `bearer ${token}`,
-      "Content-Type": "application/json",
-      "User-Agent": "github-issue-toolkit"
-    },
-    body: JSON.stringify({ query })
+// At most this many requests are out at once, however many tabs and chunks ask: a big project table sends
+// many chunks together, and GitHub's secondary limits answer a burst with a refusal.
+const MAX_CONCURRENT = 3;
+let activeRequests = 0;
+const waitingRequests = [];
+
+function takeSlot() {
+  return new Promise((resolve) => {
+    const go = () => { activeRequests++; resolve(); };
+    if (activeRequests < MAX_CONCURRENT) go();
+    else waitingRequests.push(go);
   });
+}
+
+function freeSlot() {
+  activeRequests--;
+  const next = waitingRequests.shift();
+  if (next) next();
+}
+
+// When GitHub says to wait, nothing is sent with that token until then: the answer would be the same refusal,
+// and asking again is what makes a secondary limit last longer. Another token is not held back.
+let blocked = { token: "", until: 0 };
+const DEFAULT_WAIT_MS = 60 * 1000;
+const MAX_WAIT_MS = 60 * 60 * 1000;
+
+function waitWords(ms) {
+  const seconds = Math.max(1, Math.ceil(ms / 1000));
+  if (seconds < 90) return `${seconds} second${seconds === 1 ? "" : "s"}`;
+  const minutes = Math.ceil(seconds / 60);
+  return `${minutes} minutes`;
+}
+
+function rateLimitError(ms) {
+  return new Error(`GitHub rate limit reached. Try again in ${waitWords(ms)}.`);
+}
+
+// How long GitHub asks to wait, from its headers: `Retry-After` for the secondary limit, the reset time
+// when the hourly allowance is used up, or a minute when it only says no.
+function waitFrom(res) {
+  const retry = Number(res.headers.get("retry-after"));
+  if (Number.isFinite(retry) && retry > 0) return Math.min(retry * 1000, MAX_WAIT_MS);
+  const reset = Number(res.headers.get("x-ratelimit-reset"));
+  if (res.headers.get("x-ratelimit-remaining") === "0" && Number.isFinite(reset) && reset > 0) {
+    return Math.min(Math.max(reset * 1000 - Date.now(), 1000), MAX_WAIT_MS);
+  }
+  return DEFAULT_WAIT_MS;
+}
+
+async function graphql(token, query, { partial = false, errors = null } = {}) {
+  if (blocked.token === token && Date.now() < blocked.until) throw rateLimitError(blocked.until - Date.now());
+  await takeSlot();
+  let res;
+  try {
+    res = await fetch(GRAPHQL_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `bearer ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "github-issue-toolkit"
+      },
+      body: JSON.stringify({ query })
+    });
+  } finally {
+    freeSlot();
+  }
   if (res.status === 401) {
     throw new Error("Token rejected by GitHub (401). Check it in the extension options.");
+  }
+  // A 403 is a rate limit only when GitHub says how long to wait; otherwise it is a missing permission.
+  const limited = res.status === 429
+    || (res.status === 403 && (res.headers.get("retry-after") || res.headers.get("x-ratelimit-remaining") === "0"));
+  if (limited) {
+    const wait = waitFrom(res);
+    blocked = { token, until: Date.now() + wait };
+    throw rateLimitError(wait);
   }
   if (!res.ok) {
     throw new Error(`GitHub API responded with HTTP ${res.status}`);
   }
   const json = await res.json();
+  // The hourly allowance of GraphQL runs out as a normal answer that carries an error of this type.
+  if (json.errors && json.errors.some((e) => e && e.type === "RATE_LIMITED")) {
+    const wait = waitFrom(res);
+    blocked = { token, until: Date.now() + wait };
+    throw rateLimitError(wait);
+  }
   // A caller that wants the reasons for the parts that failed passes a list to collect them in.
   if (json.errors && errors) errors.push(...json.errors.map((e) => e.message));
   if (json.errors && (!json.data || !partial)) {
@@ -218,6 +290,75 @@ async function fetchFieldValues(issues) {
     }
   }
   return { values: result, created, fields };
+}
+
+// ---------------------------------------------------------------------------
+// Answers shared by every tab. A tab keeps what it read for as long as it is open, but a new tab or a reload
+// starts empty, so what was read about a person is also kept here, in memory only: the worker holds it, and
+// session storage carries it over the worker's idle stops. It is gone when the browser closes, and when the
+// token changes, since another token may be allowed to see other things.
+// ---------------------------------------------------------------------------
+
+const SHARED_PREFIX = "shared:";
+const sharedAnswers = new Map(); // key -> { at, value }
+const sharedPending = new Map(); // key -> promise of a read that is under way
+
+async function sharedLookup(keys) {
+  const found = new Map();
+  const missing = [];
+  for (const key of keys) {
+    const hit = sharedAnswers.get(key);
+    if (hit) found.set(key, hit);
+    else missing.push(key);
+  }
+  if (missing.length && sessionStore) {
+    const stored = await sessionStore.get(missing.map((key) => SHARED_PREFIX + key)).catch(() => ({}));
+    for (const key of missing) {
+      const hit = stored[SHARED_PREFIX + key];
+      if (hit && typeof hit.at === "number") {
+        sharedAnswers.set(key, hit);
+        found.set(key, hit);
+      }
+    }
+  }
+  return found;
+}
+
+function sharedStore(entries) {
+  const stored = {};
+  for (const [key, entry] of entries) {
+    sharedAnswers.set(key, entry);
+    stored[SHARED_PREFIX + key] = entry;
+  }
+  if (sessionStore && entries.length) sessionStore.set(stored).catch(() => {});
+}
+
+async function sharedForget() {
+  sharedAnswers.clear();
+  sharedPending.clear();
+  if (!sessionStore) return;
+  const all = await sessionStore.get(null).catch(() => ({}));
+  const keys = Object.keys(all).filter((key) => key.startsWith(SHARED_PREFIX));
+  if (keys.length) sessionStore.remove(keys).catch(() => {});
+}
+
+// One read for a key, shared by every tab asking at the same time and kept for `ttl`. `keep` says whether an
+// answer is whole enough to be kept; `force` reads again, which the refresh button asks for. The answer
+// carries `at`, when it was read, so a card can say how old it is.
+async function sharedRead(key, ttl, load, keep, force) {
+  if (!force) {
+    const hit = (await sharedLookup([key])).get(key);
+    if (hit && Date.now() - hit.at < ttl) return { ...hit.value, at: hit.at };
+    if (sharedPending.has(key)) return sharedPending.get(key);
+  }
+  const request = load().then((value) => {
+    const at = Date.now();
+    if (value && !value.error && keep(value)) sharedStore([[key, { at, value }]]);
+    return value && !value.error ? { ...value, at } : value;
+  });
+  const own = request.finally(() => { if (sharedPending.get(key) === own) sharedPending.delete(key); });
+  sharedPending.set(key, own);
+  return own;
 }
 
 // ---------------------------------------------------------------------------
@@ -655,6 +796,8 @@ async function fetchPullRelations(ref) {
 // one for every name. A person GitHub cannot find, a bot for example, comes back as null.
 const MEMBER_CHUNK = 40;
 const MEMBER_MAX = 200;
+// Belonging to an organization changes rarely, so an answer stays good for hours and is shared by every tab.
+const MEMBER_TTL_MS = 6 * 60 * 60 * 1000;
 
 async function fetchMembers(ref) {
   const { token } = await getSettings();
@@ -662,15 +805,28 @@ async function fetchMembers(ref) {
   const org = String((ref && ref.org) || "").trim();
   const logins = [...new Set(((ref && ref.logins) || []).map((l) => String(l).trim()).filter(Boolean))].slice(0, MEMBER_MAX);
   if (!org || !logins.length) return { error: "An organization and at least one login are needed." };
+  const keyOf = (login) => `member:${org.toLowerCase()}/${login.toLowerCase()}`;
   const members = {};
-  for (let i = 0; i < logins.length; i += MEMBER_CHUNK) {
-    const chunk = logins.slice(i, i + MEMBER_CHUNK);
+  const known = await sharedLookup(logins.map(keyOf));
+  const missing = [];
+  for (const login of logins) {
+    const hit = known.get(keyOf(login));
+    if (hit && Date.now() - hit.at < MEMBER_TTL_MS) members[login] = hit.value;
+    else missing.push(login);
+  }
+  for (let i = 0; i < missing.length; i += MEMBER_CHUNK) {
+    const chunk = missing.slice(i, i + MEMBER_CHUNK);
     const lookups = chunk.map((login, n) => `m${n}: user(login: ${JSON.stringify(login)}) { organization(login: ${JSON.stringify(org)}) { login } }`).join("\n");
     const data = await graphql(token, `{ ${lookups} }`, { partial: true });
+    const at = Date.now();
+    const answered = [];
     chunk.forEach((login, n) => {
       const node = data[`m${n}`];
       members[login] = node ? Boolean(node.organization) : null;
+      // Someone GitHub could not find may be found later, so only a clear yes or no is kept.
+      if (members[login] !== null) answered.push([keyOf(login), { at, value: members[login] }]);
     });
+    sharedStore(answered);
   }
   return { members };
 }
@@ -754,7 +910,6 @@ function shortcutSummary(shortcut, fallback) {
 // words only, so `app` finds `webapp` through this list and not through search. The worker is stopped
 // after a short idle time, so the list is also kept in session storage, which lives in memory only.
 const ownerRepoCache = new Map();
-const sessionStore = api.storage.session || null;
 
 function fresh(entry) {
   return entry && Date.now() - entry.at < OWNER_REPOS_TTL_MS;
@@ -1362,6 +1517,19 @@ async function fetchProgress(issues, scope, done) {
   return { progress };
 }
 
+// What was read about a person is shared by the tabs for this long. A read that is missing some of its counts
+// is shown but not kept, so the next one tries again.
+const READ_TTL_MS = 10 * 60 * 1000;
+
+function loadWhole(data) {
+  return Boolean(data.merged && data.open && data.closed && data.assigned && data.done)
+    && [data.merged, data.open, data.closed, data.assigned, data.done].every((c) => c.repo !== null && c.org !== null);
+}
+
+function activityWhole(data) {
+  return [data.merged, data.open, data.issues, data.issuesOpen, data.reviewed, data.commented, data.assignedOpen].every((c) => c !== null);
+}
+
 function reply(promise, sendResponse) {
   promise
     .then(sendResponse)
@@ -1381,13 +1549,15 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return reply(viewer().then((login) => ({ login })), sendResponse);
   }
   if (msg.type === "fetchOrgActivity") {
-    return reply(fetchOrgActivity(msg.ref), sendResponse);
+    const ref = msg.ref || {};
+    return reply(sharedRead(`activity:${ref.org}/${ref.login}`.toLowerCase(), READ_TTL_MS, () => fetchOrgActivity(ref), activityWhole, msg.force === true), sendResponse);
   }
   if (msg.type === "fetchMembers") {
     return reply(fetchMembers(msg.ref), sendResponse);
   }
   if (msg.type === "fetchContributorLoad") {
-    return reply(fetchContributorLoad(msg.contributor), sendResponse);
+    const ref = msg.contributor || {};
+    return reply(sharedRead(`load:${ref.org}/${ref.repo}/${ref.login}`.toLowerCase(), READ_TTL_MS, () => fetchContributorLoad(ref), loadWhole, msg.force === true), sendResponse);
   }
   if (msg.type === "fetchProgress") {
     return reply(fetchProgress(msg.issues || [], msg.scope || null, msg.done || null), sendResponse);
@@ -1428,6 +1598,14 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     })(), sendResponse);
   }
   return false;
+});
+
+// Another token may see other things, so what was read with the old one, and a wait it was told to keep, are dropped.
+api.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !changes.token) return;
+  sharedForget();
+  blocked = { token: "", until: 0 };
+  viewerLogin = null;
 });
 
 api.action.onClicked.addListener(() => {
