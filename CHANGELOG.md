@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.13.0] - 2026-11-26
+
 ### Changed
 
 - A read that fails is no longer sent again on every change of the page: for a minute the same rows are left alone, so a rejected token or a rate limit does not turn into a stream of identical requests.
@@ -310,7 +314,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.4...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.13.0...HEAD
+[2.13.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.4...v2.13.0
 [2.12.4]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.3...v2.12.4
 [2.12.3]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.2...v2.12.3
 [2.12.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.1...v2.12.2
