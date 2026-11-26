@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.12.4] - 2026-11-26
+
 ### Fixed
 
 - A name in a timeline event, such as who assigned an issue, no longer gets a **Contributor** button or a Member mark when hovered. Only the author of the page and the authors of the comments do, and the hover button is gone.
@@ -299,7 +303,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.3...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.4...HEAD
+[2.12.4]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.3...v2.12.4
 [2.12.3]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.2...v2.12.3
 [2.12.2]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.1...v2.12.2
 [2.12.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.0...v2.12.1
