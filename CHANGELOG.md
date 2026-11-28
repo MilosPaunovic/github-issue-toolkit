@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The contributor button now stands in for GitHub's own label at the right of a comment header, the Contributor, First-time contributor or Collaborator one: that label is hidden while the button is there, and the button reads its words until it is pressed, so the same thing is no longer said twice.
 
 ## [2.13.0] - 2026-11-26
 

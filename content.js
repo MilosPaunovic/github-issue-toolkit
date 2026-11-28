@@ -785,11 +785,29 @@
     }
   }
 
-  // GitHub's own Member and Owner label sits at the right of a comment header. Where the button already says
-  // Member it is said twice, so that label is hidden for as long as the button shows it.
+  // GitHub's own label sits at the right of a comment header and says what the person is to the repository: Owner,
+  // Member, Collaborator, Contributor, First-time contributor. The button stands where the name is and says the same
+  // until it is pressed, so the label is hidden for as long as a button is there to carry it, and its words are the
+  // button's first text instead of a general one.
   const LOAD_HEADER = "[comment-header], [class*=\"IssueBodyHeaderContainer\"], .timeline-comment-header";
   const LOAD_ASSOCIATION = "[comment-author-association], .timeline-comment-label";
+  const LOAD_ASSOC_WORDS = /^(owner|member|collaborator|contributor|first[- ]time contributor|first[- ]timer)$/i;
   const LOAD_HIDE_WORDS = /^(member|owner)$/i;
+
+  // GitHub's labels in the header this button is in. A header that names two people is not read, so a label
+  // cannot be taken for the wrong one.
+  function loadHeaderLabels(button) {
+    const header = button.closest(LOAD_HEADER);
+    if (!header) return [];
+    const names = new Set([...header.querySelectorAll(".gsf-load")].map((b) => b.dataset.login.toLowerCase()));
+    if (names.size !== 1) return [];
+    return [...header.querySelectorAll(LOAD_ASSOCIATION)].filter((label) => LOAD_ASSOC_WORDS.test(label.textContent.trim()));
+  }
+
+  function loadHeaderWord(button) {
+    const [label] = loadHeaderLabels(button);
+    return label ? label.textContent.trim() : "";
+  }
 
   function loadShowAssociation() {
     document.querySelectorAll("[data-gsf-hidden]").forEach((el) => {
@@ -801,14 +819,17 @@
   function loadHideAssociation() {
     loadShowAssociation();
     if (!settings.loadEnabled) return;
-    document.querySelectorAll(".gsf-load[data-status=\"member\"]").forEach((button) => {
-      const header = button.closest(LOAD_HEADER);
-      if (!header) return;
-      header.querySelectorAll(LOAD_ASSOCIATION).forEach((label) => {
-        if (!LOAD_HIDE_WORDS.test(label.textContent.trim())) return;
+    document.querySelectorAll(".gsf-load").forEach((button) => {
+      // A button still waiting to be shown does not carry the label yet.
+      if (button.dataset.pending) return;
+      const labels = loadHeaderLabels(button);
+      labels.forEach((label) => {
         label.style.setProperty("display", "none", "important");
         label.dataset.gsfHidden = "1";
       });
+      // The header may have been drawn after the button was, so its words are taken when they appear.
+      const word = labels.length ? labels[0].textContent.trim() : "";
+      if ((button.dataset.assoc || "") !== word) loadPaint(button);
     });
   }
 
@@ -957,6 +978,10 @@
     const { login, org, repo } = button.dataset;
     const key = button.dataset.gsfKey;
     const entry = loadCache.get(key);
+    // What GitHub says about the person in this header: the button's first text, and a note in its tooltip.
+    const assoc = loadHeaderWord(button);
+    if (assoc) button.dataset.assoc = assoc;
+    else delete button.dataset.assoc;
     button.textContent = "";
     delete button.dataset.static;
     button.removeAttribute("tabindex");
@@ -985,11 +1010,11 @@
         button.setAttribute("aria-busy", "true");
         button.append(loadSpinner(), "Looking up");
       } else {
-        button.append(loadIcon(), state === "err" ? "Try again" : "Contributor");
+        button.append(loadIcon(), state === "err" ? "Try again" : (assoc || "Contributor"));
       }
       const text = state === "err"
         ? `${login}: could not be read. ${entry.error || ""} Click to try again.`.replace("  ", " ")
-        : (state === "busy" ? `Looking up ${login}` : `Show who ${login} is to ${org}/${repo}`);
+        : (state === "busy" ? `Looking up ${login}` : `${assoc ? `GitHub lists ${login} as ${assoc.toLowerCase()}. ` : ""}Show who ${login} is to ${org}/${repo}`);
       button.title = text;
       button.setAttribute("aria-label", text);
       return;
@@ -1008,7 +1033,7 @@
       if (!pulls) over.dataset.idle = "1";
       button.append(over);
     }
-    button.title = `${status.hint}. ${assigned} assigned, ${pulls} open pull request${pulls === 1 ? "" : "s"}.`;
+    button.title = `${status.hint}. ${assigned} assigned, ${pulls} open pull request${pulls === 1 ? "" : "s"}.${assoc ? ` GitHub lists them as ${assoc.toLowerCase()}.` : ""}`;
     button.setAttribute("aria-label", `${login}: ${status.label}, ${assigned} assigned, ${pulls} open`);
   }
 
@@ -1098,8 +1123,8 @@
     button.dataset.repo = ref.repo;
     button.dataset.login = login;
     if (settings.loadMembers && belongs === undefined) button.dataset.pending = "1";
-    loadPaint(button);
     anchor.after(button);
+    loadPaint(button);
     return button;
   }
 
@@ -1137,12 +1162,7 @@
     for (const button of document.querySelectorAll(".gsf-load")) {
       const key = `${ref.org}/${button.dataset.login.toLowerCase()}`;
       if (button.dataset.org !== ref.org || loadMembership.has(key)) continue;
-      const header = button.closest(LOAD_HEADER);
-      if (!header) continue;
-      // A header that names two people is not read, so the label cannot be taken for the wrong one.
-      const names = new Set([...header.querySelectorAll(".gsf-load")].map((b) => b.dataset.login.toLowerCase()));
-      if (names.size !== 1) continue;
-      if (![...header.querySelectorAll(LOAD_ASSOCIATION)].some((label) => LOAD_HIDE_WORDS.test(label.textContent.trim()))) continue;
+      if (!LOAD_HIDE_WORDS.test(loadHeaderWord(button))) continue;
       loadMembership.set(key, true);
       learned = true;
     }
