@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- GitHub's own label at the right of a comment header was not found on the current issue page, so it stayed next to the contributor button and the button did not take its words. The header and the label are now found by the test ids GitHub uses today, and the older selectors are kept.
 
 ## [2.14.0] - 2026-11-28
 
