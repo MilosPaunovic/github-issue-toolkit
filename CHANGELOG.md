@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.14.1] - 2026-11-28
+
 ### Fixed
 
 - GitHub's own label at the right of a comment header was not found on the current issue page, so it stayed next to the contributor button and the button did not take its words. The header and the label are now found by the test ids GitHub uses today, and the older selectors are kept.
@@ -322,7 +326,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.14.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.14.1...HEAD
+[2.14.1]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.14.0...v2.14.1
 [2.14.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.13.0...v2.14.0
 [2.13.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.4...v2.13.0
 [2.12.4]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.3...v2.12.4
