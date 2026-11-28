@@ -789,8 +789,8 @@
   // Member, Collaborator, Contributor, First-time contributor. The button stands where the name is and says the same
   // until it is pressed, so the label is hidden for as long as a button is there to carry it, and its words are the
   // button's first text instead of a general one.
-  const LOAD_HEADER = "[comment-header], [class*=\"IssueBodyHeaderContainer\"], .timeline-comment-header";
-  const LOAD_ASSOCIATION = "[comment-author-association], .timeline-comment-label";
+  const LOAD_HEADER = "[data-testid=\"comment-header\"], [class*=\"ActivityHeaderContainer\"], [class*=\"IssueBodyHeaderContainer\"], [comment-header], .timeline-comment-header";
+  const LOAD_ASSOCIATION = "[data-testid=\"comment-author-association\"], [comment-author-association], .timeline-comment-label";
   const LOAD_ASSOC_WORDS = /^(owner|member|collaborator|contributor|first[- ]time contributor|first[- ]timer)$/i;
   const LOAD_HIDE_WORDS = /^(member|owner)$/i;
 
