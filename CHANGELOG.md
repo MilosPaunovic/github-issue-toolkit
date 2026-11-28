@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [2.14.0] - 2026-11-28
+
 ### Changed
 
 - The contributor button now stands in for GitHub's own label at the right of a comment header, the Contributor, First-time contributor or Collaborator one: that label is hidden while the button is there, and the button reads its words until it is pressed, so the same thing is no longer said twice.
@@ -316,7 +320,8 @@ First release.
 
 - The token is stored with `chrome.storage.local` on the device and is sent only to `https://api.github.com/graphql`. No analytics or third-party services. See [PRIVACY.md](PRIVACY.md).
 
-[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.13.0...HEAD
+[Unreleased]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.14.0...HEAD
+[2.14.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.13.0...v2.14.0
 [2.13.0]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.4...v2.13.0
 [2.12.4]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.3...v2.12.4
 [2.12.3]: https://github.com/MilosPaunovic/github-issue-toolkit/compare/v2.12.2...v2.12.3
